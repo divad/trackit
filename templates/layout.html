@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>trackit</title>
+		{% include 'html-header.html' %}
+	</head>
+	<body>
+		<div class="navbar navbar-default navbar-fixed-top" role="navigation">	
+			<div class="container-fluid">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-1">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a href="{{ url_for('about') }}" class="navbar-brand">trackit</a>
+				</div>
+			
+				{%- if session.logged_in %}
+				<div class="navbar-collapse collapse" id="navbar-collapse-1">	
+					<ul class="nav navbar-nav">
+						<li class="dropdown{%if active == 'databases'%} active{%endif%}">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-fw fa-archive"></i> Menu<b class="caret"></b></a>
+							<ul class="dropdown-menu">
+								<li><a href="{{ url_for('about') }}"><i class="fa fa-fw fa-archive"></i> Item</a></li>
+								<li><a href="{{ url_for('about') }}"><i class="fa fa-fw fa-retweet"></i> Item</a></li>
+								<li><a href="{{ url_for('about') }}"><i class="fa fa-fw fa-plus"></i> Item</a></li>
+
+							</ul>
+						</li>
+
+						<li class="dropdown{%if active == 'servers'%} active{%endif%}">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-fw fa-hdd-o"></i> Menu <b class="caret"></b></a>
+							<ul class="dropdown-menu">
+								<li><a href="{{ url_for('about') }}"><i class="fa fa-fw fa-list-alt"></i> Item</a></li>
+								<li><a href="{{ url_for('about') }}"><i class="fa fa-fw fa-th"></i> Item</a></li>
+								<li><a href="{{ url_for('about') }}"><i class="fa fa-fw fa-dashboard"></i> Item</a></li>
+								<li><a href="{{ url_for('about') }}"><i class="fa fa-fw fa-plus"></i> Item</a></li>
+							</ul>
+						</li>
+					
+						<li {% if active == 'stats' %} class="active" {% endif %}><a href="{{ url_for('about') }}"><i class="fa fa-fw fa-bar-chart-o"></i> Menu</a></li>
+						<li {% if active == 'about' %} class="active" {% endif %}><a href="{{ url_for('about') }}"><i class="fa fa-fw fa-info-circle"></i> About</a></li>
+					</ul>
+					
+					<ul class="nav navbar-nav navbar-right">
+						<li class="dropdown{%if active == 'user'%} active{%endif%}">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-fw fa-user"></i> {{ session.username }} <b class="caret"></b></a>
+							<ul class="dropdown-menu">
+								<li><a href="{{ url_for('logout') }}"><i class="fa fa-fw fa-sign-out"></i>  Sign Out</a></li>
+							</ul>
+						</li>
+					</ul>
+				</div>
+				{%- endif %}
+			</div>
+		</div>
+
+		<div class="container-fluid">
+			{% for category, message in get_flashed_messages(with_categories=true) %}
+			<div class="alert {{ category }} fade in"> <a data-dismiss="alert" class="close" href="#">×</a> {{ message }} </div>
+			{% endfor %}
+			{% block body %}{% endblock -%}
+		</div>
+		
+	</body>
+</html>

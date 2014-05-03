@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>TracKit</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		{% include 'html-header.html' %}
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/login.css') }}">
+	</head>
+
+	<body>
+
+		<script type="text/javascript">
+		window.onload = function()
+		{
+			var text_input = document.getElementById ('loginUsername');
+			text_input.focus();
+			text_input.select();
+		}
+		</script>
+
+		<div class="wrapper-signin">
+			<div class="container container-signin">
+				<form class="form-signin" action="{{ url_for('login') }}" method="POST">
+					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+
+					{% if next %}
+					<input name="next" type="hidden" value="{{next}}"/>
+					{% endif %}
+
+					<h1 class="form-signin-heading">TracKit</h2>
+					<input name="username" type="text" class="form-control" placeholder="Username" autofocus>
+					<input name="password" type="password" class="form-control" placeholder="Password">
+					<label class="checkbox">
+					  <input type="checkbox" value="sec" id="sec" name="sec"> Remember me
+					</label>
+					<div class="text-center">
+						<button class="btn btn-lg btn-default" type="submit">Login</button>
+					</div>
+				</form>
+				{% for category, message in get_flashed_messages(with_categories=true) %}
+				<div class="alert {{ category }}">
+					<a data-dismiss="alert" class="close" href="#">×</a>
+					{{ message|safe }}
+				</div>
+				{% endfor %}
+
+			</div>
+		</div>
+  </body>
+</html>
