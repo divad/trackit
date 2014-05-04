@@ -47,9 +47,9 @@ def login_required(f):
 	@wraps(f)
 	def decorated_function(*args, **kwargs):
 		if session.get('logged_in',False) is False:
-			flash('You must be logged in to do that!','alert-danger')
-			args = url_encode(request.args)
-			return redirect(url_for('default', next=request.script_root + request.path + "?" + args))
+			flash('You must login first','alert-danger')
+			session['next_url'] = request.url
+			return redirect(url_for('default'))
 		return f(*args, **kwargs)
 	return decorated_function
 

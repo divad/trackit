@@ -2,42 +2,75 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-		<title>TracKit</title>
+		<title>Forge</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		{% include 'html-header.html' %}
+
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico') }}">
+		<!--<link href="//netdna.bootstrapcdn.com/bootswatch/3.1.1/yeti/bootstrap.min.css" rel="stylesheet">-->
+		<link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
+		<link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+		<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+		<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+		<!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+			<link href="{{ url_for('static', filename='respond.proxy.gif') }}" id="respond-redirect" rel="respond-redirect" />
+			<link href="//netdna.bootstrapcdn.com/respond-proxy.html" id="respond-proxy" rel="respond-proxy" />
+			<script src="{{ url_for('static', filename='js/respond.proxy.js') }}"></script>
+		<![endif]-->
+
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/login.css') }}">
 	</head>
 
 	<body>
+    <div class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <a href="#" class="navbar-brand">Soton Forge</a>
+          <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+        </div>
+        <div class="navbar-collapse collapse" id="navbar-main">
+          <ul class="nav navbar-nav">
+            <li class="dropdown">
+              <a>Etymology</a>
+            </li>
+            <li>
+              <a>Computing</a>
+            </li>
+            <li>
+              <a>Research</a>
+            </li>
+            <li>
+              <a>Statistics</a>
+            </li>
+            <li>
+              <a>Biology</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
 
-		<script type="text/javascript">
-		window.onload = function()
-		{
-			var text_input = document.getElementById ('loginUsername');
-			text_input.focus();
-			text_input.select();
-		}
-		</script>
+    <div class="splash">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-8 headline">
+            <h1><i class="fa fa-fw fa-rocket"></i> Soton Forge</h1>
+            <p>Write software, maintain research data or manage projects.</p>
+          </div>
+          <div class="col-md-4">
+			<h2>Sign In</h2>
 
-		<div class="wrapper-signin">
-			<div class="container container-signin">
-				<form class="form-signin" action="{{ url_for('login') }}" method="POST">
-					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-
-					{% if next %}
-					<input name="next" type="hidden" value="{{next}}"/>
-					{% endif %}
-
-					<h1 class="form-signin-heading">TracKit</h2>
-					<input name="username" type="text" class="form-control" placeholder="Username" autofocus>
-					<input name="password" type="password" class="form-control" placeholder="Password">
-					<label class="checkbox">
-					  <input type="checkbox" value="sec" id="sec" name="sec"> Remember me
-					</label>
-					<div class="text-center">
-						<button class="btn btn-lg btn-default" type="submit">Login</button>
-					</div>
-				</form>
 				{% for category, message in get_flashed_messages(with_categories=true) %}
 				<div class="alert {{ category }}">
 					<a data-dismiss="alert" class="close" href="#">×</a>
@@ -45,7 +78,90 @@
 				</div>
 				{% endfor %}
 
-			</div>
-		</div>
+			<form class="form-signin text-left" action="{{ url_for('login') }}" method="POST">
+				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<div class="form-group">
+					<input name="username" type="text" class="form-control input-lg" placeholder="Username" autofocus>
+				</div>
+				<div class="form-group">
+					<input name="password" type="password" class="form-control input-lg" placeholder="Password">
+				</div>
+				<div class="text-center">
+					<button class="btn btn-primary" type="submit">Sign In</button>
+				</div>
+			</form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+   <div class="container marketing">
+
+      <!-- Three columns of text below the carousel -->
+      <div class="row">
+        <div class="col-lg-4">
+          <i class="fa fa-fw fa-5x fa-code"></i>
+          <h2>Version Control</h2>
+          <p>Choose from Subversion, Git or Mercurial. </p>
+          <p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>
+        </div><!-- /.col-lg-4 -->
+        <div class="col-lg-4">
+          <i class="fa fa-fw fa-5x fa-code-fork"></i>
+          <h2>Self Provisioning</h2>
+          <p>Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Cras mattis consectetur purus sit amet fermentum. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh.</p>
+          <p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>
+        </div><!-- /.col-lg-4 -->
+        <div class="col-lg-4">
+          <i class="fa fa-fw fa-5x fa-bug"></i>
+          <h2>Project Management</h2>
+          <p>Donec sed odio dui. Cras justo odio, dapibus ac facilisis in, egestas eget quam. Vestibulum id ligula porta felis euismod semper. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.</p>
+          <p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>
+        </div><!-- /.col-lg-4 -->
+      </div><!-- /.row -->
+
+
+      <!-- START THE FEATURETTES -->
+
+      <hr class="featurette-divider">
+
+      <div class="row featurette">
+        <div class="col-md-7">
+          <h2 class="featurette-heading">Manage your project <span class="text-muted">with Trac.</span></h2>
+          <p class="lead">Donec ullamcorper nulla non metus auctor fringilla. Vestibulum id ligula porta felis euismod semper. Praesent commodo cursus magna, vel scelerisque nisl consectetur. Fusce dapibus, tellus ac cursus commodo.</p>
+        </div>
+        <div class="col-md-5">
+          <img class="featurette-image img-responsive" data-src="holder.js/500x500/auto" alt="Generic placeholder image">
+        </div>
+      </div>
+
+      <hr class="featurette-divider">
+
+      <div class="row featurette">
+        <div class="col-md-5">
+          <img class="featurette-image img-responsive" data-src="holder.js/500x500/auto" alt="Generic placeholder image">
+        </div>
+        <div class="col-md-7">
+          <h2 class="featurette-heading">...Or manage your project <span class="text-muted">with Redmine!</span></h2>
+          <p class="lead">Donec ullamcorper nulla non metus auctor fringilla. Vestibulum id ligula porta felis euismod semper. Praesent commodo cursus magna, vel scelerisque nisl consectetur. Fusce dapibus, tellus ac cursus commodo.</p>
+        </div>
+      </div>
+
+      <hr class="featurette-divider">
+
+      <div class="row featurette">
+        <div class="col-md-7">
+          <h2 class="featurette-heading">And lastly, this one. <span class="text-muted">Checkmate.</span></h2>
+          <p class="lead">Donec ullamcorper nulla non metus auctor fringilla. Vestibulum id ligula porta felis euismod semper. Praesent commodo cursus magna, vel scelerisque nisl consectetur. Fusce dapibus, tellus ac cursus commodo.</p>
+        </div>
+        <div class="col-md-5">
+          <img class="featurette-image img-responsive" data-src="holder.js/500x500/auto" alt="Generic placeholder image">
+        </div>
+      </div>
+
+      <hr class="featurette-divider">
+
+
+
   </body>
 </html>

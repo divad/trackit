@@ -113,10 +113,9 @@ Further Details:
 
 # load core functions
 import trackit.core
+import trackit.errors
+import trackit.user
+import trackit.views
 
 # load anti csrf function reference into template engine
 app.jinja_env.globals['csrf_token'] = trackit.core.generate_csrf_token
-
-# import modules
-import trackit.errors
-import trackit.views
