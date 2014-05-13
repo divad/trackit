@@ -1,0 +1,75 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="page-header">
+  <h2>Create team</h2>
+</div>
+
+<form class="form-horizontal" role="form" method="POST">
+	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+	<div class="form-group has-feedback" id="form_group_name">
+		<label for="inputName" class="col-lg-2 control-label">Name</label>
+		<div class="col-lg-6">
+			<input type="text" class="form-control" id="inputName" name="team_name" {% if team_name %}value="{{ team_name }}" {% endif %} data-container="body" data-toggle="popover" data-placement="right" data-content="">
+			<span id="form_feedback_name" class="fa form-control-feedback"></span>
+			<span class="help-block">A unique public name for the team, used in URLs.</span>
+			
+		</div>
+	</div>
+
+	<div class="form-group">
+		<label for="input_desc" class="col-lg-2 control-label">Description</label>
+		<div class="col-lg-6">
+			<input type="text" class="form-control" id="input_desc" name="team_desc" {% if team_desc %}value="{{ team_desc }}" {% endif %}>
+			<span class="help-block">A short description of the team, e.g. the full team name.
+			</span>
+		</div>
+	</div>
+
+	<div class="form-group">
+		<div class="col-lg-offset-2 col-lg-10">
+			<button type="submit" class="btn btn-default">Create</button>
+		</div>
+	</div>
+</form>
+
+<script type="text/javascript">
+	var checkTimer = undefined;
+	$('#inputName').keyup(function()
+	{
+		if (checkTimer)
+		{
+			clearTimeout(checkTimer);
+		}
+		checkTimer = setTimeout(function() {
+			$.post('/teams/check', { _csrf_token: "{{ csrf_token() }}", team_name: $('#inputName').val() }, function(data, textStatus, jqXHR) {
+				if (data.result != 'valid')
+				{
+					$('#form_group_name').addClass('has-error')
+					$('#form_group_name').removeClass('has-success')
+					$('#form_feedback_name').removeClass('hidden fa-check')
+					$('#form_feedback_name').addClass('fa-exclamation-triangle')
+					if (data.result == 'exists')
+					{
+						$('#inputName').attr('data-content', 'Sorry, a team with that name already exists!')
+					}
+					else if (data.result == 'invalid')
+					{
+						$('#inputName').attr('data-content', 'Sorry, that team name is invalid!')
+					}
+					$('#inputName').popover()
+					$('#inputName').popover('show')
+				}
+				else
+				{
+					$('#form_group_name').addClass('has-success')
+					$('#form_group_name').removeClass('has-error')
+					$('#form_feedback_name').removeClass('hidden fa-exclamation-triangle')
+					$('#form_feedback_name').addClass('fa-check')
+					$('#inputName').popover('hide')
+				}
+			});
+		}, 400);
+	});
+</script>
+
+{% endblock %}

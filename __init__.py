@@ -72,16 +72,12 @@ app.config.from_pyfile('/etc/trackit/trackit.conf', silent=True)
 app.config.from_pyfile('/data/trackit/trackit.conf', silent=True)
 
 # set up e-mail alert logging
-if not app.debug:
-	if app.config['EMAIL_ALERTS'] == True:
+if app.config['EMAIL_ALERTS'] == True:
 
-		mail_handler = SMTPHandler(app.config['SMTP_SERVER'],
-			app.config['EMAIL_FROM'],
-			app.config['ADMINS'], 
-			'TracKit Application Error')
+	mail_handler = SMTPHandler(app.config['SMTP_SERVER'], app.config['EMAIL_FROM'], app.config['ADMINS'], 'TracKit Application Error')
 
-		mail_handler.setLevel(logging.ERROR)
-		mail_handler.setFormatter(Formatter("""
+	mail_handler.setLevel(logging.ERROR)
+	mail_handler.setFormatter(Formatter("""
 A fatal error occured in TracKit.
 
 Message type:       %(levelname)s
@@ -98,15 +94,15 @@ Further Details:
 
 """))
 
-		app.logger.addHandler(mail_handler)
+	app.logger.addHandler(mail_handler)
 	
-	## Set up file logging as well
-	file_handler = RotatingFileHandler(app.config['LOG_DIR'] + '/' + app.config['LOG_FILE'], 'a', 1 * 1024 * 1024, 10)
-	file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
-	app.logger.setLevel(logging.INFO)
-	file_handler.setLevel(logging.INFO)
-	app.logger.addHandler(file_handler)
-	app.logger.info('trackit ' + app.conf['VERSION'] + ' started up')
+## Set up file logging as well
+file_handler = RotatingFileHandler(app.config['LOG_DIR'] + '/' + app.config['LOG_FILE'], 'a', 1 * 1024 * 1024, 10)
+file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
+app.logger.setLevel(logging.INFO)
+file_handler.setLevel(logging.INFO)
+app.logger.addHandler(file_handler)
+app.logger.info('trackit ' + str(app.config['VERSION']) + ' started up')
 
 
 ################################################################################
@@ -116,6 +112,8 @@ import trackit.core
 import trackit.errors
 import trackit.user
 import trackit.views
+import trackit.repos
+import trackit.teams
 
 # load anti csrf function reference into template engine
 app.jinja_env.globals['csrf_token'] = trackit.core.generate_csrf_token

@@ -34,9 +34,9 @@ import re
 def db_connect():
 	"""This function connects to the DB via parameters stored in the config file.
 	"""
-	conn = mysql.connect(app.config['DB_SERV'],app.config['DB_USER'],app.config['DB_PASS'],app.config['DB_NAME'])
-	conn.errorhandler = trackit.errors.db_error_handler
-	return conn
+	## Connect to the database instance
+	g.db = mysql.connect(app.config['DB_SERV'],app.config['DB_USER'],app.config['DB_PASS'],app.config['DB_NAME'])
+	g.db.errorhandler = trackit.errors.db_error_handler
 
 ################################################################################
 
@@ -62,12 +62,28 @@ def before_request():
 	connects to the database
 	"""
 	## Connect to the database
-	g.db = db_connect()
+	trackit.core.db_connect()
 
 	## Check CSRF key is valid
 	if request.method == "POST":
 		## check csrf token is valid
 		token = session.get('_csrf_token')
+
+
+		try:
+			if '_csrf_token' in session:
+				app.logger.info('CSRF token in session is: ' + token)
+			else:
+				app.logger.info('No token in session')
+
+			if '_csrf_token' in request.form:
+				app.logger.info('CSRF token presented is: ' + request.form.get('_csrf_token'))
+			else:
+				app.logger.info('No CSRF token in form')
+
+		except Exception as e:
+			app.logger.error(str(e))
+
 		if not token or token != request.form.get('_csrf_token'):
 			if 'username' in session:
 				app.logger.warning('CSRF protection alert: %s failed to present a valid POST token',session['username'])

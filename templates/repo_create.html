@@ -1,0 +1,129 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="page-header">
+  <h2>Create repository</h2>
+<p>
+	Please fill out the following form to create your project. After creation you will be able to grant users permission to access the project.
+</p>
+</div>
+
+<form class="form-horizontal" role="form" method="POST">
+	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+	<div class="form-group has-feedback" id="form_group_name">
+		<label for="inputName" class="col-lg-2 control-label">Name</label>
+		<div class="col-lg-6">
+			<input type="text" class="form-control" id="inputName" name="repo_name" {% if repo_name %}value="{{ repo_name }}" {% endif %} data-container="body" data-toggle="popover" data-placement="right" data-content="">
+			<span id="form_feedback_name" class="fa form-control-feedback"></span>
+			<span class="help-block">A unique public name for the repository, usually the name of the project or purpose of the repository.</span>
+			
+		</div>
+	</div>
+
+	<div class="form-group">
+		<label for="input_desc" class="col-lg-2 control-label">Description</label>
+		<div class="col-lg-6">
+			<input type="text" class="form-control" id="input_desc" name="repo_desc" {% if repo_desc %}value="{{ repo_desc }}" {% endif %}>
+			<span class="help-block">A short description of what the repository contains and/or is used for.
+			</span>
+		</div>
+	</div>
+
+	<div class="form-group">
+		<label for="input_team" class="col-lg-2 control-label">Team</label>
+		<div class="col-lg-6">
+			<select name="repo_team" class="form-control" id="input_team">
+				<option value="-1"{% if repo_team and repo_team == "-1" %} selected="selected"{% endif %}>None</option>
+			</select>
+
+			<span class="help-block">The team this repository should be grouped under, if any.
+			</span>
+		</div>
+	</div>
+	<div class="form-group">
+		<label for="input_src_type" class="col-lg-2 control-label">Source Control</label>
+		<div class="col-lg-6">
+			<select name="repo_src_type" class="form-control" id="input_src_type">
+				<option value="git"{% if repo_src_type and repo_src_type == "git" %} selected="selected"{% endif %}>Git</option>
+				<option value="svn"{% if repo_src_type and repo_src_type == "svn" %} selected="selected"{% endif %}>Subversion</option>
+				<option value="hg"{% if repo_src_type and repo_src_type == "hg" %} selected="selected"{% endif %}>Mercurial</option>
+				<option value="none"{% if repo_src_type and repo_src_type == "none" %} selected="selected"{% endif %}>None - source control disabled</option>
+			</select>
+
+			<span class="help-block">The type of repository source control, if any. <a href="">How do I choose?</a>
+			</span>
+		</div>
+	</div>
+	<div class="form-group">
+		<label for="input_web_type" class="col-lg-2 control-label">Project Tool</label>
+		<div class="col-lg-6">
+			<select name="repo_web_type" class="form-control" id="input_web_type">
+				<option value="trac"{% if repo_src_type and repo_src_type == "trac" %} selected="selected"{% endif %}>Trac</option>
+				<option value="redmine"{% if repo_src_type and repo_src_type == "redmine" %} selected="selected"{% endif %}>Redmine</option>
+				<option value="none"{% if repo_src_type and repo_src_type == "none" %} selected="selected"{% endif %}>None - no project tool</option>
+			</select>
+
+			<span class="help-block">The type of web based project management tool, if any. <a href="">How do I choose?</a>
+			</span>
+		</div>
+	</div>
+	<div class="form-group">
+		<label for="input_security" class="col-lg-2 control-label">Security</label>
+		<div class="col-lg-6">
+			<select name="repo_security" class="form-control" id="input_security">
+				<option value="0"{% if repo_security and repo_security == "0" %} selected="selected"{% endif %}>Private - Only visible to project members</option>
+				<option value="1"{% if repo_security and repo_security == "1" %} selected="selected"{% endif %}>University - Visible to all university members</option>
+				<option value="2"{% if repo_security and repo_security == "2" %} selected="selected"{% endif %}>Public - Visible to anybody on the internet</option>
+			</select>
+
+			<span class="help-block">Who can search for, view details of the repository, and who can logon to the web based project management tool?
+			</span>
+		</div>
+	</div>
+	<div class="form-group">
+		<div class="col-lg-offset-2 col-lg-10">
+			<button type="submit" class="btn btn-default">Create</button>
+		</div>
+	</div>
+</form>
+
+<script type="text/javascript">
+	var checkTimer = undefined;
+	$('#inputName').keyup(function()
+	{
+		if (checkTimer)
+		{
+			clearTimeout(checkTimer);
+		}
+		checkTimer = setTimeout(function() {
+			$.post('/repos/check', { _csrf_token: "{{ csrf_token() }}", repo_name: $('#inputName').val() }, function(data, textStatus, jqXHR) {
+				if (data.result != 'valid')
+				{
+					$('#form_group_name').addClass('has-error')
+					$('#form_group_name').removeClass('has-success')
+					$('#form_feedback_name').removeClass('hidden fa-check')
+					$('#form_feedback_name').addClass('fa-exclamation-triangle')
+					if (data.result == 'exists')
+					{
+						$('#inputName').attr('data-content', 'Sorry, a repository with that name already exists!')
+					}
+					else if (data.result == 'invalid')
+					{
+						$('#inputName').attr('data-content', 'Sorry, that repository name is invalid!')
+					}
+					$('#inputName').popover()
+					$('#inputName').popover('show')
+				}
+				else
+				{
+					$('#form_group_name').addClass('has-success')
+					$('#form_group_name').removeClass('has-error')
+					$('#form_feedback_name').removeClass('hidden fa-exclamation-triangle')
+					$('#form_feedback_name').addClass('fa-check')
+					$('#inputName').popover('hide')
+				}
+			});
+		}, 400);
+	});
+</script>
+
+{% endblock %}
