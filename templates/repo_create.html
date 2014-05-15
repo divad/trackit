@@ -12,7 +12,7 @@
 	<div class="form-group has-feedback" id="form_group_name">
 		<label for="inputName" class="col-lg-2 control-label">Name</label>
 		<div class="col-lg-6">
-			<input type="text" class="form-control" id="inputName" name="repo_name" {% if repo_name %}value="{{ repo_name }}" {% endif %} data-container="body" data-toggle="popover" data-placement="right" data-content="">
+			<input type="text" class="form-control" id="inputName" name="repo_name" {% if repo_name %}value="{{ repo_name }}" {% endif %} data-container="body" data-toggle="popover" data-placement="right" data-content="" data-trigger="manual">
 			<span id="form_feedback_name" class="fa form-control-feedback"></span>
 			<span class="help-block">A unique public name for the repository, usually the name of the project or purpose of the repository.</span>
 			
@@ -33,9 +33,12 @@
 		<div class="col-lg-6">
 			<select name="repo_team" class="form-control" id="input_team">
 				<option value="-1"{% if repo_team and repo_team == "-1" %} selected="selected"{% endif %}>None</option>
+				{% for team in teams %}
+					<option value="{{team.id}}"{% if repo_team and repo_team|int == team.id|int %} selected="selected"{% endif %}>{{team.name}}</option>
+				{% endfor %}
 			</select>
 
-			<span class="help-block">The team this repository should be grouped under, if any.
+			<span class="help-block">The team this repository should be grouped under, if any. {{repo_team}}
 			</span>
 		</div>
 	</div>
@@ -88,14 +91,16 @@
 
 <script type="text/javascript">
 	var checkTimer = undefined;
-	$('#inputName').keyup(function()
+	$('#inputName').bind('input', function()
 	{
 		if (checkTimer)
 		{
 			clearTimeout(checkTimer);
 		}
-		checkTimer = setTimeout(function() {
-			$.post('/repos/check', { _csrf_token: "{{ csrf_token() }}", repo_name: $('#inputName').val() }, function(data, textStatus, jqXHR) {
+		checkTimer = setTimeout(function()
+		{
+			$.post('/repos/check', { _csrf_token: "{{ csrf_token() }}", repo_name: $('#inputName').val() }, function(data, textStatus, jqXHR)
+			{
 				if (data.result != 'valid')
 				{
 					$('#form_group_name').addClass('has-error')

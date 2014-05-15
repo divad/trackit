@@ -18,10 +18,11 @@
 from trackit import app
 import trackit.core
 import trackit.errors
-from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash
+from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, jsonify
 import kerberos
 import pwd
 import grp
+import pwd
 
 ################################################################################
 #### LOGIN
@@ -64,19 +65,56 @@ def login():
 		## Log a successful login
 		app.logger.info('User "' + session['username'] + '" logged in from "' + request.remote_addr + '" using ' + request.user_agent.string)
 
-		## mark the user as an admin if they are in the admins group
-		group = grp.getgrnam(app.config['ADMIN_GROUP'])
-		if session['username'] in group.gr_mem:
-			session['admin'] = True
-		else:
-			session['admin'] = False
-
 		## determine if "next" variable is set (the URL to be sent to)
 		if 'next_url' in session:
 			if session['next_url'] != None:
 				return redirect(session['next_url'])
 
 		return redirect(url_for('about'))
+		
+################################################################################
+
+def is_global_admin(username=None):
+	if username == None:
+		username = session['username']
+		
+	## mark the user as an admin if they are in the admins group
+	group = grp.getgrnam(app.config['ADMIN_GROUP'])
+	if username in group.gr_mem:
+		return True
+	else:
+		return False
+
+################################################################################
+
+def get(username):
+
+	try:
+		passwd = pwd.getpwnam(username)
+	except KeyError as e:
+		return None
+		
+	return passwd
+
+################################################################################
+
+
+@app.route('/user/check', methods=['POST'])
+def user_check():
+	"""Returns a JSON response to user agents to check if a username is valid."""
+
+	if 'username' in request.form:
+		username = request.form['username']
+	else:
+		app.logger.info('invalid')
+		return jsonify(result='invalid')
+
+	user_object = trackit.user.get(username)
+	
+	if user_object == None:
+		return jsonify(result='notfound')
+	else:
+		return jsonify(result='exists')
 
 ################################################################################
 #### LOGOUT

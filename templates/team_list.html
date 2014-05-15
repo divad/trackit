@@ -3,9 +3,9 @@
 
 <div class="page-header">
   <div class="pull-right">
-  	<a href="{{ url_for('repo_create') }}" class="btn btn-info" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Create new repository"><i class="fa fa-fw fa-plus"></i></a>
+  	<a href="{{ url_for('team_create') }}" class="btn btn-info" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Create new team"><i class="fa fa-fw fa-plus"></i></a>
   </div>
-  <h1><i class="fa fa-fw fa-code-fork"></i> Repositories</h1>
+  <h1><i class="fa fa-fw fa-users"></i> Teams</h1>
 </div>
 
 <table id="tsort" class="table table-hover table-striped">
@@ -13,47 +13,18 @@
 		<tr>
 			<th>Name</th>
 			<th>Description</th>
-			<th>Status</th>
-			<th>Source Control</th>
-			<th>Web Tool</th>
 		</tr>
 	</thead>
 	<tbody class="rowclick-table">
-{% if repos|length == 0 %}
+{% if teams|length == 0 %}
 		<tr>
-			<td colspan='3'>There are no repositories!</td>
+			<td colspan='3'>There are no teams to display.</td>
 		</tr>
 {% else %}
-	{% for repo in repos %}
-		<tr class="rowclick-tr" data-url="{{ repo.link }}">
-			<td class="rowclick-td">{{ repo.name }}</td>
-			<td class="rowclick-td">{{ repo.desc }}</td>
-			<td class="rowclick-td">{{ repo.status }}</td>
-			<td class="rowclick-td">
-				{% if repo.src_type == 'git' %}
-					<span class="label label-primary">GIT</span>
-				{% endif %}
-				{% if repo.src_type == 'svn' %}
-					<span class="label label-primary">SVN</span>
-				{% endif %}
-				{% if repo.src_type == 'hg' %}
-					<span class="label label-primary">HG</span>
-				{% endif %}
-				{% if repo.src_type == 'none' %}
-					<span class="label label-default">N/A</span>
-				{% endif %}
-			</td>
-			<td class="rowclick-td">
-				{% if repo.web_type == 'trac' %}
-					<span class="label label-info">Trac</span>
-				{% endif %}
-				{% if repo.web_type == 'redmine' %}
-					<span class="label label-info">Redmine</span>
-				{% endif %}
-				{% if repo.web_type == 'none' %}
-					<span class="label label-default">N/A</span>
-				{% endif %}
-			</td>
+	{% for team in teams %}
+		<tr class="rowclick-tr" data-url="{{ team.link }}">
+			<td class="rowclick-td"><span class="fa fa-fw fa-user"></span> {{ team.name }}</td>
+			<td class="rowclick-td">{{ team.desc }}</td>
 		</tr>
 	{% endfor %}
 {% endif %}

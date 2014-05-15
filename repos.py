@@ -27,6 +27,20 @@ REPO_STATE_STR = { 0: 'Automatic repository creation scheduled', 1: 'Active', 2:
 
 ################################################################################
 
+def get_all():
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT * FROM `repos` ORDER BY `name`')
+	return curd.fetchall()
+
+################################################################################
+
+def get_team_repos(team_id):
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT * FROM `repos` WHERE `tid` = %s ORDER BY `name`',(team_id))
+	return curd.fetchall()
+
+################################################################################
+
 @app.route('/repos')
 @trackit.core.login_required
 def repo_list():
@@ -81,7 +95,9 @@ def repo_create():
 	"""View function to create a new repository"""	
 	
 	if request.method == 'GET':
-		return render_template('repo_create.html', active='repos')
+		teams = trackit.teams.get_all()
+		## TODO send a list of RELEVANT teams, not all.
+		return render_template('repo_create.html', active='repos', teams=teams)
 
 	elif request.method == 'POST':
 		# Set a flag to determine if we'd had an error
@@ -113,13 +129,19 @@ def repo_create():
 
 
 		## TEAM
-		## TODO check the team ID is actually valid
 		if 'repo_team' in request.form:
 			repo_team = request.form['repo_team']
 
 			if not re.search(r'[0-9]+$',repo_team):
 				had_error = 1
-				flash('Invalid team.', 'alert-danger')
+				flash('Invalid team ID', 'alert-danger')
+
+			if not int(repo_team) == -1:
+				if not trackit.teams.exists(repo_team):
+					had_error = 1
+					flash('Sorry, but that team does not exist', 'alert-danger')
+
+			## TODO check that they are allowed to create a repo in that team
 		else:
 			had_error = 1
 			repo_team = -1
@@ -170,13 +192,16 @@ def repo_create():
 
 		# If we had an error, just render the form again with details already there so they can be changed
 		if had_error == 1:
+			teams = trackit.teams.get_all()
 			return render_template('repo_create.html',
 				active='servers',
 				repo_name=repo_name,
 				repo_desc=repo_desc,
+				repo_team=repo_team,
 				repo_src_type=repo_src_type,
 				repo_web_type=repo_web_type,
 				repo_security=repo_security,
+				teams=teams,
 			)
 			
 		# CREATE THE REPOSITORY
@@ -188,7 +213,7 @@ def repo_create():
 		g.db.commit()
 
 		## Last insert ID
-		#server_id = cur.lastrowid
+		repo_id = cur.lastrowid
 
 		# Notify that we've succeeded
 		flash('Created new repo!', 'alert-success')

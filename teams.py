@@ -21,20 +21,39 @@ import trackit.errors
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, jsonify
 import re
 import MySQLdb as mysql
+import pwd
 
-@app.route('/teams')
-@trackit.core.login_required
-def team_list():
-	"""View handler to list all repositories"""
+################################################################################
 
+def get_all():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT * FROM `teams` ORDER BY `name`')
-	repos = curd.fetchall()
+	return curd.fetchall()
 
-	for team in teams:
-		team['link'] = url_for('about', team_id = team['id'])
-		
-	return render_template('team_list.html',teams=teams,active='teams')
+################################################################################
+
+def get_user_teams(username):
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT * FROM `teams` WHERE `id` IN (SELECT `tid` FROM `team_members` WHERE `username` = %s ) ORDER BY `name`',(username))
+	return curd.fetchall()
+
+################################################################################
+
+def exists(team_id):
+	"""checks if a team ID corresponds to a valid team. Returns true or false"""
+	cur = g.db.cursor()
+	cur.execute('SELECT 1 FROM `teams` WHERE `id` = %s', (team_id))
+	if cur.fetchone() is not None:
+		return True
+	return False
+
+################################################################################
+
+def get(value,selector='id'):
+	""" Return a team from the DB. Returns None when the team doesn't exist"""
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT * FROM `teams` WHERE `' + selector + '` = %s', (value))
+	return curd.fetchone()
 
 ################################################################################
 
@@ -43,6 +62,155 @@ def team_is_valid_name(team_name):
 		return True
 	else:
 		return False
+
+################################################################################
+
+def members(team_id):
+	""" Return a list of members of a team."""
+
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT * FROM `team_members` WHERE `tid` = %s', (team_id))
+	members = curd.fetchall()
+
+	for member in members:
+		if member['domain'] == 'internal':
+		
+			user_object = trackit.user.get(member['username'])
+			
+			if user_object == None:
+				app.logger.warn('Username ' + member['username'] + 'found on team but not found on internal domain')
+				member['fullname'] = 'User not found'
+			else:
+				member['fullname'] = user_object.pw_gecos			
+
+		else:
+			## TODO other domain support (v3.0)
+			member['fullname'] = 'N/A'
+
+	return members
+	
+################################################################################
+
+def is_admin(team_id,username=None):
+	if username == None:
+		username = session['username']
+		
+	if trackit.user.is_global_admin():
+		return True
+		
+	cur = g.db.cursor()
+	cur.execute('SELECT 1 FROM `team_members` WHERE `tid` = %s AND `username` = %s AND `admin` = 1', (team_id,username))
+	result = cur.fetchone()
+	
+	if result == None:
+		return False
+	else:
+		return True
+
+################################################################################
+
+@app.route('/team/<name>/', methods=['GET','POST'])
+@trackit.core.login_required
+def team_view(name):
+	"""View handler to show a team and the repositories in the team"""
+
+	## Get the team
+	team    = trackit.teams.get(name,selector='name')
+
+	## No such team found!
+	if team == None:
+		abort(404)
+		
+	## Permissions checking
+	team_admin = trackit.teams.is_admin(team['id'])
+	
+	## GET (view) requests
+	if request.method == 'GET':
+
+		repos   = trackit.repos.get_team_repos(team['id'])
+		members = trackit.teams.members(team['id'])
+
+		return render_template('team.html',team=team,repos=repos,members=members,team_admin=team_admin,active='teams')
+
+	## POST (change settings or delete or add member or delete member)
+	else:
+		cur = g.db.cursor()
+		
+		if not team_admin:
+			flash('You must be a team administrator to alter this team','alert-danger')
+			abort(403)
+
+		if 'action' in request.form:
+			action = request.form['action']
+			
+			## Delete the team
+			if action == 'delete':
+			
+				## TODO why isn't this on delete cascade in MySQL???
+				cur.execute('DELETE FROM `team_members` WHERE `tid` = %s', (team['id']))
+				cur.execute('DELETE FROM `teams` WHERE `id` = %s', (team['id']))
+				g.db.commit()
+				flash('Team successfully deleted', 'alert-success')
+				return(redirect(url_for('team_list')))
+			
+			## Add a member to the team	
+			if action == 'add':
+				if 'username' in request.form and 'admin' in request.form:
+					username = request.form['username']
+					admin    = request.form['admin']
+					
+					## 'validate' the admin flag
+					if int(admin) != 1:
+						admin = 0
+					
+					user_object = trackit.user.get(username)
+					
+					if user_object == None:
+						flash('That username was not found','alert-danger')
+					else:					
+						cur.execute('INSERT INTO `team_members` (tid,username,admin) VALUES (%s, %s,%s)', (team['id'],username,admin))
+						g.db.commit()
+						flash('Team member added', 'alert-success')
+					
+					return(redirect(url_for('team_view',name=team['name'])))	
+				else:
+					flash('You must supply a username and an admin flag to add a new team member')
+					abort(400)
+					
+			## Save settings
+			if action == 'save':
+				if 'team_desc' in request.form:
+					team_desc = request.form['team_desc']
+
+					if not re.search(r'^[a-zA-Z0-9_\-\,\.\(\)\s\+]{3,255}$',team_desc):
+						flash('Invalid team description. Allowed characters are a-z, 0-9, comma, full stop, backslash, whitespace, plus, underscore and hyphen', 'alert-danger')
+						return(redirect(url_for('team_view',name=team['name'])))
+
+					cur.execute('UPDATE `teams` SET `desc` = %s WHERE `id` = %s', (team_desc,team['id']))
+					g.db.commit()
+					flash('Team settings updated successfully', 'alert-success')
+					return(redirect(url_for('team_view',name=team['name'])))
+					
+			else:
+				abort(400)
+			
+		else:
+			flash("You must specify a team description", 'alert-danger')	
+			return(redirect(url_for('team_view',name=team['name'])))
+		
+################################################################################
+
+@app.route('/teams')
+@trackit.core.login_required
+def team_list():
+	"""View handler to list all teams"""
+
+	teams = trackit.teams.get_all()
+
+	for team in teams:
+		team['link'] = url_for('team_view', name = team['name'])
+		
+	return render_template('team_list.html',teams=teams,active='teams')
 
 ################################################################################
 
@@ -58,11 +226,11 @@ def team_check():
 	if not team_is_valid_name(team_name):
 		return jsonify(success=1, result='invalid')
 
-	# Check whether the repo exists
+	# Check whether the team exists
 	cur = g.db.cursor()
 	cur.execute('SELECT 1 FROM `teams` WHERE `name` = %s;', (team_name))
 	if cur.fetchone() is not None:
-		# Repo exists
+		# team exists
 		return jsonify(success=1, result='exists')
 
 	return jsonify(success=1, result='valid')
@@ -82,108 +250,60 @@ def team_create():
 		had_error = 0
 
 		# NAME
-		if 'repo_name' in request.form:
-			repo_name = request.form['repo_name']
+		if 'team_name' in request.form:
+			team_name = request.form['team_name']
 
-			if not re.search(r'^[a-zA-Z0-9_\-]{3,50}$',repo_name):
+			if not re.search(r'^[a-zA-Z0-9_\-]{3,50}$',team_name):
 				had_error = 1
-				flash('Invalid repository name. Allowed characters are a-z, 0-9, underscore and hyphen', 'alert-danger')
+				flash('Invalid team name. Allowed characters are a-z, 0-9, underscore and hyphen', 'alert-danger')
 		else:
 			had_error = 1
-			repo_name = ''
-			flash("You must specify a repository name", 'alert-danger')
+			team_name = ''
+			flash("You must specify a team name", 'alert-danger')
 
 		## DESCRIPTION
-		if 'repo_desc' in request.form:
-			repo_desc = request.form['repo_desc']
+		if 'team_desc' in request.form:
+			team_desc = request.form['team_desc']
 
-			if not re.search(r'^[a-zA-Z0-9_\-\,\.\(\)\s\+]{3,255}$',repo_desc):
+			if not re.search(r'^[a-zA-Z0-9_\-\,\.\(\)\s\+]{3,255}$',team_desc):
 				had_error = 1
-				flash('Invalid repository description. Allowed characters are a-z, 0-9, comma, full stop, backslash, whitespace, plus, underscore and hyphen', 'alert-danger')
+				flash('Invalid team description. Allowed characters are a-z, 0-9, comma, full stop, backslash, whitespace, plus, underscore and hyphen', 'alert-danger')
 		else:
 			had_error = 1
-			repo_desc = ''
-			flash("You must specify a repository name", 'alert-danger')		
+			team_desc = ''
+			flash("You must specify a team description", 'alert-danger')		
 
-
-		## TEAM
-		## TODO check the team ID is actually valid
-		if 'repo_team' in request.form:
-			repo_team = request.form['repo_team']
-
-			if not re.search(r'[0-9]+$',repo_team):
-				had_error = 1
-				flash('Invalid team.', 'alert-danger')
-		else:
-			had_error = 1
-			repo_team = -1
-			flash("You must specify a team", 'alert-danger')
-
-		## SOURCE TYPE
-		if 'repo_src_type' in request.form:
-			repo_src_type = request.form['repo_src_type']
-
-			if not repo_src_type in ['git','svn','hg','none']:
-				had_error = 1
-				flash('Invalid repository source type. Valid values are: git, svn, hg or none.', 'alert-danger')
-		else:
-			had_error = 1
-			repo_src_type = 'git'
-			flash("You must specify a repository source type", 'alert-danger')
-
-		## WEB TYPE
-		if 'repo_web_type' in request.form:
-			repo_web_type = request.form['repo_web_type']
-
-			if not repo_web_type in ['trac','redmine','none']:
-				had_error = 1
-				flash('Invalid repository web tool type. Valid values are: trac, redmine or none.', 'alert-danger')
-		else:
-			had_error = 1
-			repo_src_type = 'trac'
-			flash("You must specify a repository web tool type", 'alert-danger')
-
-		## SECURITY MODE
-		if 'repo_security' in request.form:
-			repo_security = request.form['repo_security']
-
-			if not str(repo_security) in ['0','1','2']:
-				had_error = 1
-				flash('Invalid repository security mode. Valid values are: 0 (private), 1 (domain) or 2 (public)', 'alert-danger')
-		else:
-			had_error = 1
-			repo_security = 0
-			flash("You must specify a repository security mode", 'alert-danger')
-
-		# Ensure that the repo name doesn't already exist
+		# Ensure that the team name doesn't already exist
 		cur = g.db.cursor()
-		cur.execute('SELECT 1 FROM `repos` WHERE `name` = %s;', (repo_name))
+		cur.execute('SELECT 1 FROM `teams` WHERE `name` = %s;', (team_name))
 		if cur.fetchone() is not None:
 			had_error = 1
-			flash('Error: I\'m sorry, but a repository with that name already exists. Please choose another name.', 'alert-danger')
+			flash('Error: I\'m sorry, but a team with that name already exists. Please choose another name.', 'alert-danger')
 
 		# If we had an error, just render the form again with details already there so they can be changed
 		if had_error == 1:
-			return render_template('repo_create.html',
+			return render_template('team_create.html',
 				active='servers',
-				repo_name=repo_name,
-				repo_desc=repo_desc,
+				team_name=team_name,
+				team_desc=team_desc,
 			)
 			
-		# CREATE THE REPOSITORY
-		cur.execute('''INSERT INTO `repos` 
-		(`name`, `desc`, `tid`, `src_type`, `web_type`, `security`, `state`) 
-		VALUES (%s, %s, %s, %s, %s, %s, %s)''', (repo_name, repo_desc, repo_team, repo_src_type, repo_web_type, repo_security, REPO_STATE['REQUESTED']))
+		# CREATE THE team
+		cur.execute('''INSERT INTO `teams` 
+		(`name`, `desc`) 
+		VALUES (%s, %s)''', (team_name, team_desc))
+
+		## TODO add a team member to manage the team!
 
 		# Commit changes to the database
 		g.db.commit()
 
 		## Last insert ID
-		#server_id = cur.lastrowid
+		team_id = cur.lastrowid
 
 		# Notify that we've succeeded
-		flash('Created new repo!', 'alert-success')
+		flash('Created new team!', 'alert-success')
 
 		# redirect to server list
 		#return redirect(url_for('server_view',server_name=hostname))
-		return redirect(url_for('about'))
+		return redirect(url_for('team_list'))
