@@ -25,7 +25,7 @@ import pwd
 
 ################################################################################
 
-def get_all():
+def get_all_teams():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT * FROM `teams` ORDER BY `name`')
 	return curd.fetchall()
@@ -36,6 +36,13 @@ def get_user_teams(username):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT * FROM `teams` WHERE `id` IN (SELECT `tid` FROM `team_members` WHERE `username` = %s ) ORDER BY `name`',(username))
 	return curd.fetchall()
+
+################################################################################
+
+def get_team_member(tid,username):
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT * FROM `team_members` WHERE `tid` = %s AND `username` = %s', (tid,username))
+	return curd.fetchone()
 
 ################################################################################
 
@@ -151,7 +158,7 @@ def team_view(name):
 				cur.execute('DELETE FROM `teams` WHERE `id` = %s', (team['id']))
 				g.db.commit()
 				flash('Team successfully deleted', 'alert-success')
-				return(redirect(url_for('team_list')))
+				return(redirect(url_for('team_list_mine')))
 			
 			## Add a member to the team	
 			if action == 'add':
@@ -167,18 +174,23 @@ def team_view(name):
 					
 					if user_object == None:
 						flash('That username was not found','alert-danger')
-					else:					
-						cur.execute('INSERT INTO `team_members` (tid,username,admin) VALUES (%s, %s,%s)', (team['id'],username,admin))
-						g.db.commit()
-						flash('Team member added', 'alert-success')
+					else:	
+						member = get_team_member(team['id'],username)
+						if member == None:
+							cur.execute('INSERT INTO `team_members` (tid,username,admin) VALUES (%s, %s,%s)', (team['id'],username,admin))
+							g.db.commit()
+							flash('Team member added', 'alert-success')
+						else:
+							flash('That person is already a team member','alert-danger')
 					
 					return(redirect(url_for('team_view',name=team['name'])))	
 				else:
 					flash('You must supply a username and an admin flag to add a new team member')
-					abort(400)
+
+				return(redirect(url_for('team_view',name=team['name'])))	
 					
 			## Save settings
-			if action == 'save':
+			elif action == 'save':
 				if 'team_desc' in request.form:
 					team_desc = request.form['team_desc']
 
@@ -190,6 +202,41 @@ def team_view(name):
 					g.db.commit()
 					flash('Team settings updated successfully', 'alert-success')
 					return(redirect(url_for('team_view',name=team['name'])))
+
+			elif action == 'member':
+				if 'username' in request.form and 'admin' in request.form:
+					username = request.form['username']
+					admin    = request.form['admin']
+					submit   = request.form['submit']
+					
+					## 'validate' the admin flag
+					if int(admin) != 1:
+						admin = 0
+					
+					user_object = trackit.user.get(username)
+					
+					if user_object == None:
+						flash('That username was not found','alert-danger')
+					else:
+						member = get_team_member(team['id'],username)
+						if member == None:
+							flash('That person is not a member of the team','alert-danger')
+						else:
+							if submit == 'Remove':
+								cur.execute('DELETE FROM `team_members` WHERE tid = %s AND username = %s', (team['id'],username))
+								g.db.commit()
+								flash('Removed team member', 'alert-success')
+							elif submit == 'Save':
+								cur.execute('UPDATE `team_members` SET `admin` = %s WHERE tid = %s AND username = %s', (admin, team['id'],username))
+								g.db.commit()
+								flash('Team member details saved', 'alert-success')
+							else:
+								flash('Unknown action','alert-danger')
+					
+					return(redirect(url_for('team_view',name=team['name'])))	
+				else:
+					flash('You must supply a username and an admin flag to add a new team member')
+					abort(400)
 					
 			else:
 				abort(400)
@@ -202,15 +249,29 @@ def team_view(name):
 
 @app.route('/teams')
 @trackit.core.login_required
-def team_list():
+def team_list_all():
 	"""View handler to list all teams"""
 
-	teams = trackit.teams.get_all()
+	teams = trackit.teams.get_all_teams()
 
 	for team in teams:
 		team['link'] = url_for('team_view', name = team['name'])
 		
-	return render_template('team_list.html',teams=teams,active='teams')
+	return render_template('team_list_all.html',teams=teams,active='teams')
+
+################################################################################
+
+@app.route('/my/teams')
+@trackit.core.login_required
+def team_list_mine():
+	"""View handler to list all my teams"""
+
+	teams = trackit.teams.get_user_teams(session['username'])
+
+	for team in teams:
+		team['link'] = url_for('team_view', name = team['name'])
+		
+	return render_template('team_list_mine.html',teams=teams,active='teams')
 
 ################################################################################
 
@@ -293,17 +354,18 @@ def team_create():
 		(`name`, `desc`) 
 		VALUES (%s, %s)''', (team_name, team_desc))
 
-		## TODO add a team member to manage the team!
-
 		# Commit changes to the database
 		g.db.commit()
 
 		## Last insert ID
 		team_id = cur.lastrowid
 
-		# Notify that we've succeeded
-		flash('Created new team!', 'alert-success')
+		## add a team member to manage the team!
+		cur.execute('INSERT INTO `team_members` (tid,username,admin) VALUES (%s, %s,%s)', (team_id,session['username'],1))
+		g.db.commit()
 
-		# redirect to server list
-		#return redirect(url_for('server_view',server_name=hostname))
-		return redirect(url_for('team_list'))
+		# Notify that we've succeeded
+		flash('Team created successfully', 'alert-success')
+
+		## Show the new team
+		return redirect(url_for('team_view', name=team_name))

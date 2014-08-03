@@ -23,7 +23,7 @@ import re
 import MySQLdb as mysql
 
 REPO_STATE = { 'REQUESTED': 0, 'ACTIVE': 1, 'SUSPEND_USER': 2, 'SUSPEND_ADMIN': 3, 'DELETE': 4 }
-REPO_STATE_STR = { 0: 'Automatic repository creation scheduled', 1: 'Active', 2: 'Suspended by repository admin', 3: 'Suspended by site administrator', 4: 'Scheduled for deletion' }
+REPO_STATE_STR = { 0: 'Being created', 1: 'Active', 2: 'Suspended by repository admin', 3: 'Suspended by site administrator', 4: 'Scheduled for deletion' }
 
 ################################################################################
 
@@ -51,7 +51,7 @@ def repo_list():
 	repos = curd.fetchall()
 
 	for repo in repos:
-		repo['link'] = url_for('about', repo_id = repo['id'])
+		repo['link'] = url_for('repo_view', name = repo['name'])
 		repo['status'] = REPO_STATE_STR[repo['state']]
 		
 	return render_template('repo_list.html',repos=repos,active='repos')
@@ -67,7 +67,7 @@ def repo_is_valid_name(repo_name):
 ################################################################################
 
 @app.route('/repos/check', methods=['POST'])
-def repo_check():
+def repo_check_exists():
 	"""Returns a JSON response to user agents to check if a repository already exists. Used for AJAX client-side checking before form submit"""
 
 	if 'repo_name' in request.form:
@@ -95,8 +95,7 @@ def repo_create():
 	"""View function to create a new repository"""	
 	
 	if request.method == 'GET':
-		teams = trackit.teams.get_all()
-		## TODO send a list of RELEVANT teams, not all.
+		teams = trackit.teams.get_user_teams(session['username'])
 		return render_template('repo_create.html', active='repos', teams=teams)
 
 	elif request.method == 'POST':
@@ -192,7 +191,7 @@ def repo_create():
 
 		# If we had an error, just render the form again with details already there so they can be changed
 		if had_error == 1:
-			teams = trackit.teams.get_all()
+			teams = trackit.teams.get_user_teams(session['username'])
 			return render_template('repo_create.html',
 				active='servers',
 				repo_name=repo_name,
@@ -221,3 +220,36 @@ def repo_create():
 		# redirect to server list
 		#return redirect(url_for('server_view',server_name=hostname))
 		return redirect(url_for('about'))
+
+################################################################################
+
+def get(value,selector='id'):
+	""" Return a repo from the DB. Returns None when the repo doesn't exist"""
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT * FROM `repos` WHERE `' + selector + '` = %s', (value))
+	return curd.fetchone()
+
+################################################################################
+
+@app.route('/repo/<name>/', methods=['GET','POST'])
+@trackit.core.login_required
+def repo_view(name):
+	"""View handler to manage a repo"""
+
+	## Get the team
+	repo    = get(name,selector='name')
+
+	## No such team found!
+	if repo == None:
+		abort(404)
+		
+	## Permissions checking
+	#team_admin = trackit.teams.is_admin(team['id'])
+	
+	## GET (view) requests
+	if request.method == 'GET':
+		return render_template('repo.html',repo=repo,repo_admin=True,active='repos')
+
+	## POST (change settings or delete or add member or delete member)
+	else:
+		cur = g.db.cursor()	

@@ -70,19 +70,19 @@ def before_request():
 		token = session.get('_csrf_token')
 
 
-		try:
-			if '_csrf_token' in session:
-				app.logger.info('CSRF token in session is: ' + token)
-			else:
-				app.logger.info('No token in session')
+#		try:
+#			if '_csrf_token' in session:
+#				app.logger.info('CSRF token in session is: ' + token)
+#			else:
+#				app.logger.info('No token in session')
 
-			if '_csrf_token' in request.form:
-				app.logger.info('CSRF token presented is: ' + request.form.get('_csrf_token'))
-			else:
-				app.logger.info('No CSRF token in form')
+#			if '_csrf_token' in request.form:
+#				app.logger.info('CSRF token presented is: ' + request.form.get('_csrf_token'))
+#			else:
+#				app.logger.info('No CSRF token in form')
 
-		except Exception as e:
-			app.logger.error(str(e))
+#		except Exception as e:
+#			app.logger.error(str(e))
 
 		if not token or token != request.form.get('_csrf_token'):
 			if 'username' in session:
