@@ -152,8 +152,8 @@
 <div class="page-header">
 	{% if team_admin %}
 	<div class="pull-right">
-  	<a href="" data-toggle="modal" data-target="#settings" class="btn btn-info" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Edit team settings"><i class="fa fa-fw fa-cog"></i></a>		
-  	<a href="" data-toggle="modal" data-target="#delete" class="btn btn-danger" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Delete team"><i class="fa fa-fw fa-trash-o"></i></a>		
+  	<a href="" data-toggle="modal" data-target="#settings" class="btn btn-info" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Edit team settings"><i class="fa fa-fw fa-cog"></i><span class="hidden-xs"> Settings</span></a>		
+  	<a href="" data-toggle="modal" data-target="#delete" class="btn btn-danger" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Delete team"><i class="fa fa-fw fa-trash-o"></i><span class="hidden-xs"> Delete</span></a>		
 	</div>
 	{% endif %}
 	<h1><i class="fa fa-fw fa-users"></i> {{team.name}}</h1>
@@ -180,7 +180,7 @@
 	<div class="col-md-7">
 		{% if team_admin %}
 		<div class="pull-right">
-	  	<a href="" data-toggle="modal" data-target="#add" class="btn btn-success" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Add team member"><i class="fa fa-fw fa-plus"></i></a>		
+	  	<a href="" data-toggle="modal" data-target="#add" class="btn btn-success" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Add team member"><i class="fa fa-fw fa-plus"></i><span class="hidden-xs"> Add member</span></a>		
 		</div>
 		{% endif %}
 		
@@ -206,9 +206,9 @@
 					<td>{{ member.fullname }}</td>
 					<td>
 						{% if member.admin == 1 %}
-							<span class="label label-danger">ADMIN</span>
+							<span class="label label-danger">&nbsp;&nbsp;&nbsp;ADMIN&nbsp;&nbsp;&nbsp;</span>
 						{% else %}
-							<span class="label label-info">MEMBER</span>
+							<span class="label label-info">MEMBER&nbsp;</span>
 						{% endif %}
 					</td>
 					<td data-fullname="{{member.fullname}}" data-admin="{{member.admin}}" data-username="{{member.username}}">

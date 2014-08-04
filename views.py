@@ -26,7 +26,7 @@ from flask import Flask, request, session, g, redirect, url_for, abort, render_t
 @app.route('/')
 def default():
 	if 'username' in session:
-		return redirect(url_for('about'))
+		return redirect(url_for('repo_list'))
 	else:
 		next = request.args.get('next',default=None)
 		return render_template('default.html', next=next)

@@ -28,9 +28,9 @@
 {% else %}
 	{% for team in teams %}
 		<div class="col-md-3">
-			<div class="well" style="height: 150px">
+			<div class="well block-display">
 				<h2><a href="{{ team.link }}">{{team.name}}</a></h2>
-				<p>{{ team.desc }}</p>
+				<p>{{ team.desc|truncate(160)}}</p>
 			</div>
 		</div>
 	{% endfor %}

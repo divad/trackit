@@ -37,7 +37,13 @@ def get_all():
 def get_team_repos(team_id):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT * FROM `repos` WHERE `tid` = %s ORDER BY `name`',(team_id))
-	return curd.fetchall()
+	repos = curd.fetchall()
+
+	for repo in repos:
+		repo['link'] = url_for('repo_view', name = repo['name'])
+		repo['status'] = REPO_STATE_STR[repo['state']]
+
+	return repos
 
 ################################################################################
 

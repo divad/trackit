@@ -3,7 +3,7 @@
 
 <div class="page-header">
   <div class="pull-right">
-  	<a href="{{ url_for('repo_create') }}" class="btn btn-info" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Create new repository"><i class="fa fa-fw fa-plus"></i></a>
+  	<a href="{{ url_for('repo_create') }}" class="btn btn-info" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Create new repository"><i class="fa fa-fw fa-plus"></i><span class="hidden-xs"> Create repository</span></a>
   </div>
   <h1><i class="fa fa-fw fa-code-fork"></i> Repositories</h1>
 </div>
@@ -66,10 +66,10 @@
 		<h3>No projects found</h3>
 {% else %}
 	{% for repo in repos %}
-		<div class="col-md-4">
-			<div class="well" style="height: 200px">
-				<h2><a href="{{ repo.link }}">{{repo.name}}</a></h2>
-				<p>{{ repo.desc }}</p>
+		<div class="col-md-3 qq">
+			<div class="well block-display">
+				<h2><a href="{{ repo.link }}">{{ repo.name }}</a></h2>
+				<p>{{ repo.desc|truncate(160) }}</p>
 				<p>Status: {{ repo.status }}</p>
 			</div>
 		</div>
