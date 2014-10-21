@@ -130,7 +130,7 @@ def repo_create():
 		else:
 			had_error = 1
 			repo_desc = ''
-			flash("You must specify a repository name", 'alert-danger')		
+			flash("You must specify a repository description", 'alert-danger')		
 
 
 		## TEAM
@@ -217,15 +217,11 @@ def repo_create():
 		# Commit changes to the database
 		g.db.commit()
 
-		## Last insert ID
-		repo_id = cur.lastrowid
-
 		# Notify that we've succeeded
-		flash('Created new repo!', 'alert-success')
+		flash('Repository successfully created', 'alert-success')
 
 		# redirect to server list
-		#return redirect(url_for('server_view',server_name=hostname))
-		return redirect(url_for('about'))
+		return redirect(url_for('repo_view',name=repo_name))
 
 ################################################################################
 
@@ -288,15 +284,70 @@ def repo_view(name):
 		if 'action' in request.form:
 			action = request.form['action']
 			
-			if action = 'settings':
+			if action == 'settings':
+			
+				had_error = 0
+			
+				if 'repo_desc' in request.form:
+					repo_desc = request.form['repo_desc']
+
+					if not re.search(r'^[a-zA-Z0-9_\-\,\.\(\)\s\+]{3,255}$',repo_desc):
+						had_error = 1
+						flash('Invalid repository description. Allowed characters are a-z, 0-9, comma, full stop, backslash, whitespace, plus, underscore and hyphen', 'alert-danger')
+				else:
+					had_error = 1
+					flash("You must specify a repository description", 'alert-danger')
+					
+				if 'repo_security' in request.form:
+					repo_security = request.form['repo_security']
+
+					if not str(repo_security) in ['0','1','2']:
+						had_error = 1
+						flash('Invalid repository security mode. Valid values are: 0 (private), 1 (domain) or 2 (public)', 'alert-danger')
+				else:
+					had_error = 1
+					flash("You must specify a repository security mode", 'alert-danger')
+					
+				if repo['src_type'] == 'svn':
+				
+					if 'src_notify_email' in request.form:
+						src_notify_email = request.form['src_notify_email']
+						
+						if len(src_notify_email) > 0:
+						
+							if not re.search(r'[-0-9a-zA-Z.+_]+@[-0-9a-zA-Z.+_]+\.[a-zA-Z]{2,10}',src_notify_email):
+								had_error = 1
+								flash('Invalid notification e-mail address', 'alert-danger')
+
+					else:
+						had_error = 1
+						flash("You must specify a repository security mode", 'alert-danger')
+						
+					if 'repo_autoversion' in request.form:
+						repo_autoversion = request.form['repo_autoversion']
+
+						if not str(repo_autoversion) in ['0','1']:
+							had_error = 1
+							flash('Invalid autoversion flag. Valid values are: 0 (off) and 1 (on)', 'alert-danger')
+							
+							
+					if not had_error:				
+						cur.execute('UPDATE `repos` SET `desc` = %s, `security` = %s, `src_notify_email` = %s, `autoversion` = %s WHERE `id` = %s', (repo_desc, repo_security, src_notify_email,repo_autoversion,repo['id']))
+						g.db.commit()
+						flash('Repository settings updated successfully', 'alert-success')
+						
+					return redirect(url_for('repo_view',name=repo['name']))
+
+				else:
+					abort(501)
+
+			elif action == 'delete':
 				pass
-			elif action = 'delete':
+			elif action == 'addperm':
 				pass
-			elif action = 'addperm':
+			elif action == 'setperm':
 				pass
-			elif action = 'setperm':
-				pass
-			elif action = 'rmperm':
+			elif action == 'rmperm':
 				pass
 			else:
 				abort(400)
