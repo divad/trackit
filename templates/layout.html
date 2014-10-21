@@ -6,7 +6,7 @@
 		{% include 'html-header.html' %}
 	</head>
 	<body>
-		<div class="navbar navbar-default navbar-fixed-top" role="navigation">	
+		<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">	
 			<div class="container">
 				<div class="navbar-header">
 					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-1">
@@ -64,7 +64,10 @@
 
 		<div class="container">
 			{% for category, message in get_flashed_messages(with_categories=true) %}
-			<div class="alert {{ category }} fade in"> <a data-dismiss="alert" class="close" href="#">×</a> {{ message }} </div>
+              <div class="alert alert-dismissable {{ category }}">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                {{ message }}
+              </div>
 			{% endfor %}
 			{% block body %}{% endblock -%}
 		</div>

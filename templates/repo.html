@@ -12,7 +12,10 @@
 	<div class="alert alert-danger pull-right" role="alert"><i class="fa fa-fw fa-spin fa-cog"></i> This repository is being deleted</div>
 	{% endif %}
 	{% endif %}
-	<h1><i class="fa fa-fw fa-archive"></i> {{repo.name}}</h1>
+	<h1><span class="fa-stack">
+  <i class="fa fa-square fa-stack-2x"></i>
+  <i class="fa fa-flag fa-stack-1x fa-inverse"></i>
+</span> {{repo.name}}</h1>
 	<p>{{repo.desc}}</p>
 </div>
 
@@ -105,6 +108,95 @@
 		</div>
 	</div>
 </div>
+
+<div class="modal" id="addperm">
+	<div class="modal-dialog modal-sm">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">Add Permission</h4>
+			</div>
+				<div class="modal-body" stlye="min-height: 200px">
+					<button type="button" class="btn btn-primary btn-lg btn-block" onclick="$('#addperm').modal('hide'); $('#adduser').modal('show');">University account</button>
+					<br/>
+					<button type="button" class="btn btn-primary btn-lg btn-block">Forge Team</button>
+					<br/>
+					<button type="button" class="btn btn-primary btn-lg btn-block">Active Directory Group</button>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal" id="adduser">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<form class="form-horizontal" role="form" method="POST">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+						<h4 class="modal-title">Add university account</h4>
+				</div>
+				<div class="modal-body" stlye="min-height: 200px">
+
+					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+					<input type="hidden" name="action" value="settings"/>
+
+					<div class="form-group" id="form_group_name">
+						<label for="inputName" class="col-lg-3 control-label">Username</label>
+						<div class="col-lg-9">
+							<input type="text" class="form-control" name="username">
+						</div>
+					</div>
+					
+					<div class="form-group">
+						<label for="input_admin" class="col-lg-3 control-label">Source Control</label>
+						<div class="col-lg-9">							
+							<select name="repo_security" class="form-control" id="input_security">
+								<option value="0">No access</option>
+								<option value="1">Read only</option>
+								<option value="2" selected="selected">Read/Write</option>
+							</select>
+
+							<span class="help-block">What permission should this user be granted over the source control repository?
+							</span>
+						</div>
+					</div>
+					
+					<div class="form-group">
+						<label for="input_admin" class="col-lg-3 control-label">Web Interface</label>
+						<div class="col-lg-9">							
+							<select name="repo_security" class="form-control" id="input_security">
+								<option value="0">No access</option>
+								<option value="1">Normal access</option>
+							</select>
+							<span class="help-block">What permission should this user be granted over the web based project manager tool?
+							</span>
+						</div>
+					</div>
+					
+					<div class="form-group">
+						<label for="input_admin" class="col-lg-3 control-label">Administrator</label>
+						<div class="col-lg-9">							
+							<select name="repo_security" class="form-control" id="input_security">
+								<option value="0" selected="selected">No</option>
+								<option value="1">Yes</option>
+							</select>
+							<span class="help-block">Should this user be granted administrative rights over this repository?
+							</span>
+						</div>
+					</div>
+				
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
 {% endif %}
 
 
@@ -208,7 +300,7 @@
 		{% if repo_admin %}
 		{% if repo.state != 4 %}
 		<div class="pull-right">
-	  	<a href="" data-toggle="modal" data-target="#add" class="btn btn-success" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Add team member"><i class="fa fa-fw fa-plus"></i><span class="hidden-xs"> Add Permission</span></a>		
+	  	<a href="" data-toggle="modal" data-target="#addperm" class="btn btn-success" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Add permission"><i class="fa fa-fw fa-plus"></i><span class="hidden-xs"> Add Permission</span></a>		
 		</div>
 		{% endif %}
 		{% endif %}
