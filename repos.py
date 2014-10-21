@@ -233,7 +233,24 @@ def get(value,selector='id'):
 	""" Return a repo from the DB. Returns None when the repo doesn't exist"""
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT * FROM `repos` WHERE `' + selector + '` = %s', (value))
-	return curd.fetchone()
+	repo = curd.fetchone()
+
+	if repo is not None:
+		repo['link'] = url_for('repo_view', name = repo['name'])
+		repo['status'] = REPO_STATE_STR[repo['state']]
+
+	return repo
+
+################################################################################
+
+def get_perms(repoid):
+	""" Return all the permissions for a specific repo"""
+
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT * FROM `rules` WHERE `rid` = %s', (repoid))
+	rules = curd.fetchall()
+
+	return rules
 
 ################################################################################
 
@@ -242,20 +259,47 @@ def get(value,selector='id'):
 def repo_view(name):
 	"""View handler to manage a repo"""
 
-	## Get the team
+	## Get the repo
 	repo    = get(name,selector='name')
 
 	## No such team found!
 	if repo == None:
 		abort(404)
+
+	## Get permissions list for the repo
+	perms = trackit.repos.get_perms(repo['id'])
 		
-	## Permissions checking
+	## TODO Permissions checking
 	#team_admin = trackit.teams.is_admin(team['id'])
+
+	## get the team if any
+	team = None
+	if repo['tid'] != -1:
+		team = trackit.teams.get(repo['tid'])
 	
 	## GET (view) requests
 	if request.method == 'GET':
-		return render_template('repo.html',repo=repo,repo_admin=True,active='repos')
+		return render_template('repo.html',repo=repo,team=team,repo_admin=True,perms=perms,active='repos')
 
 	## POST (change settings or delete or add member or delete member)
 	else:
 		cur = g.db.cursor()	
+		
+		if 'action' in request.form:
+			action = request.form['action']
+			
+			if action = 'settings':
+				pass
+			elif action = 'delete':
+				pass
+			elif action = 'addperm':
+				pass
+			elif action = 'setperm':
+				pass
+			elif action = 'rmperm':
+				pass
+			else:
+				abort(400)
+			
+		else:
+			abort(400)

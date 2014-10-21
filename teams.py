@@ -60,7 +60,9 @@ def get(value,selector='id'):
 	""" Return a team from the DB. Returns None when the team doesn't exist"""
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT * FROM `teams` WHERE `' + selector + '` = %s', (value))
-	return curd.fetchone()
+	team = curd.fetchone()
+	team['link'] = url_for('team_view', name = team['name'])
+	return team
 
 ################################################################################
 
@@ -186,8 +188,7 @@ def team_view(name):
 					return(redirect(url_for('team_view',name=team['name'])))	
 				else:
 					flash('You must supply a username and an admin flag to add a new team member')
-
-				return(redirect(url_for('team_view',name=team['name'])))	
+					return(redirect(url_for('team_view',name=team['name'])))	
 					
 			## Save settings
 			elif action == 'save':
@@ -201,6 +202,10 @@ def team_view(name):
 					cur.execute('UPDATE `teams` SET `desc` = %s WHERE `id` = %s', (team_desc,team['id']))
 					g.db.commit()
 					flash('Team settings updated successfully', 'alert-success')
+					return(redirect(url_for('team_view',name=team['name'])))
+					
+				else:
+					flash("You must specify a team description", 'alert-danger')	
 					return(redirect(url_for('team_view',name=team['name'])))
 
 			elif action == 'member':
@@ -236,13 +241,13 @@ def team_view(name):
 					return(redirect(url_for('team_view',name=team['name'])))	
 				else:
 					flash('You must supply a username and an admin flag to add a new team member')
-					abort(400)
+					return(redirect(url_for('team_view',name=team['name'])))
 					
 			else:
 				abort(400)
 			
 		else:
-			flash("You must specify a team description", 'alert-danger')	
+			flash("You must specify an action!", 'alert-danger')	
 			return(redirect(url_for('team_view',name=team['name'])))
 		
 ################################################################################
