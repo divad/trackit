@@ -342,7 +342,11 @@ def repo_view(name):
 					abort(501)
 
 			elif action == 'delete':
-				pass
+				cur.execute('UPDATE `repos` SET `state` = %s WHERE `id` = %s', (REPO_STATE['DELETE'], repo['id']))
+				g.db.commit()
+				flash('Repository marked for deletion', 'alert-success')
+				return redirect(url_for('repo_view',name=repo['name']))
+				
 			elif action == 'addperm':
 				pass
 			elif action == 'setperm':

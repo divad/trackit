@@ -3,10 +3,14 @@
 
 <div class="page-header">
 	{% if repo_admin %}
+	{% if repo.state != 4 %}
 	<div class="pull-right">
   	<a href="" data-toggle="modal" data-target="#settings" class="btn btn-info" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Edit team settings"><i class="fa fa-fw fa-cog"></i><span class="hidden-xs"> Settings</span></a>		
   	<a href="" data-toggle="modal" data-target="#delete" class="btn btn-danger" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Delete team"><i class="fa fa-fw fa-trash-o"></i><span class="hidden-xs"> Delete</span></a>		
 	</div>
+	{% else %}
+	<div class="alert alert-danger pull-right" role="alert"><i class="fa fa-fw fa-spin fa-cog"></i> This repository is being deleted</div>
+	{% endif %}
 	{% endif %}
 	<h1><i class="fa fa-fw fa-archive"></i> {{repo.name}}</h1>
 	<p>{{repo.desc}}</p>
@@ -84,14 +88,14 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title">Delete team</h4>
+				<h4 class="modal-title">Delete repository</h4>
 			</div>
 			<form class="form-horizontal" role="form" method="POST">
 				<div class="modal-body">
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 					<input type="hidden" name="action" value="delete"/>
 
-					<p>Are you sure you want to delete this team? Repositories within this team will not be deleted and may become orphaned!</p>
+					<p>Are you sure you want to delete this team? repository? All data will be lost!</p>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">No, wait! Cancel!</button>
@@ -202,9 +206,11 @@
 	<div class="col-md-12">
 		<div class="well">
 		{% if repo_admin %}
+		{% if repo.state != 4 %}
 		<div class="pull-right">
 	  	<a href="" data-toggle="modal" data-target="#add" class="btn btn-success" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Add team member"><i class="fa fa-fw fa-plus"></i><span class="hidden-xs"> Add Permission</span></a>		
 		</div>
+		{% endif %}
 		{% endif %}
 		<h3>Permissions</h3>
 		<table id="tsort" class="table table-hover table-striped">
