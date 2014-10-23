@@ -348,11 +348,45 @@ def repo_view(name):
 				return redirect(url_for('repo_view',name=repo['name']))
 				
 			elif action == 'addperm':
-				pass
+			
+				if 'src' in request.form:
+					src = request.form['src']
+
+					if not int(src) >= 0 and int(src) <= 2:
+						had_error = 1
+						flash('Invalid revision control access flag', 'alert-danger')
+				else:
+					had_error = 1
+					flash("You must specify a revision control access flag", 'alert-danger')
+						
+				if 'web' in request.form:
+					web = request.form['web']
+
+					if not int(web) == 0 or int(src) == 1:
+						had_error = 1
+						flash('Invalid web project management tool access flag', 'alert-danger')	
+				else:
+					had_error = 1
+					flash("You must specify a web project management tool access flag", 'alert-danger')
+		
+				if 'source' in request.form:
+					source = request.form['source']
+				else:
+					flash("You must specify a source type", 'alert-danger')
+					return redirect(url_for('repo_view',name=repo['name']))
+					
+				if source == 'internal':
+					
+				# source 
+				# web
+				# admin 
+				# name 
+				
+				
 			elif action == 'setperm':
-				pass
+				abort(501)
 			elif action == 'rmperm':
-				pass
+				abort(501)
 			else:
 				abort(400)
 			

@@ -98,7 +98,7 @@
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 					<input type="hidden" name="action" value="delete"/>
 
-					<p>Are you sure you want to delete this team? repository? All data will be lost!</p>
+					<p>Are you sure you want to delete this repository? All data will be lost!</p>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">No, wait! Cancel!</button>
@@ -109,6 +109,40 @@
 	</div>
 </div>
 
+<script type="text/javascript">
+function selectSourceType(sourceType)
+{
+	if (sourceType == 'internal')
+	{
+		$('#name-label').text('Username');
+		$('#add-title').text('Add account permission');
+		$('#ad-alert').addClass('hidden');
+	}
+	else if (sourceType == 'team')
+	{
+		$('#name-label').text('Team');
+		$('#add-title').text('Add team permission');
+		$('#ad-alert').addClass('hidden');
+	}
+	else if (sourceType == 'adgroup')
+	{
+		$('#name-label').text('AD Group');
+		$('#add-title').text('Add AD group permission');
+		$('#ad-alert').removeClass('hidden');
+	}
+		
+	$('#source-name').val(sourceType);
+	$('#addperm').modal('hide'); 
+	$('#addpermform').modal('show');
+}
+
+function goBack()
+{
+	$('#addpermform').modal('hide');
+	$('#addperm').modal('show'); 
+}
+</script>
+
 <div class="modal" id="addperm">
 	<div class="modal-dialog modal-sm">
 		<div class="modal-content">
@@ -116,44 +150,47 @@
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">Add Permission</h4>
 			</div>
-				<div class="modal-body" stlye="min-height: 200px">
-					<button type="button" class="btn btn-primary btn-lg btn-block" onclick="$('#addperm').modal('hide'); $('#adduser').modal('show');">University account</button>
-					<br/>
-					<button type="button" class="btn btn-primary btn-lg btn-block">Forge Team</button>
-					<br/>
-					<button type="button" class="btn btn-primary btn-lg btn-block">Active Directory Group</button>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-				</div>
+			<div class="modal-body" stlye="min-height: 200px">
+				<button type="button" class="btn btn-primary btn-lg btn-block" onclick="selectSourceType('internal')">University account</button>
+				<br/>
+				<button type="button" class="btn btn-primary btn-lg btn-block" onclick="selectSourceType('team')">Forge Team</button>
+				<br/>
+				<button type="button" class="btn btn-primary btn-lg btn-block" onclick="selectSourceType('adgroup')">Active Directory Group</button>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+			</div>
 		</div>
 	</div>
 </div>
 
-<div class="modal" id="adduser">
+<div class="modal" id="addpermform">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<form class="form-horizontal" role="form" method="POST">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-						<h4 class="modal-title">Add university account</h4>
+						<h4 class="modal-title" id="add-title">Add Permission</h4>
 				</div>
 				<div class="modal-body" stlye="min-height: 200px">
+				
+					<div class="alert alert-danger hidden" role="alert" id="ad-alert"><strong>Warning!</strong> Granting permissions to active directory groups is not recommended. Nested groups are not supported. Access over SVN+SSH is not supported. Git and Mercurial, though not yet available, are also not supported.</div>
 
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-					<input type="hidden" name="action" value="settings"/>
+					<input type="hidden" name="action" value="addperm"/>
+					<input type="hidden" name="source" value="internal" id="source-name"/>
 
 					<div class="form-group" id="form_group_name">
-						<label for="inputName" class="col-lg-3 control-label">Username</label>
+						<label for="inputName" class="col-lg-3 control-label" id="name-label">Name</label>
 						<div class="col-lg-9">
-							<input type="text" class="form-control" name="username">
+							<input type="text" class="form-control" name="name">
 						</div>
 					</div>
 					
 					<div class="form-group">
-						<label for="input_admin" class="col-lg-3 control-label">Source Control</label>
+						<label class="col-lg-3 control-label">Source Control</label>
 						<div class="col-lg-9">							
-							<select name="repo_security" class="form-control" id="input_security">
+							<select name="src" class="form-control">
 								<option value="0">No access</option>
 								<option value="1">Read only</option>
 								<option value="2" selected="selected">Read/Write</option>
@@ -165,33 +202,31 @@
 					</div>
 					
 					<div class="form-group">
-						<label for="input_admin" class="col-lg-3 control-label">Web Interface</label>
-						<div class="col-lg-9">							
-							<select name="repo_security" class="form-control" id="input_security">
-								<option value="0">No access</option>
-								<option value="1">Normal access</option>
-							</select>
-							<span class="help-block">What permission should this user be granted over the web based project manager tool?
+						<div class="col-lg-offset-3 col-lg-9">						
+							<label>
+							  <input name="web" type="checkbox" checked="checked"></input> Access to Trac
+							</label>
+							<span class="help-block">Should this user be granted access to the web interface?
 							</span>
 						</div>
+						
 					</div>
 					
 					<div class="form-group">
-						<label for="input_admin" class="col-lg-3 control-label">Administrator</label>
-						<div class="col-lg-9">							
-							<select name="repo_security" class="form-control" id="input_security">
-								<option value="0" selected="selected">No</option>
-								<option value="1">Yes</option>
-							</select>
+						<div class="col-lg-offset-3 col-lg-9">						
+							<label>
+							  <input name="admin" type="checkbox"></input> Repository Administrator
+							</label>
 							<span class="help-block">Should this user be granted administrative rights over this repository?
 							</span>
 						</div>
 					</div>
-				
 				</div>
 				<div class="modal-footer">
+					<button type="button" class="btn btn-warning" onclick="goBack()">Back</button>
 					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-				</div>
+					<button type="submit" class="btn btn-primary">Add</button>
+					</div>
 			</form>
 		</div>
 	</div>
