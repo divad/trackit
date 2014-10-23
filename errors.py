@@ -110,7 +110,7 @@ def error400(error):
 def error403(error):
 	"""Handles abort(403) calls in code.
 	"""
-	return render_template('error.html',error=error,title="Permission Denied",message='You do not have permission to access this resource. If you have changed your password recently you must log out and log back in again.'), 403
+	return render_template('error.html',error=error,title="Permission Denied",message='You do not have permission to access this resource.'), 403
 
 @app.errorhandler(404)
 def error404(error):

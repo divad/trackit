@@ -348,6 +348,7 @@ def repo_view(name):
 				return redirect(url_for('repo_view',name=repo['name']))
 				
 			elif action == 'addperm':
+				had_error = 0
 			
 				if 'src' in request.form:
 					src = request.form['src']
@@ -362,26 +363,89 @@ def repo_view(name):
 				if 'web' in request.form:
 					web = request.form['web']
 
-					if not int(web) == 0 or int(src) == 1:
+					if not str(web) == '1':
 						had_error = 1
 						flash('Invalid web project management tool access flag', 'alert-danger')	
 				else:
-					had_error = 1
-					flash("You must specify a web project management tool access flag", 'alert-danger')
+					web = 0
+					
+				if 'admin' in request.form:
+					admin = request.form['admin']
+
+					if not str(admin) == '1':
+						had_error = 1
+						flash('Invalid admin flag', 'alert-danger')	
+				else:
+					admin = 0
 		
 				if 'source' in request.form:
 					source = request.form['source']
 				else:
 					flash("You must specify a source type", 'alert-danger')
+					had_error = 1
+
+				if 'name' in request.form:
+					name = request.form['name']
+					
+					if not len(name) > 0:
+						had_error = 1
+						flash("You must specify a name", 'alert-danger')
+				else:
+					flash("You must specify a name", 'alert-danger')
+					had_error = 1
+					
+				if had_error:
 					return redirect(url_for('repo_view',name=repo['name']))
+				else:
+
+					if source == 'internal':
+						## university internal account
+						## check its a valid username
+						user_object = trackit.user.get(name)
 					
-				if source == 'internal':
+						if user_object == None:
+							flash('That username was not found','alert-danger')
+							return redirect(url_for('repo_view',name=repo['name']))
+						
+					elif source == 'team':
+						## trackit team
+						## check its a valid team
+						team_object = trackit.teams.get(name,'name')
+						
+						if team_object == None:
+							flash('That team was not found','alert-danger')
+							return redirect(url_for('repo_view',name=repo['name']))					
+						
+					elif source == 'adgroup':
+						## active directory group
+						## just...assume..its valid...
+						pass
+						
+					else:
+						flash('Invalid source','alert-danger')
+						return redirect(url_for('repo_view',name=repo['name']))	
+						
+					## TODO make sure rule for this source/name doesnt already exist
 					
-				# source 
-				# web
-				# admin 
-				# name 
-				
+					cur.execute('SELECT * FROM `rules` WHERE `source` = %s AND `name` = %s', (source,name))
+					result = cur.fetchone()
+					if not result == None: 
+						flash('A permission rule already exists for that name','alert-danger')
+						return redirect(url_for('repo_view',name=repo['name']))	
+						
+					## now add to sql
+					cur.execute('''INSERT INTO `rules` 
+					(`rid`, `source`, `name`, `src`, `web`, `admin`) 
+					VALUES (%s, %s, %s, %s, %s, %s)''', (repo['id'], source, name, src, web, admin))
+
+					# Commit changes to the database
+					g.db.commit()
+
+					# Notify that we've succeeded
+					flash('Permission added', 'alert-success')
+
+					# redirect to server list
+					return redirect(url_for('repo_view',name=repo['name']))
 				
 			elif action == 'setperm':
 				abort(501)

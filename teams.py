@@ -21,7 +21,6 @@ import trackit.errors
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, jsonify
 import re
 import MySQLdb as mysql
-import pwd
 
 ################################################################################
 

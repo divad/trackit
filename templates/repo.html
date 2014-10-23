@@ -32,7 +32,7 @@
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 					<input type="hidden" name="action" value="settings"/>
 
-					<div class="form-group" id="form_group_name">
+					<div class="form-group" id="form_group_desc">
 						<label for="inputDescription" class="col-lg-3 control-label">Description</label>
 						<div class="col-lg-9">
 							<input type="text" class="form-control" id="inputDescription" name="repo_desc" {% if repo.desc %}value="{{ repo.desc }}" {% endif %}>
@@ -180,10 +180,11 @@ function goBack()
 					<input type="hidden" name="action" value="addperm"/>
 					<input type="hidden" name="source" value="internal" id="source-name"/>
 
-					<div class="form-group" id="form_group_name">
+					<div class="form-group has-feedback" id="form_group_name">
 						<label for="inputName" class="col-lg-3 control-label" id="name-label">Name</label>
 						<div class="col-lg-9">
-							<input type="text" class="form-control" name="name">
+							<input id="inputName" type="text" class="form-control" name="name" data-container="body" data-toggle="popover" data-placement="right" data-content="" data-trigger="manual">
+							<span id="form_feedback_name" class="glyphicon form-control-feedback"></span>
 						</div>
 					</div>
 					
@@ -204,7 +205,7 @@ function goBack()
 					<div class="form-group">
 						<div class="col-lg-offset-3 col-lg-9">						
 							<label>
-							  <input name="web" type="checkbox" checked="checked"></input> Access to Trac
+							  <input name="web" type="checkbox" checked="checked" value="1"></input> Access to Trac
 							</label>
 							<span class="help-block">Should this user be granted access to the web interface?
 							</span>
@@ -215,7 +216,7 @@ function goBack()
 					<div class="form-group">
 						<div class="col-lg-offset-3 col-lg-9">						
 							<label>
-							  <input name="admin" type="checkbox"></input> Repository Administrator
+							  <input name="admin" type="checkbox" value="1"></input> Repository Administrator
 							</label>
 							<span class="help-block">Should this user be granted administrative rights over this repository?
 							</span>
@@ -231,6 +232,80 @@ function goBack()
 		</div>
 	</div>
 </div>
+
+<script type="text/javascript">
+	var checkTimer = undefined;
+	$('#inputName').bind('input', function()
+	{
+		if (checkTimer)
+		{
+			clearTimeout(checkTimer);
+		}
+		checkTimer = setTimeout(function() {
+		
+			if ($('#source-name').val() == 'team')
+			{
+				$.post('/teams/check', { _csrf_token: "{{ csrf_token() }}", team_name: $('#inputName').val() }, function(data, textStatus, jqXHR)
+				{
+					if (data.result == 'exists')
+					{
+						$('#form_group_name').addClass('has-success')
+						$('#form_group_name').removeClass('has-error')
+						$('#form_feedback_name').removeClass('hidden glyphicon-remove')
+						$('#form_feedback_name').addClass('glyphicon-ok')
+						$('#inputName').popover('hide')
+					}
+					else
+					{
+						$('#form_group_name').addClass('has-error')
+						$('#form_group_name').removeClass('has-success')
+						$('#form_feedback_name').removeClass('hidden glyphicon-ok')
+						$('#form_feedback_name').addClass('glyphicon-remove')
+						if (data.result == 'valid')
+						{
+							$('#inputName').attr('data-content', 'That team does not exist')
+						}
+						else if (data.result == 'invalid')
+						{
+							$('#inputName').attr('data-content', 'That is an invalid team name')
+						}
+						$('#inputName').popover()
+						$('#inputName').popover('show')
+					}
+				});
+			}
+
+			else if ($('#source-name').val() == 'internal')
+			{
+			
+				$.post('/user/check', { _csrf_token: "{{ csrf_token() }}", username: $('#inputName').val() }, function(data, textStatus, jqXHR)
+				{
+					if (data.result != 'exists')
+					{
+						$('#form_group_name').addClass('has-error')
+						$('#form_group_name').removeClass('has-success')
+						$('#form_feedback_name').removeClass('hidden glyphicon-ok')
+						$('#form_feedback_name').addClass('glyphicon-remove')
+						$('#inputName').attr('data-content', 'That user does not exist')
+						$('#inputName').popover()
+						$('#inputName').popover('show')
+					}
+					else
+					{
+						$('#form_group_name').addClass('has-success')
+						$('#form_group_name').removeClass('has-error')
+						$('#form_feedback_name').removeClass('hidden glyphicon-remove')
+						$('#form_feedback_name').addClass('glyphicon-ok')	
+						$('#inputName').popover('hide')
+						
+					}
+				});
+				
+			}
+			
+		}, 400);
+	});
+</script>
 
 {% endif %}
 
@@ -345,16 +420,44 @@ function goBack()
 				<tr>
 					<th width="24%">Name</th>
 					<th width="24%">Type</th>
-					<th width="24%">Source</th>
 					<th width="24%">Web</th>
 					<th width="4%"></th>
 				</tr>
 			</thead>
 			<tbody class="rowclick-table">
-
+			
+			{% for rule in perms %}
+				<tr>
+					<td>
+						<span class="fa fa-fw {% if rule.source == 'internal'%}fa-user{%elif rule.source == 'team'%}fa-group{%elif rule.source == 'adgroup'%}fa-windows{%endif%}"></span> {{ rule.name }}
+					</td>
+					<td>
+						{% if rule.src == 0 %}
+							<i class="fa fa-check fa-remove fa-fw"></i>
+						{% elif rule.src == 1 %}
+							<i class="fa fa-binoculars fa-fw"></i>
+						{% elif rule.src == 2 %}
+							<i class="fa fa-check fa-edit fa-fw"></i>
+						{% endif %}
+					</td>
+					<td>
+						{% if rule.web == 0 %}
+							<i class="fa fa-check fa-remove fa-fw"></i>
+						{% elif rule.web == 1 %}
+							<i class="fa fa-check fa-fw"></i>
+						{% endif %}
+					</td>
+					<td data-fullname="" data-admin="" data-username="">
+						<a href="#" class="click_edit_member"><span class="fa fa-fw fa-gear"></span></a>
+						<a href="#" class="click_edit_member"><span class="fa fa-fw fa-trash"></span></a>
+					</tr>
+				</tr>
+			{% else %}
+			
 				<tr>
 					<td colspan="5">There are no permissions on this team yet.</td>
 				</tr>
+			{% endfor %}
 			</tbody>
 		</table>
 		</div>
