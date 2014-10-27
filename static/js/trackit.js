@@ -24,6 +24,31 @@ $(document).ready(function()
 		event.preventDefault();
 		event.stopPropagation();
 	});
+	
+	$('.click_edit_rule').click(function()
+	{
+		var parent = $(this).parent()
+
+		$('#edit_perm_rid').attr('value',parent.data('rid'));
+		$('#edit_perm_name').text(parent.data('name'));
+		var src = parent.data('src');
+
+		$('#edit_perm_src_0').removeAttr('selected');
+		$('#edit_perm_src_1').removeAttr('selected');
+		$('#edit_perm_src_2').removeAttr('selected');
+		$('#edit_perm_src_' + src).attr('selected','selected');
+		
+		var web = parent.data('web');
+		$('#edit_perm_web').prop('checked', web);
+		var admin = parent.data('admin');
+		$('#edit_perm_admin').prop('checked', admin);
+
+		
+		$('#edit_perm').modal({show: true});
+		event.preventDefault();
+		event.stopPropagation();
+	});
+	
 });
 
 $(document).ready(function($)
@@ -31,11 +56,6 @@ $(document).ready(function($)
 	$(".rowclick-td").click(function()
 	{
 		window.document.location = $(this).parent().data('url');
-	});
-	
-	$(function()
-	{
-		$("#tsort").tablesorter();
 	});
 	
 	$(document).ready(function ()

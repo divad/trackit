@@ -447,10 +447,68 @@ def repo_view(name):
 					# redirect to server list
 					return redirect(url_for('repo_view',name=repo['name']))
 				
-			elif action == 'setperm':
-				abort(501)
-			elif action == 'rmperm':
-				abort(501)
+			elif action == 'editperm':
+
+				## Load the rule ID from the form
+				rid = request.form['rid']
+				if not re.search(r'^[0-9]+$',rid):
+					flash('Invalid rule ID', 'alert-danger')
+					return(redirect(url_for('repo_view',name=repo['name'])))
+					
+				## Check that rule exists
+				cur.execute('SELECT 1 FROM `rules` WHERE `id` = %s;', (rid))
+				if cur.fetchone() is None:
+					flash('That rule has was not found', 'alert-danger')
+					return(redirect(url_for('repo_view',name=repo['name'])))			
+			
+				## Check if this is an edit or a delete of the rule
+				submit = request.form['submit']
+				if submit == 'Remove':
+					cur.execute('DELETE FROM `rules` WHERE id = %s', (rid))
+					g.db.commit()
+					flash('Removed permission rule', 'alert-success')
+					return(redirect(url_for('repo_view',name=repo['name'])))	
+					
+				elif submit == 'Save':
+			
+					had_error = 0
+				
+					if 'src' in request.form:
+						src = request.form['src']
+
+						if not int(src) >= 0 and int(src) <= 2:
+							had_error = 1
+							flash('Invalid revision control access flag', 'alert-danger')
+					else:
+						had_error = 1
+						flash("You must specify a revision control access flag", 'alert-danger')
+							
+					if 'web' in request.form:
+						web = request.form['web']
+
+						if not str(web) == '1':
+							had_error = 1
+							flash('Invalid web project management tool access flag', 'alert-danger')	
+					else:
+						web = 0
+						
+					if 'admin' in request.form:
+						admin = request.form['admin']
+
+						if not str(admin) == '1':
+							had_error = 1
+							flash('Invalid admin flag', 'alert-danger')	
+					else:
+						admin = 0	
+
+					
+					if not had_error:
+						cur.execute('UPDATE `rules` SET `src` = %s, `web` = %s, `admin` = %s WHERE id = %s', (src, web, admin, rid))
+						g.db.commit()
+						flash('Permission rule updated', 'alert-success')
+						
+					return(redirect(url_for('repo_view',name=repo['name'])))
+
 			else:
 				abort(400)
 			

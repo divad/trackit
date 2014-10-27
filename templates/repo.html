@@ -307,6 +307,72 @@ function goBack()
 	});
 </script>
 
+<div class="modal" id="edit_perm">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<form class="form-horizontal" role="form" method="POST">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+						<h4 class="modal-title" id="add-title">Edit Permission Rule</h4>
+				</div>
+				<div class="modal-body" stlye="min-height: 200px">
+				
+					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+					<input type="hidden" name="action" value="editperm"/>
+					<input type="hidden" name="rid" value="" id="edit_perm_rid"/>
+
+					<div class="form-group has-feedback" id="form_group_name">
+						<label for="inputName" class="col-lg-3 control-label" id="name-label">Name</label>
+						<div class="col-lg-9">
+							<p class="form-control-static" id="edit_perm_name"></p>
+						</div>
+					</div>
+					
+					<div class="form-group">
+						<label class="col-lg-3 control-label">Source Control</label>
+						<div class="col-lg-9">							
+							<select name="src" class="form-control" id="edit_perm_src">
+								<option value="0" id="edit_perm_src_0">No access</option>
+								<option value="1" id="edit_perm_src_1">Read only</option>
+								<option value="2" id="edit_perm_src_2">Read/Write</option>
+							</select>
+
+							<span class="help-block">What permission should this user be granted over the source control repository?
+							</span>
+						</div>
+					</div>
+					
+					<div class="form-group">
+						<div class="col-lg-offset-3 col-lg-9">						
+							<label>
+							  <input name="web" id="edit_perm_web" type="checkbox" checked="checked" value="1"></input> Access to Trac
+							</label>
+							<span class="help-block">Should this user be granted access to the web interface?
+							</span>
+						</div>
+						
+					</div>
+					
+					<div class="form-group">
+						<div class="col-lg-offset-3 col-lg-9">						
+							<label>
+							  <input name="admin" id="edit_perm_admin" type="checkbox" value="1"></input> Repository Administrator
+							</label>
+							<span class="help-block">Should this user be granted administrative rights over this repository?
+							</span>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">					
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<input type="submit" name="submit" value="Remove" class="btn btn-danger"/>
+					<input type="submit" name="submit" value="Save" class="btn btn-primary"/>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
 {% endif %}
 
 
@@ -421,6 +487,7 @@ function goBack()
 					<th width="24%">Name</th>
 					<th width="24%">Type</th>
 					<th width="24%">Web</th>
+					<th width="24%">Admin</th>
 					<th width="4%"></th>
 				</tr>
 			</thead>
@@ -447,9 +514,15 @@ function goBack()
 							<i class="fa fa-check fa-fw"></i>
 						{% endif %}
 					</td>
-					<td data-fullname="" data-admin="" data-username="">
-						<a href="#" class="click_edit_member"><span class="fa fa-fw fa-gear"></span></a>
-						<a href="#" class="click_edit_member"><span class="fa fa-fw fa-trash"></span></a>
+					<td>
+						{% if rule.admin == 0 %}
+							<i class="fa fa-check fa-remove fa-fw"></i>
+						{% elif rule.admin == 1 %}
+							<i class="fa fa-check fa-fw"></i>
+						{% endif %}
+					</td>
+					<td data-src="{{rule.src}}" data-web="{{rule.web}}" data-admin="{{rule.admin}}" data-rid="{{rule.id}}" data-name="{{rule.name}}">
+						<a href="#" class="click_edit_rule"><span class="fa fa-fw fa-gear"></span></a>
 					</tr>
 				</tr>
 			{% else %}
