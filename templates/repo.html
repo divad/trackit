@@ -117,18 +117,22 @@ function selectSourceType(sourceType)
 		$('#name-label').text('Username');
 		$('#add-title').text('Add account permission');
 		$('#ad-alert').addClass('hidden');
+		$('#admin-group').removeClass('hidden');
 	}
 	else if (sourceType == 'team')
 	{
 		$('#name-label').text('Team');
 		$('#add-title').text('Add team permission');
 		$('#ad-alert').addClass('hidden');
+		$('#admin-group').removeClass('hidden');
 	}
 	else if (sourceType == 'adgroup')
 	{
 		$('#name-label').text('AD Group');
 		$('#add-title').text('Add AD group permission');
 		$('#ad-alert').removeClass('hidden');
+		$('#admin-group').addClass('hidden');
+		
 	}
 		
 	$('#source-name').val(sourceType);
@@ -174,7 +178,7 @@ function goBack()
 				</div>
 				<div class="modal-body" stlye="min-height: 200px">
 				
-					<div class="alert alert-danger hidden" role="alert" id="ad-alert"><strong>Warning!</strong> Granting permissions to active directory groups is not recommended. Nested groups are not supported. Access over SVN+SSH is not supported. Git and Mercurial, though not yet available, are also not supported.</div>
+					<div class="alert alert-danger hidden" role="alert" id="ad-alert"><strong>Warning!</strong> Granting permissions to active directory groups is <u>not recommended</u>. Admin rights cannot be granted to AD groups. Nested groups are not supported. Access over SVN+SSH is not supported. Git and Mercurial, though not yet available, are also not supported.</div>
 
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 					<input type="hidden" name="action" value="addperm"/>
@@ -213,7 +217,7 @@ function goBack()
 						
 					</div>
 					
-					<div class="form-group">
+					<div class="form-group" id="admin-group">
 						<div class="col-lg-offset-3 col-lg-9">						
 							<label>
 							  <input name="admin" type="checkbox" value="1"></input> Repository Administrator
@@ -353,7 +357,7 @@ function goBack()
 						
 					</div>
 					
-					<div class="form-group">
+					<div class="form-group" id="admin_edit_group">
 						<div class="col-lg-offset-3 col-lg-9">						
 							<label>
 							  <input name="admin" id="edit_perm_admin" type="checkbox" value="1"></input> Repository Administrator
@@ -452,7 +456,7 @@ function goBack()
 				<div class="form-group">
 					<label class="col-sm-4 control-label bold-text">SVN</label>
 					<div class="col-sm-8">
-						<p class="form-control-static">https://svn.soton.ac.uk/{{repo.name}}</p>
+						<p class="form-control-static"><a href="https://svn.soton.ac.uk/{{repo.name}}">https://svn.soton.ac.uk/{{repo.name}}</a></p>
 					</div>
 				</div>
 				<div class="form-group">
@@ -464,7 +468,7 @@ function goBack()
 				<div class="form-group">
 					<label class="col-sm-4 control-label bold-text">Trac</label>
 					<div class="col-sm-8">
-						<p class="form-control-static">https://trac.soton.ac.uk/{{repo.name}}</p>
+						<p class="form-control-static"><a href="https://trac.soton.ac.uk/{{repo.name}}/">https://trac.soton.ac.uk/{{repo.name}}</a></p>
 					</div>
 				</div>
 			</form>
@@ -522,7 +526,7 @@ function goBack()
 							<i class="fa fa-check fa-fw"></i>
 						{% endif %}
 					</td>
-					<td data-src="{{rule.src}}" data-web="{{rule.web}}" data-admin="{{rule.admin}}" data-rid="{{rule.id}}" data-name="{{rule.name}}">
+					<td data-source="{{rule.source}}" data-src="{{rule.src}}" data-web="{{rule.web}}" data-admin="{{rule.admin}}" data-rid="{{rule.id}}" data-name="{{rule.name}}">
 						<a href="#" class="click_edit_rule"><span class="fa fa-fw fa-gear"></span></a>
 					</tr>
 				</tr>

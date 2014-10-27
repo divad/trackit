@@ -42,7 +42,16 @@ $(document).ready(function()
 		$('#edit_perm_web').prop('checked', web);
 		var admin = parent.data('admin');
 		$('#edit_perm_admin').prop('checked', admin);
-
+		
+		var source = parent.data('source');
+		if (source == 'adgroup')
+		{
+			$('#admin_edit_group').addClass('hidden');
+		}
+		else
+		{
+			$('#admin_edit_group').removeClass('hidden');
+		}
 		
 		$('#edit_perm').modal({show: true});
 		event.preventDefault();
