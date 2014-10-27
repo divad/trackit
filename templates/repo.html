@@ -437,7 +437,8 @@ function goBack()
 				<div class="form-group">
 					<label class="col-sm-4 control-label bold-text">Visibility</label>
 					<div class="col-sm-8">
-						<p class="form-control-static">{{repo.security}}</p>
+						<p class="form-control-static">
+						{% if repo.security == 0 %}Private{%elif repo.security == 1%}University wide{%elif repo.security == 2%}Public{%endif%}</p>
 					</div>
 				</div>
 			</form>

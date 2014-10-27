@@ -34,6 +34,22 @@ def get_all():
 
 ################################################################################
 
+def get_user_repos():
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute("""
+	SELECT * FROM `repos` WHERE `id` IN 
+		(SELECT `rid` FROM `rules` WHERE `name` = %s AND `source` = 'internal') 
+	OR `id` IN
+		(SELECT `rid` FROM `rules` WHERE `source` = 'team' AND `name` IN
+			(SELECT `name` FROM `teams` WHERE `id` IN 
+				(SELECT `tid` FROM `team_members` WHERE `domain` = 'internal' AND `username` = %s)
+			)
+		)
+	""",(session['username'],session['username']))
+	return curd.fetchall()
+	
+################################################################################
+
 def get_team_repos(team_id):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT * FROM `repos` WHERE `tid` = %s ORDER BY `name`',(team_id))
@@ -52,16 +68,32 @@ def get_team_repos(team_id):
 def repo_list():
 	"""View handler to list all repositories"""
 
+	repos = get_user_repos();
+	for repo in repos:
+		repo['link'] = url_for('repo_view', name = repo['name'])
+		repo['status'] = REPO_STATE_STR[repo['state']]
+		
+	return render_template('repo_list.html',repos=repos,active='repos',title="Your Repositories")
+
+################################################################################
+
+@app.route('/repos/all')
+@trackit.core.login_required
+def repo_list_all():
+	"""View handler to list all repositories"""
+	
+	## TODO only show 'public' repos!
+
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT * FROM `repos` ORDER BY `name`')
+	curd.execute('SELECT * FROM `repos` WHERE `security` > 0 AND `state` <= 2 ORDER BY `name`')
 	repos = curd.fetchall()
 
 	for repo in repos:
 		repo['link'] = url_for('repo_view', name = repo['name'])
 		repo['status'] = REPO_STATE_STR[repo['state']]
 		
-	return render_template('repo_list.html',repos=repos,active='repos')
-
+	return render_template('repo_list.html',repos=repos,active='repos',title="Public Repositories")
+	
 ################################################################################
 
 def repo_is_valid_name(repo_name):
@@ -213,10 +245,23 @@ def repo_create():
 		cur.execute('''INSERT INTO `repos` 
 		(`name`, `desc`, `tid`, `src_type`, `web_type`, `security`, `state`) 
 		VALUES (%s, %s, %s, %s, %s, %s, %s)''', (repo_name, repo_desc, repo_team, repo_src_type, repo_web_type, repo_security, REPO_STATE['REQUESTED']))
-
+		
 		# Commit changes to the database
 		g.db.commit()
+		
+		# Get the new ID
+		rid = cur.lastrowid
 
+		# CREATE THE DEFAULT ADMIN RULE
+		cur.execute('''INSERT INTO `rules` 
+		(`rid`, `source`, `name`, `src`, `web`, `admin`) 
+		VALUES (%s, %s, %s, %s, %s, %s)''', (rid, 'internal', session['username'], 2, 1, 1))
+
+		g.db.commit()
+		
+		## what should the team default permission be? Why are repos grouped to a team? argh! Team repos could be calculated from 'rules' instead?
+			
+	
 		# Notify that we've succeeded
 		flash('Repository successfully created', 'alert-success')
 
@@ -427,7 +472,7 @@ def repo_view(name):
 						
 					## TODO make sure rule for this source/name doesnt already exist
 					
-					cur.execute('SELECT * FROM `rules` WHERE `source` = %s AND `name` = %s', (source,name))
+					cur.execute('SELECT * FROM `rules` WHERE `source` = %s AND `name` = %s AND `rid` = %s', (source,name,repo['id']))
 					result = cur.fetchone()
 					if not result == None: 
 						flash('A permission rule already exists for that name','alert-danger')

@@ -9,60 +9,8 @@
 <span class="fa-stack">
   <i class="fa fa-square fa-stack-2x"></i>
   <i class="fa fa-code-fork fa-stack-1x fa-inverse"></i>
-</span>Repositories</h1>
+</span>{{title}}</h1>
 </div>
-
-<!--<table id="tsort" class="table table-hover table-striped">
-	<thead>
-		<tr>
-			<th>Name</th>
-			<th>Description</th>
-			<th>Status</th>
-			<th>Source Control</th>
-			<th>Web Tool</th>
-		</tr>
-	</thead>
-	<tbody class="rowclick-table">
-{% if repos|length == 0 %}
-		<tr>
-			<td colspan='3'>There are no repositories!</td>
-		</tr>
-{% else %}
-	{% for repo in repos %}
-		<tr class="rowclick-tr" data-url="{{ repo.link }}">
-			<td class="rowclick-td">{{ repo.name }}</td>
-			<td class="rowclick-td" style="width: 40%">{{ repo.desc }}</td>
-			<td class="rowclick-td">{{ repo.status }}</td>
-			<td class="rowclick-td" style="width: 12%">
-				{% if repo.src_type == 'git' %}
-					<span class="label label-primary">GIT</span>
-				{% endif %}
-				{% if repo.src_type == 'svn' %}
-					<span class="label label-primary">SVN</span>
-				{% endif %}
-				{% if repo.src_type == 'hg' %}
-					<span class="label label-primary">HG</span>
-				{% endif %}
-				{% if repo.src_type == 'none' %}
-					<span class="label label-default">N/A</span>
-				{% endif %}
-			</td>
-			<td class="rowclick-td">
-				{% if repo.web_type == 'trac' %}
-					<span class="label label-info">Trac</span>
-				{% endif %}
-				{% if repo.web_type == 'redmine' %}
-					<span class="label label-info">Redmine</span>
-				{% endif %}
-				{% if repo.web_type == 'none' %}
-					<span class="label label-default">N/A</span>
-				{% endif %}
-			</td>
-		</tr>
-	{% endfor %}
-{% endif %}
-	</tbody>
-</table>-->
 
 <div class="row">
 
