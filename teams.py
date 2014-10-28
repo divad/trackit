@@ -264,7 +264,7 @@ def team_list_handler(teams,template,page,function):
 	number_of_pages = int(math.ceil(float(teams_length) / float(itemsPerPage)))
 	
 	pages = False
-	if number_of_pages > 0:
+	if number_of_pages > 1:
 		pages = True
 		
 		if page == None:

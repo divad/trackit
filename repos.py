@@ -78,7 +78,7 @@ def repo_list_handler(repos,title,page,function):
 	number_of_pages = int(math.ceil(float(repos_length) / float(itemsPerPage)))
 	
 	pages = False
-	if number_of_pages > 0:
+	if number_of_pages > 1:
 		pages = True
 		
 		if page == None:
