@@ -70,7 +70,7 @@ def login():
 			if session['next_url'] != None:
 				return redirect(session['next_url'])
 
-		return redirect(url_for('about'))
+		return redirect(url_for('repo_list'))
 		
 ################################################################################
 

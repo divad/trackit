@@ -324,6 +324,23 @@ def get_perms(repoid):
 
 	return rules
 
+	
+################################################################################
+
+def is_admin(repo_id,username=None):
+	if username == None:
+		username = session['username']
+		
+	if trackit.user.is_global_admin():
+		return True
+		
+	cur = g.db.cursor()
+	cur.execute('SELECT 1 FROM `rules` WHERE `source` = 'internal' AND `name` = %s AND `admin` = 1 AND `rid` = %s', (username,repo_id))
+	result = cur.fetchone()
+	
+	if not result == None:
+		return True
+		
 ################################################################################
 
 @app.route('/repo/<name>/', methods=['GET','POST'])
@@ -342,7 +359,7 @@ def repo_view(name):
 	perms = trackit.repos.get_perms(repo['id'])
 		
 	## TODO Permissions checking
-	#team_admin = trackit.teams.is_admin(team['id'])
+	repo_admin = trackit.repos.is_admin(repo['id'])
 
 	## get the team if any
 	team = None

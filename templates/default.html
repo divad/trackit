@@ -76,7 +76,7 @@
 					<a data-dismiss="alert" class="close" href="#">×</a>
 					{{ message|safe }}
 				</div>
-				{% endfor %}
+				{% endfor %} 
 
 			<form class="form-signin text-left" action="{{ url_for('login') }}" method="POST">
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
