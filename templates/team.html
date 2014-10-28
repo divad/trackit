@@ -18,7 +18,7 @@
 						<label for="inputUsername" class="col-lg-2 control-label">Username</label>
 						<div class="col-lg-10">
 							<input type="text" class="form-control" id="inputUsername" name="username" data-container="body" data-toggle="popover" data-placement="bottom" data-content="" data-trigger="manual">
-							<span id="form_feedback_name" class="fa form-control-feedback"></span>
+							<span id="form_feedback_name" class="glyphicon form-control-feedback"></span>
 							<span class="help-block">The University username of the person you wish to add to the team.
 							</span>
 						</div>
@@ -238,15 +238,15 @@
 				{
 					$('#form_group_name').addClass('has-error')
 					$('#form_group_name').removeClass('has-success')
-					$('#form_feedback_name').removeClass('hidden fa-check')
-					$('#form_feedback_name').addClass('fa-exclamation-triangle')
+					$('#form_feedback_name').removeClass('hidden glyphicon-ok')
+					$('#form_feedback_name').addClass('glyphicon-remove')
 				}
 				else
 				{
 					$('#form_group_name').addClass('has-success')
 					$('#form_group_name').removeClass('has-error')
-					$('#form_feedback_name').removeClass('hidden fa-exclamation-triangle')
-					$('#form_feedback_name').addClass('fa-check')
+					$('#form_feedback_name').removeClass('hidden glyphicon-remove')
+					$('#form_feedback_name').addClass('glyphicon-ok')
 				}
 			});
 		}, 400);

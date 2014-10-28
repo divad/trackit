@@ -13,7 +13,7 @@
 		<label for="inputName" class="col-lg-2 control-label">Name</label>
 		<div class="col-lg-6">
 			<input type="text" class="form-control" id="inputName" name="repo_name" {% if repo_name %}value="{{ repo_name }}" {% endif %} data-container="body" data-toggle="popover" data-placement="right" data-content="" data-trigger="manual">
-			<span id="form_feedback_name" class="fa form-control-feedback"></span>
+			<span id="form_feedback_name" class="glyphicon form-control-feedback"></span>
 			<span class="help-block">A unique public name for the repository, usually the name of the project or purpose of the repository.</span>
 			
 		</div>
@@ -105,8 +105,8 @@
 				{
 					$('#form_group_name').addClass('has-error')
 					$('#form_group_name').removeClass('has-success')
-					$('#form_feedback_name').removeClass('hidden fa-check')
-					$('#form_feedback_name').addClass('fa-exclamation-triangle')
+					$('#form_feedback_name').removeClass('hidden glyphicon-ok')
+					$('#form_feedback_name').addClass('glyphicon-remove')
 					if (data.result == 'exists')
 					{
 						$('#inputName').attr('data-content', 'Sorry, a repository with that name already exists!')
@@ -122,8 +122,8 @@
 				{
 					$('#form_group_name').addClass('has-success')
 					$('#form_group_name').removeClass('has-error')
-					$('#form_feedback_name').removeClass('hidden fa-exclamation-triangle')
-					$('#form_feedback_name').addClass('fa-check')
+					$('#form_feedback_name').removeClass('hidden glyphicon-remove')
+					$('#form_feedback_name').addClass('glyphicon-ok')
 					$('#inputName').popover('hide')
 				}
 			});
