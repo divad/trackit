@@ -1,26 +1,3 @@
-<!--<table id="tsort" class="table table-hover table-striped">
-	<thead>
-		<tr>
-			<th>Name</th>
-			<th>Description</th>
-		</tr>
-	</thead>
-	<tbody class="rowclick-table">
-{% if teams|length == 0 %}
-		<tr>
-			<td colspan='3'>There are no teams to display.</td>
-		</tr>
-{% else %}
-	{% for team in teams %}
-		<tr class="rowclick-tr" data-url="{{ team.link }}">
-			<td class="rowclick-td"><span class="fa fa-fw fa-user"></span> {{ team.name }}</td>
-			<td class="rowclick-td">{{ team.desc }}</td>
-		</tr>
-	{% endfor %}
-{% endif %}
-	</tbody>
-</table>-->
-
 <div class="row">
 
 {% if teams|length == 0 %}
@@ -36,3 +13,13 @@
 	{% endfor %}
 {%endif%}
 </div>
+
+{% if pages %}
+<div class="text-center">
+	<ul class="pagination">
+		{% for num in range(1,number_of_pages + 1) %}
+		<li{% if num == page %} class="active"{%endif%}><a href="{{ url_for(function,page=num)}}">{{ num }}</a></li>
+		{% endfor %}
+	</ul>
+</div>
+{% endif%}

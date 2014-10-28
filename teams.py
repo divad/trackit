@@ -21,6 +21,7 @@ import trackit.errors
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, jsonify
 import re
 import MySQLdb as mysql
+import math
 
 ################################################################################
 
@@ -248,34 +249,62 @@ def team_view(name):
 		else:
 			flash("You must specify an action!", 'alert-danger')	
 			return(redirect(url_for('team_view',name=team['name'])))
+			
+################################################################################
+
+def team_list_handler(teams,template,page,function):
+
+	for team in teams:
+		team['link'] = url_for('team_view', name = team['name'])
+
+	## Pagination
+	itemsPerPage = 8
+		
+	teams_length = len(teams)
+	number_of_pages = int(math.ceil(float(teams_length) / float(itemsPerPage)))
+	
+	pages = False
+	if number_of_pages > 0:
+		pages = True
+		
+		if page == None:
+			page = 1
+		else:
+			try:
+				page = int(page)
+			except ValueError as e:
+				flash('Invalid page ID','alert-danger')
+				page = 1
+			
+		if page > number_of_pages:
+			flash('That page does not exist','alert-danger')
+			page = 1
+			
+		## slice the repos!
+		start = (page -1) * itemsPerPage
+		end = start + itemsPerPage
+		teams = teams[start:end]
+		
+	return render_template(template,teams=teams,active='teams',pages=pages,number_of_pages=number_of_pages,page=page,function=function)
 		
 ################################################################################
 
 @app.route('/teams')
+@app.route('/teams/<page>')
 @trackit.core.login_required
-def team_list_all():
+def team_list_all(page=None):
 	"""View handler to list all teams"""
-
-	teams = trackit.teams.get_all_teams()
-
-	for team in teams:
-		team['link'] = url_for('team_view', name = team['name'])
-		
-	return render_template('team_list_all.html',teams=teams,active='teams')
+	return team_list_handler(get_all_teams(),'team_list_all.html',page,'team_list_all')
 
 ################################################################################
 
-@app.route('/my/teams')
+@app.route('/myteams')
+@app.route('/myteams/<page>')
 @trackit.core.login_required
-def team_list_mine():
+def team_list_mine(page=None):
 	"""View handler to list all my teams"""
-
-	teams = trackit.teams.get_user_teams(session['username'])
-
-	for team in teams:
-		team['link'] = url_for('team_view', name = team['name'])
+	return team_list_handler(get_user_teams(session['username']),'team_list_mine.html',page,'team_list_mine')
 		
-	return render_template('team_list_mine.html',teams=teams,active='teams')
 
 ################################################################################
 

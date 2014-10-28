@@ -84,7 +84,11 @@ def repo_list_handler(repos,title,page,function):
 		if page == None:
 			page = 1
 		else:
-			page = int(page)
+			try:
+				page = int(page)
+			except ValueError as e:
+				flash('Invalid page ID','alert-danger')
+				page = 1
 			
 		if page > number_of_pages:
 			flash('That page does not exist','alert-danger')
