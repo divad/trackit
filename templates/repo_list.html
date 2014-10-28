@@ -29,16 +29,14 @@
 {%endif%}
 </div>
 
-	<div class="text-center">
-		<ul class="pagination">
-			<li><a href="#">&laquo;</a></li>
-			<li><a href="#">1</a></li>
-			<li><a href="#">2</a></li>
-			<li><a href="#">3</a></li>
-			<li><a href="#">4</a></li>
-			<li><a href="#">5</a></li>
-			<li><a href="#">&raquo;</a></li>
-		</ul>
-	</div>
+{% if pages %}
+<div class="text-center">
+	<ul class="pagination">
+		{% for num in range(1,number_of_pages + 1) %}
+		<li{% if num == page %} class="active"{%endif%}><a href="{{ url_for(function,page=num)}}">{{ num }}</a></li>
+		{% endfor %}
+	</ul>
+</div>
+{% endif%}
 
 {% endblock %}

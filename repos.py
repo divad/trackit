@@ -21,6 +21,7 @@ import trackit.errors
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, jsonify
 import re
 import MySQLdb as mysql
+import math
 
 REPO_STATE = { 'REQUESTED': 0, 'ACTIVE': 1, 'SUSPEND_USER': 2, 'SUSPEND_ADMIN': 3, 'DELETE': 4 }
 REPO_STATE_STR = { 0: 'Being created', 1: 'Active', 2: 'Suspended by repository admin', 3: 'Suspended by site administrator', 4: 'Scheduled for deletion' }
@@ -62,37 +63,63 @@ def get_team_repos(team_id):
 	return repos
 
 ################################################################################
+	
+def repo_list_handler(repos,title,page,function):
 
-@app.route('/repos')
-@trackit.core.login_required
-def repo_list():
-	"""View handler to list all repositories"""
-
-	repos = get_user_repos();
+	## Add links / status text
 	for repo in repos:
 		repo['link'] = url_for('repo_view', name = repo['name'])
 		repo['status'] = REPO_STATE_STR[repo['state']]
 		
-	return render_template('repo_list.html',repos=repos,active='repos',title="Your Repositories")
+	## Pagination
+	itemsPerPage = 8
+		
+	repos_length = len(repos)
+	number_of_pages = int(math.ceil(float(repos_length) / float(itemsPerPage)))
+	
+	pages = False
+	if number_of_pages > 0:
+		pages = True
+		
+		if page == None:
+			page = 1
+		else:
+			page = int(page)
+			
+		if page > number_of_pages:
+			flash('That page does not exist','alert-danger')
+			page = 1
+			
+		## slice the repos!
+		start = (page -1) * itemsPerPage
+		end = start + itemsPerPage
+		repos = repos[start:end]
+		
+	return render_template('repo_list.html',repos=repos,active='repos',title=title,pages=pages,number_of_pages=number_of_pages,page=page,function=function)	
 
 ################################################################################
 
-@app.route('/repos/all')
+@app.route('/repos')
+@app.route('/repos/<page>')
 @trackit.core.login_required
-def repo_list_all():
+def repo_list(page=None):
+	"""View handler to list all repositories"""
+
+	return repo_list_handler(get_user_repos(),"My Repositories",page,'repo_list')
+
+################################################################################
+
+@app.route('/public')
+@app.route('/public/<page>')
+@trackit.core.login_required
+def repo_list_all(page=None):
 	"""View handler to list all repositories"""
 	
-	## TODO only show 'public' repos!
-
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT * FROM `repos` WHERE `security` > 0 AND `state` <= 2 ORDER BY `name`')
 	repos = curd.fetchall()
 
-	for repo in repos:
-		repo['link'] = url_for('repo_view', name = repo['name'])
-		repo['status'] = REPO_STATE_STR[repo['state']]
-		
-	return render_template('repo_list.html',repos=repos,active='repos',title="Public Repositories")
+	return repo_list_handler(repos,"All Repositories",page,'repo_list_all')
 	
 ################################################################################
 
