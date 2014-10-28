@@ -335,11 +335,59 @@ def is_admin(repo_id,username=None):
 		return True
 		
 	cur = g.db.cursor()
-	cur.execute('SELECT 1 FROM `rules` WHERE `source` = 'internal' AND `name` = %s AND `admin` = 1 AND `rid` = %s', (username,repo_id))
+	cur.execute("""SELECT 1 FROM `rules` WHERE `source` = 'internal' AND `name` = %s AND `admin` = 1 AND `rid` = %s""", (username,repo_id))
 	result = cur.fetchone()
 	
 	if not result == None:
 		return True
+		
+	cur.execute("""
+		SELECT 1 FROM `rules` WHERE `source` = 'team' AND `admin` = 1 AND `rid` = %s AND `name` IN
+			(
+				SELECT `name` FROM `teams` WHERE `id` IN 
+				(
+					SELECT `tid` FROM `team_members` WHERE `domain` = 'internal' AND `username` = %s
+				)
+			)	
+	""",(repo_id,session['username']))
+	result = cur.fetchone()
+	
+	if not result == None:
+		return True
+
+	return False
+	
+################################################################################
+
+def has_access(repo_id,username=None):
+	if username == None:
+		username = session['username']
+		
+	if trackit.user.is_global_admin():
+		return True
+		
+	cur = g.db.cursor()
+	cur.execute("""SELECT 1 FROM `rules` WHERE `source` = 'internal' AND `name` = %s AND `rid` = %s""", (username,repo_id))
+	result = cur.fetchone()
+	
+	if not result == None:
+		return True
+		
+	cur.execute("""
+		SELECT 1 FROM `rules` WHERE `source` = 'team' AND `rid` = %s AND `name` IN
+			(
+				SELECT `name` FROM `teams` WHERE `id` IN 
+				(
+					SELECT `tid` FROM `team_members` WHERE `domain` = 'internal' AND `username` = %s
+				)
+			)	
+	""",(repo_id,session['username']))
+	result = cur.fetchone()
+	
+	if not result == None:
+		return True
+
+	return False
 		
 ################################################################################
 
@@ -358,17 +406,24 @@ def repo_view(name):
 	## Get permissions list for the repo
 	perms = trackit.repos.get_perms(repo['id'])
 		
-	## TODO Permissions checking
+	## Permissions checking
 	repo_admin = trackit.repos.is_admin(repo['id'])
+	repo_member = trackit.repos.has_access(repo['id'])
 
 	## get the team if any
 	team = None
 	if repo['tid'] != -1:
 		team = trackit.teams.get(repo['tid'])
+		
+	## Check visibility
+	if repo['security'] == 0:
+		if not repo_member:
+			flash('You do not have permission to view that repository','alert-danger')
+			return(redirect(url_for('repo_list')))
 	
 	## GET (view) requests
 	if request.method == 'GET':
-		return render_template('repo.html',repo=repo,team=team,repo_admin=True,perms=perms,active='repos')
+		return render_template('repo.html',repo=repo,team=team,repo_admin=repo_admin,repo_member=repo_member,perms=perms,active='repos')
 
 	## POST (change settings or delete or add member or delete member)
 	else:

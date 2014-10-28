@@ -476,6 +476,7 @@ function goBack()
 	</div>
 </div>
 <div class="row">
+	{% if repo_member %}
 	<div class="col-md-12">
 		<div class="well">
 		{% if repo_admin %}
@@ -527,7 +528,7 @@ function goBack()
 						{% endif %}
 					</td>
 					<td data-source="{{rule.source}}" data-src="{{rule.src}}" data-web="{{rule.web}}" data-admin="{{rule.admin}}" data-rid="{{rule.id}}" data-name="{{rule.name}}">
-						<a href="#" class="click_edit_rule"><span class="fa fa-fw fa-gear"></span></a>
+						{% if repo_admin %}<a href="#" class="click_edit_rule"><span class="fa fa-fw fa-gear"></span></a>{%endif%}
 					</tr>
 				</tr>
 			{% else %}
@@ -540,5 +541,6 @@ function goBack()
 		</table>
 		</div>
 	</div>
+	{% endif %}
 </div>
 {% endblock %}
