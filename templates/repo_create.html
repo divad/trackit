@@ -45,7 +45,7 @@
 			</span>
 		</div>
 	</div>
-	<div class="form-group">
+	<!--<div class="form-group">
 		<label for="input_src_type" class="col-lg-2 control-label">Source Control</label>
 		<div class="col-lg-6">
 			<select name="repo_src_type" class="form-control" id="input_src_type">
@@ -58,18 +58,19 @@
 			<span class="help-block">The type of repository source control, if any. <a href="">How do I choose?</a>
 			</span>
 		</div>
-	</div>
+	</div>-->
+	<input type="hidden" name="repo_src_type" value="svn"/>
 	<div class="form-group">
 		<label for="input_web_type" class="col-lg-2 control-label">Project Tool</label>
 		<div class="col-lg-6">
 			<select name="repo_web_type" class="form-control" id="input_web_type">
 				<option value="trac"{% if repo_src_type and repo_src_type == "trac" %} selected="selected"{% endif %}>Trac</option>
-				<option value="redmine"{% if repo_src_type and repo_src_type == "redmine" %} selected="selected"{% endif %}>Redmine</option>
+				<!--<option value="redmine"{% if repo_src_type and repo_src_type == "redmine" %} selected="selected"{% endif %}>Redmine</option>-->
 				<option value="none"{% if repo_src_type and repo_src_type == "none" %} selected="selected"{% endif %}>None - no project tool</option>
 			</select>
 
-			<span class="help-block">The type of web based project management tool, if any. <a href="">How do I choose?</a>
-			</span>
+			<!--<span class="help-block">The type of web based project management tool, if any. <a href="">How do I choose?</a>
+			</span>-->
 		</div>
 	</div>
 	<div class="form-group">
