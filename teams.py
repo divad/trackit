@@ -304,7 +304,13 @@ def team_list_all(page=None):
 def team_list_mine(page=None):
 	"""View handler to list all my teams"""
 	return team_list_handler(get_user_teams(session['username']),'team_list_mine.html',page,'team_list_mine')
-		
+
+################################################################################
+
+@app.route('/god/teams')
+@trackit.core.login_required
+def team_list_admin():
+	return team_list_handler(get_user_teams(session['username']),'team_list_mine.html',None,'team_list_mine')	
 
 ################################################################################
 

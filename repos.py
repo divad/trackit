@@ -25,6 +25,8 @@ import math
 
 REPO_STATE = { 'REQUESTED': 0, 'ACTIVE': 1, 'SUSPEND_USER': 2, 'SUSPEND_ADMIN': 3, 'DELETE': 4 }
 REPO_STATE_STR = { 0: 'Being created', 1: 'Active', 2: 'Suspended by repository admin', 3: 'Suspended by site administrator', 4: 'Scheduled for deletion' }
+REPO_SEC = { 'PRIVATE': 0, 'INTERNAL': 1, 'PUBLIC': 2 }
+REPO_SEC_STR = { 0: 'Private', 1: 'University only', 2: 'Public' }
 
 ################################################################################
 
@@ -124,9 +126,25 @@ def repo_list_all(page=None):
 	repos = curd.fetchall()
 
 	return repo_list_handler(repos,"All Repositories",page,'repo_list_all')
-	
+
 ################################################################################
 
+@app.route('/god/repos')
+@trackit.core.login_required
+def repo_list_admin():
+	"""View handler to list all repositories"""
+	
+	repos = get_all()
+	
+	## Add links / status text
+	for repo in repos:
+		repo['link'] = url_for('repo_view', name = repo['name'])
+		repo['status'] = REPO_STATE_STR[repo['state']]
+
+	return render_template('god_repo_list.html',repos=repos,active='god')	
+
+################################################################################
+	
 def repo_is_valid_name(repo_name):
 	if re.search(r'^[a-zA-Z0-9_\-]{3,50}$', repo_name):
 		return True
