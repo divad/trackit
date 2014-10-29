@@ -310,7 +310,13 @@ def team_list_mine(page=None):
 @app.route('/god/teams')
 @trackit.core.login_required
 def team_list_admin():
-	return team_list_handler(get_user_teams(session['username']),'team_list_mine.html',None,'team_list_mine')	
+
+	teams = get_all_teams()
+	
+	for team in teams:
+		team['link'] = url_for('team_view', name = team['name'])
+
+	return render_template('god_team_list.html',teams=teams,active='god')	
 
 ################################################################################
 

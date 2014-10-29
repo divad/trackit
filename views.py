@@ -37,4 +37,4 @@ def default():
 @app.route('/about')
 @trackit.core.login_required
 def about():
-	return render_template('about.html', active='about')
+	return render_template('about.html', active='help')
