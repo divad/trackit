@@ -61,6 +61,7 @@ def get_team_repos(team_id):
 	for repo in repos:
 		repo['link'] = url_for('repo_view', name = repo['name'])
 		repo['status'] = REPO_STATE_STR[repo['state']]
+		repo['visibility'] = REPO_SEC_STR[repo['security']]
 
 	return repos
 
@@ -72,6 +73,7 @@ def repo_list_handler(repos,title,page,function):
 	for repo in repos:
 		repo['link'] = url_for('repo_view', name = repo['name'])
 		repo['status'] = REPO_STATE_STR[repo['state']]
+		repo['visibility'] = REPO_SEC_STR[repo['security']]
 		
 	## Pagination
 	itemsPerPage = 8
@@ -140,6 +142,7 @@ def repo_list_admin():
 	for repo in repos:
 		repo['link'] = url_for('repo_view', name = repo['name'])
 		repo['status'] = REPO_STATE_STR[repo['state']]
+		repo['visibility'] = REPO_SEC_STR[repo['security']]
 
 	return render_template('god_repo_list.html',repos=repos,active='god')	
 
@@ -328,6 +331,7 @@ def get(value,selector='id'):
 	if repo is not None:
 		repo['link'] = url_for('repo_view', name = repo['name'])
 		repo['status'] = REPO_STATE_STR[repo['state']]
+		repo['visibility'] = REPO_SEC_STR[repo['security']]
 
 	return repo
 
