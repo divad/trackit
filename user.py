@@ -64,6 +64,10 @@ def login():
 
 		## Log a successful login
 		app.logger.info('User "' + session['username'] + '" logged in from "' + request.remote_addr + '" using ' + request.user_agent.string)
+		
+		if is_global_admin():
+			session['admin'] = True
+			flash('You are logged in as a global administrator with full privileges over all repositories and teams.','alert-warning')
 
 		## determine if "next" variable is set (the URL to be sent to)
 		if 'next_url' in session:
