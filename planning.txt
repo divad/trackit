@@ -1,0 +1,75 @@
+
+
+
+
+
+# trac locale
+
+
+
+
+
+instance usage/quotas
+#hooks?
+disable/enable repos 
+
+
+
+
+
+CREATE REPO - nothing for svn. trac needs web server restart. :(
+DELETE REPO - nothing for svn. trac needs web server restart.
+CHANGE REPO NOTIFY EMAIL - no restart needed. just 
+SET/UNSET AUTOVERSION - restart web server.
+
+add permission - no
+change permission
+delete permission
+
+PYRO SERVER METHODS
+	create repo
+		create svn
+			mkdir 
+			svnadmin create
+			perms
+		create trac
+			mkdir
+			trac-admin create
+			perms
+			call->trac_add_admin
+			setup default perms
+			trac ini stuff
+			trac perm file in apache config
+			
+	delete repo
+		delete stuff
+	
+	change repo settings
+		email hooks
+		autoversion :/
+		
+	
+	add permission
+		## if admin added, do admin add in trac
+		rebuild svn authz
+		rebuild_trac_auth and restart web server
+	change permission
+		## if admin added, do admin add in trac
+		## if admin removed, do admin remove in trac
+		rebuild svn authz
+		rebuild trac authz
+		restart
+	delete permission
+		rebuild svn authz
+		rebuild trac authz
+		delete trac admin status, if any
+		restart
+	
+	
+	rebuild_svn_authz 
+	rebuild_trac_auth (repo=None)
+	
+	trac_add_admin
+	trac_remove_admin
+	
+	graceful_restart
