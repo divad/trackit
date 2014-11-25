@@ -29,6 +29,10 @@ import json
 import MySQLdb as mysql
 import datetime
 import re
+import Pyro4
+
+def trackitd_connect():
+	return Pyro4.Proxy(app.config['TRACKITD_URI'])
 
 ################################################################################
 

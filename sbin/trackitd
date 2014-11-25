@@ -16,18 +16,43 @@
 # along with trackit.  If not, see <http://www.gnu.org/licenses/>.
 
 import Pyro4
+import syslog
+import signal
+import sys
 
 VERSION = 0.1
 
+Pyro4.config.SERVERTYPE = "multiplex"
+
 class TracKitDaemon(object):
+
+	def __init__(self):
+		syslog.openlog("trackitd",syslog.LOG_PID)
+		syslog.syslog('Starting trackitd/' + str(VERSION))
+
 	def get_fortune(self, name):
 		return "Hello, {0}. Here is your fortune message:\n" \
 			"Behold the warranty -- the bold print giveth and the fine print taketh away.".format(name)
+			
+	def repo_create(self,name):
+		print 'lolz a repo was created with the name ' + str(name)
 
+def signal_handler_term(signal, frame):
+	signal_handler('SIGTERM')
+	
+def signal_handler_int(signal, frame):
+	signal_handler('SIGINT')
+		
+def signal_handler(signal):
+	syslog.syslog('Caught signal ' + str(signal) + ' - exiting trackitd/' + str(VERSION))
+	Pyro4.core.Daemon.shutdown(pyro_daemon)
+	sys.exit(0)
 
 if __name__ == "__main__":
 	trackit     = TracKitDaemon()
+	signal.signal(signal.SIGTERM, signal_handler_term)
+	signal.signal(signal.SIGINT, signal_handler_int)
 	pyro_daemon = Pyro4.Daemon(host='localhost',port=18)
 	uri         = pyro_daemon.register(trackit,'trackit-daemon')
-	print 'Starting TrackIt daemon version ' + str(VERSION) + '. Client URI: ' + str(uri) 
+	syslog.syslog('Reading to serve clients on URI: ' + str(uri))
 	pyro_daemon.requestLoop()

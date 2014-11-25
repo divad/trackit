@@ -22,6 +22,8 @@ from flask import Flask, request, session, g, redirect, url_for, abort, render_t
 import re
 import MySQLdb as mysql
 import math
+import Pyro4
+
 
 REPO_STATE = { 'REQUESTED': 0, 'ACTIVE': 1, 'SUSPEND_USER': 2, 'SUSPEND_ADMIN': 3, 'DELETE': 4 }
 REPO_STATE_STR = { 0: 'Being created', 1: 'Active', 2: 'Suspended by repository admin', 3: 'Suspended by site administrator', 4: 'Scheduled for deletion' }
@@ -293,6 +295,10 @@ def repo_create():
 				teams=teams,
 			)
 			
+		# Ask trackitd to create the repository 
+		trackitd = trackit.core.trackitd_connect()
+		trackitd.repo_create(repo_name)
+		
 		# CREATE THE REPOSITORY
 		cur.execute('''INSERT INTO `repos` 
 		(`name`, `desc`, `tid`, `src_type`, `web_type`, `security`, `state`) 
@@ -312,7 +318,6 @@ def repo_create():
 		g.db.commit()
 		
 		## what should the team default permission be? Why are repos grouped to a team? argh! Team repos could be calculated from 'rules' instead?
-			
 	
 		# Notify that we've succeeded
 		flash('Repository successfully created', 'alert-success')
