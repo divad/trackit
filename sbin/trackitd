@@ -31,6 +31,7 @@ TRAC_ROOT = '/data/tracroot/'
 VERSION = 0.1
 
 Pyro4.config.SERVERTYPE = "multiplex"
+Pyro4.config.SOCK_REUSE = True
 
 class TracKitDaemon(object):
 
@@ -38,9 +39,7 @@ class TracKitDaemon(object):
 		syslog.openlog("trackitd",syslog.LOG_PID)
 		syslog.syslog('Starting trackitd/' + str(VERSION))
 		
-	def svn_create(self,name,svn_path):
-		#os.mkdir(svn_path)
-		
+	def svn_create(self,name,svn_path):		
 		svnadmin = subprocess.Popen(['svnadmin', 'create', svn_path],stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 		(stdoutdata, stderrdata) = svnadmin.communicate()
 
@@ -52,6 +51,19 @@ class TracKitDaemon(object):
 			return False
 		else:
 			print "Created svn repo"
+			
+	def trac_create(self,name,trac_path,svn_path):		
+		tracadmin = subprocess.Popen(['trac-admin', trac_path, 'initenv', name, 'sqlite:db/trac.db', 'svn', svn_path],stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+		(stdoutdata, stderrdata) = tracadmin.communicate()
+
+        ## Handle errors
+		if tracadmin.returncode > 0:
+			print "Could not create trac instnace repository: " + str(tracadmin.returncode)
+			print stdoutdata
+			print stderrdata
+			return False
+		else:
+			print "Created trac instance"
 			
 	def repo_create(self,name,src_type,web_type):
 		if not re.search(r'^[a-zA-Z0-9_\-]{3,50}$', name):
@@ -71,7 +83,7 @@ class TracKitDaemon(object):
 				## TODO bettar errors
 				return False
 				
-			self.svn_create(name,svn_path)
+			result = self.svn_create(name,svn_path)
 			
 		if web_type == 'trac':
 
@@ -81,7 +93,7 @@ class TracKitDaemon(object):
 				## TODO bettar errors
 				return False
 				
-			#self.trac_create(name)
+			result2 = self.trac_create(name,trac_path,svn_path)
 		
 
 def signal_handler_term(signal, frame):

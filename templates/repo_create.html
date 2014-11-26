@@ -1,5 +1,20 @@
 {% extends "layout.html" %}
 {% block body %}
+
+<div class="modal" id="loading">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">Please wait...</h4>
+			</div>
+			<div class="modal-body text-center">
+				<i class="fa fa-refresh fa-spin fa-5x fa-fw"></i>
+			</div>
+		</div>
+	</div>
+</div>
+
 <div class="page-header">
   <h1><span class="fa-stack">
   <i class="fa fa-square fa-stack-2x"></i>
@@ -10,7 +25,15 @@
 </p>
 </div>
 
-<form class="form-horizontal" role="form" method="POST">
+<script type="text/javascript">
+function onFormSubmit()
+{
+	$('#loading').modal('show');
+	return true;
+}
+</script>
+
+<form class="form-horizontal" role="form" method="POST" onsubmit="return onFormSubmit();">
 	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 	<div class="form-group has-feedback" id="form_group_name">
 		<label for="inputName" class="col-lg-2 control-label">Name</label>
