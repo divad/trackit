@@ -19,7 +19,15 @@ import Pyro4
 import syslog
 import signal
 import sys
+import os.path
+import os
+import subprocess
+import re
 
+## should run as apache. then run sudo to do restart.
+
+SVN_ROOT  = '/data/svnroot/'
+TRAC_ROOT = '/data/tracroot/'
 VERSION = 0.1
 
 Pyro4.config.SERVERTYPE = "multiplex"
@@ -29,13 +37,52 @@ class TracKitDaemon(object):
 	def __init__(self):
 		syslog.openlog("trackitd",syslog.LOG_PID)
 		syslog.syslog('Starting trackitd/' + str(VERSION))
+		
+	def svn_create(self,name,svn_path):
+		#os.mkdir(svn_path)
+		
+		svnadmin = subprocess.Popen(['svnadmin', 'create', svn_path],stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+		(stdoutdata, stderrdata) = svnadmin.communicate()
 
-	def get_fortune(self, name):
-		return "Hello, {0}. Here is your fortune message:\n" \
-			"Behold the warranty -- the bold print giveth and the fine print taketh away.".format(name)
+        ## Handle errors
+		if svnadmin.returncode > 0:
+			print "Could not create repository: " + str(svnadmin.returncode)
+			print stdoutdata
+			print stderrdata
+			return False
+		else:
+			print "Created svn repo"
 			
-	def repo_create(self,name):
-		print 'lolz a repo was created with the name ' + str(name)
+	def repo_create(self,name,src_type,web_type):
+		if not re.search(r'^[a-zA-Z0-9_\-]{3,50}$', name):
+			## TODO bettar error
+			return False
+			
+		## we only support svn atm
+		if not src_type == 'svn': 
+			## TODO bettar error
+			return False			
+			
+			
+		if src_type == 'svn': 
+			## Check svn folder does not exist
+			svn_path = os.path.join(SVN_ROOT,name)
+			if os.path.lexists(name):
+				## TODO bettar errors
+				return False
+				
+			self.svn_create(name,svn_path)
+			
+		if web_type == 'trac':
+
+			## Check trac folder does not exist
+			trac_path = os.path.join(TRAC_ROOT,name)
+			if os.path.lexists(name):
+				## TODO bettar errors
+				return False
+				
+			#self.trac_create(name)
+		
 
 def signal_handler_term(signal, frame):
 	signal_handler('SIGTERM')

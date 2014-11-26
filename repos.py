@@ -297,7 +297,7 @@ def repo_create():
 			
 		# Ask trackitd to create the repository 
 		trackitd = trackit.core.trackitd_connect()
-		trackitd.repo_create(repo_name)
+		trackitd.repo_create(repo_name,'svn','trac')
 		
 		# CREATE THE REPOSITORY
 		cur.execute('''INSERT INTO `repos` 
