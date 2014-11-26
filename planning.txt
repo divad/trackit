@@ -29,11 +29,9 @@ delete permission
 PYRO SERVER METHODS
 	create repo
 		create svn
-			mkdir 
 			svnadmin create
 			perms
 		create trac
-			mkdir
 			trac-admin create
 			perms
 			call->trac_add_admin

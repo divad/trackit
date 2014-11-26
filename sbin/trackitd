@@ -93,7 +93,7 @@ class TracKitDaemon(object):
 				## TODO bettar errors
 				return False
 				
-			result2 = self.trac_create(name,trac_path,svn_path)
+			result = self.trac_create(name,trac_path,svn_path)
 		
 
 def signal_handler_term(signal, frame):
