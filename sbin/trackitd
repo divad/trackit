@@ -23,6 +23,7 @@ import os.path
 import os
 import subprocess
 import re
+import ConfigParser
 
 ## should run as apache. then run sudo to do restart.
 
@@ -39,31 +40,88 @@ class TracKitDaemon(object):
 		syslog.openlog("trackitd",syslog.LOG_PID)
 		syslog.syslog('Starting trackitd/' + str(VERSION))
 		
-	def svn_create(self,name,svn_path):		
-		svnadmin = subprocess.Popen(['svnadmin', 'create', svn_path],stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-		(stdoutdata, stderrdata) = svnadmin.communicate()
-
-        ## Handle errors
-		if svnadmin.returncode > 0:
-			print "Could not create repository: " + str(svnadmin.returncode)
+	def sysexec(self,command):
+		commands = command.split(' ')
+		proc = subprocess.Popen(commands,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+		(stdoutdata, stderrdata) = proc.communicate()
+		return (proc.returncode,stdoutdata,stderrdata)
+		
+	def svn_create(self,name,svn_path):
+		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/svnadmin create ' + svn_path)
+		if rcode > 0:
+			print "Could not create subversion repository: error code " + str(rcode)
 			print stdoutdata
 			print stderrdata
 			return False
 		else:
-			print "Created svn repo"
+			print "Created svn repo " + svn_path
 			
-	def trac_create(self,name,trac_path,svn_path):		
-		tracadmin = subprocess.Popen(['trac-admin', trac_path, 'initenv', name, 'sqlite:db/trac.db', 'svn', svn_path],stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-		(stdoutdata, stderrdata) = tracadmin.communicate()
+	def trac_create(self,name,trac_path,svn_path,repo_description="Test Desc"):
+		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/trac-admin ' + trac_path + ' initenv ' + name + ' sqlite:db/trac.db svn ' + svn_path)
 
-        ## Handle errors
-		if tracadmin.returncode > 0:
-			print "Could not create trac instnace repository: " + str(tracadmin.returncode)
+		if rcode > 0:
+			print "Could not create trac instance: error code " + str(rcode)
 			print stdoutdata
 			print stderrdata
 			return False
 		else:
-			print "Created trac instance"
+			print "Created trac instance " + trac_path
+			
+			
+		## Open the config file
+		print str(os.path.join(trac_path,'conf','trac.ini'))
+		
+		config_path = os.path.join(trac_path,'conf','trac.ini')
+		
+		tconfig = ConfigParser.RawConfigParser()
+		tconfig.read(config_path)
+
+		## LOGO
+		tconfig.set('header_logo','src','https://www.southampton.ac.uk/images/bg_logo_small.png')
+		tconfig.set('header_logo','alt','Trac')
+		tconfig.set('header_logo','link','https://trac.soton.ac.uk/' + name + '/')
+		
+		## Enable SVN component
+		tconfig.add_section('components')
+		tconfig.set('components','tracopt.versioncontrol.svn.*','enabled')
+
+		## email notifications
+		tconfig.set('notification','always_notify_owner','true')
+		tconfig.set('notification','always_notify_reporter','true')
+		tconfig.set('notification','always_notify_updater','true')
+		tconfig.set('notification','smtp_default_domain','soton.ac.uk')
+		tconfig.set('notification','smtp_enabled','true')
+		tconfig.set('notification','smtp_from','noreply@soton.ac.uk')
+		tconfig.set('notification','smtp_replyto','noreply@soton.ac.uk')
+		
+		## other settings
+		tconfig.set('project','admin','noreply@soton.ac.uk')
+		tconfig.set('project','descr',repo_description)
+		
+		with open(config_path,'wb') as cfp:
+			tconfig.write(cfp)
+		
+	def trac_add_admin(self,trac_path,username):	
+		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/trac-admin ' + trac_path + ' permission add ' + username + ' TRAC_ADMIN')		
+
+		if rcode > 0:
+			print "Could not grant admin permission for user " + username + " on trac instance " + trac_path + ". Error code: " + str(rcode)
+			print stdoutdata
+			print stderrdata
+			return False
+		else:
+			print "Granted TRAC_ADMIN to " + username + " on instance " + trac_path
+			
+	def trac_remove_admin(self,trac_path,username):	
+		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/trac-admin ' + trac_path + ' permission remove ' + username + ' TRAC_ADMIN')		
+
+		if rcode > 0:
+			print "Could not remove admin permission for user " + username + " on trac instance " + trac_path + ". Error code: " + str(rcode)
+			print stdoutdata
+			print stderrdata
+			return False
+		else:
+			print "Revoked TRAC_ADMIN to " + username + " on instance " + trac_path
 			
 	def repo_create(self,name,src_type,web_type):
 		if not re.search(r'^[a-zA-Z0-9_\-]{3,50}$', name):
@@ -94,6 +152,7 @@ class TracKitDaemon(object):
 				return False
 				
 			result = self.trac_create(name,trac_path,svn_path)
+			self.trac_add_admin(trac_path,'db2z07')
 		
 
 def signal_handler_term(signal, frame):
@@ -112,6 +171,7 @@ if __name__ == "__main__":
 	signal.signal(signal.SIGTERM, signal_handler_term)
 	signal.signal(signal.SIGINT, signal_handler_int)
 	pyro_daemon = Pyro4.Daemon(host='localhost',port=18)
+	#pyro_daemon._pyroHmacKey = b"secretkey1234"
 	uri         = pyro_daemon.register(trackit,'trackit-daemon')
 	syslog.syslog('Reading to serve clients on URI: ' + str(uri))
 	pyro_daemon.requestLoop()

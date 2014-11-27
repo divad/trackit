@@ -1,20 +1,9 @@
-
-
-
-
-
-# trac locale
-
-
-
-
-
-instance usage/quotas
-#hooks?
-disable/enable repos 
-
-
-
+# trac locale (add to trac config file)
+# svn hook for email
+#instance usage/quotas
+#hooks? (samba)
+#disable/enable repos  (not in webapp...yet)
+# remove the old 'awaiting creation' crap
 
 
 CREATE REPO - nothing for svn. trac needs web server restart. :(
@@ -22,30 +11,17 @@ DELETE REPO - nothing for svn. trac needs web server restart.
 CHANGE REPO NOTIFY EMAIL - no restart needed. just 
 SET/UNSET AUTOVERSION - restart web server.
 
-add permission - no
+add permission
 change permission
 delete permission
 
 PYRO SERVER METHODS
-	create repo
-		create svn
-			svnadmin create
-			perms
-		create trac
-			trac-admin create
-			perms
-			call->trac_add_admin
-			setup default perms
-			trac ini stuff
-			trac perm file in apache config
-			
 	delete repo
 		delete stuff
 	
 	change repo settings
-		email hooks
+		email hook
 		autoversion :/
-		
 	
 	add permission
 		## if admin added, do admin add in trac
