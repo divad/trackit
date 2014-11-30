@@ -173,7 +173,8 @@ class TracKitDaemon(object):
 		repos = curd.fetchall()
 		
 		for repo in repos:
-			zconfig.add_section(repo['name'])
+			section_name = repo['name'] + ":/"
+			zconfig.add_section(section_name)
 			print "Processing repo " + repo['name']
 			curd.execute('SELECT * FROM `rules` WHERE `rid` = %s', (repo['id']))
 			rules = curd.fetchall()	
@@ -188,9 +189,9 @@ class TracKitDaemon(object):
 					continue
 					
 				if int(rule['src']) == 1:
-					zconfig.set(repo['name'],prefix + rule['name'],'r')
+					zconfig.set(section_name,prefix + rule['name'],'r')
 				elif int(rule['src']) == 2:
-					zconfig.set(repo['name'],prefix + rule['name'],'rw')
+					zconfig.set(section_name,prefix + rule['name'],'rw')
 		
 		with open('/tmp/authz_test','wb') as cfp:
 			zconfig.write(cfp)
