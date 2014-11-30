@@ -188,7 +188,7 @@ def team_view(name):
 					return(redirect(url_for('team_view',name=team['name'])))	
 				else:
 					flash('You must supply a username and an admin flag to add a new team member')
-					return(redirect(url_for('team_view',name=team['name'])))	
+					return(redirect(url_for('team_view',name=team['name'])))
 					
 			## Save settings
 			elif action == 'save':

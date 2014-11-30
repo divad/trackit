@@ -3,6 +3,7 @@
 #instance usage/quotas
 #hooks? (samba)
 #disable/enable repos  (not in webapp...yet)
+# svnautoversion
 # remove the old 'awaiting creation' crap
 
 

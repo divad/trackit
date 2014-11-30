@@ -24,12 +24,20 @@ import os
 import subprocess
 import re
 import ConfigParser
+import MySQLdb as mysql
 
-## should run as apache. then run sudo to do restart.
 
+SET_UID=48
+SET_GID=48
 SVN_ROOT  = '/data/svnroot/'
 TRAC_ROOT = '/data/tracroot/'
+SVN_AUTHZ_FILE = '/data/svn_authz_auth'
 VERSION = 0.1
+DB_SERV='mysql536.soton.ac.uk'
+DB_NAME='tracsvn'
+DB_USER='tracsvn'
+DB_PASS='zgg53v8Zu60W0hzy'
+DB_PORT='3306'
 
 Pyro4.config.SERVERTYPE = "multiplex"
 Pyro4.config.SOCK_REUSE = True
@@ -37,8 +45,17 @@ Pyro4.config.SOCK_REUSE = True
 class TracKitDaemon(object):
 
 	def __init__(self):
+		## Open syslog 
 		syslog.openlog("trackitd",syslog.LOG_PID)
 		syslog.syslog('Starting trackitd/' + str(VERSION))
+		
+	def db_connect(self):
+		## Connect to MySQL
+		self.db = mysql.connect(DB_SERV,DB_USER,DB_PASS,DB_NAME)
+		return self.db.cursor(mysql.cursors.DictCursor)
+		
+	def db_close(self):
+		self.db.close()
 		
 	def sysexec(self,command):
 		commands = command.split(' ')
@@ -66,7 +83,6 @@ class TracKitDaemon(object):
 			return False
 		else:
 			print "Created trac instance " + trac_path
-			
 			
 		## Open the config file
 		print str(os.path.join(trac_path,'conf','trac.ini'))
@@ -122,6 +138,67 @@ class TracKitDaemon(object):
 			return False
 		else:
 			print "Revoked TRAC_ADMIN to " + username + " on instance " + trac_path
+
+	def regenerate_authz_file(self):
+		## regenerate the entire authz file
+		zconfig = ConfigParser.RawConfigParser()
+		
+		
+		## Generate teams
+		zconfig.add_section('groups')
+		curd = self.db_connect()
+		curd.execute('SELECT * FROM `teams` ORDER BY `name`')
+		teams = curd.fetchall()
+		
+		for team in teams:
+			curd.execute('SELECT * FROM `team_members` WHERE `tid` = %s', (team['id']))
+			members = curd.fetchall()
+			
+			memberstr = ""
+			for member in members:
+				memberstr += " " + member['username'] + ","
+				
+			if memberstr.endswith(','):
+				## remove the trailing comma and starting space
+				memberstr = memberstr[1:-1]
+				zconfig.set('groups',team['name'],memberstr)
+				print "Wrote out team " + team['name']
+			else:
+				## no members
+				print "Team " + team['name'] + " has no members"
+				continue
+				
+		## Generate each repo rules
+		curd.execute('SELECT * FROM `repos`')
+		repos = curd.fetchall()
+		
+		for repo in repos:
+			zconfig.add_section(repo['name'])
+			print "Processing repo " + repo['name']
+			curd.execute('SELECT * FROM `rules` WHERE `rid` = %s', (repo['id']))
+			rules = curd.fetchall()	
+
+			for rule in rules:
+				print "found rule id " + str(rule['id'])
+				if rule['source'] == 'internal':
+					prefix = ""
+				elif rule['source'] == 'team':
+					prefix = "@"
+				else:
+					continue
+					
+				if int(rule['src']) == 1:
+					zconfig.set(repo['name'],prefix + rule['name'],'r')
+				elif int(rule['src']) == 2:
+					zconfig.set(repo['name'],prefix + rule['name'],'rw')
+		
+		with open('/tmp/authz_test','wb') as cfp:
+			zconfig.write(cfp)
+			
+		print "Wrote out new authz file"
+		
+		curd.close()
+		self.db_close()
 			
 	def repo_create(self,name,src_type,web_type):
 		if not re.search(r'^[a-zA-Z0-9_\-]{3,50}$', name):
@@ -132,7 +209,6 @@ class TracKitDaemon(object):
 		if not src_type == 'svn': 
 			## TODO bettar error
 			return False			
-			
 			
 		if src_type == 'svn': 
 			## Check svn folder does not exist
@@ -154,10 +230,10 @@ class TracKitDaemon(object):
 			result = self.trac_create(name,trac_path,svn_path)
 			self.trac_add_admin(trac_path,'db2z07')
 			
-		## re-generate authz file
+		self.regenerate_authz_file()
 		## generate file for the trac ldap auth 
-		## 
-		
+
+			
 
 def signal_handler_term(signal, frame):
 	signal_handler('SIGTERM')
@@ -172,8 +248,8 @@ def signal_handler(signal):
 
 if __name__ == "__main__":
 	## Drop privileges
-	os.setgid(48)
-	os.setuid(48)
+	os.setgid(SET_GID)
+	os.setuid(SET_UID)
 	
 	## Set up the daemon
 	trackit     = TracKitDaemon()
