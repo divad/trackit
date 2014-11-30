@@ -153,6 +153,10 @@ class TracKitDaemon(object):
 				
 			result = self.trac_create(name,trac_path,svn_path)
 			self.trac_add_admin(trac_path,'db2z07')
+			
+		## re-generate authz file
+		## generate file for the trac ldap auth 
+		## 
 		
 
 def signal_handler_term(signal, frame):
@@ -167,10 +171,15 @@ def signal_handler(signal):
 	sys.exit(0)
 
 if __name__ == "__main__":
+	## Drop privileges
+	os.setgid(48)
+	os.setuid(48)
+	
+	## Set up the daemon
 	trackit     = TracKitDaemon()
 	signal.signal(signal.SIGTERM, signal_handler_term)
 	signal.signal(signal.SIGINT, signal_handler_int)
-	pyro_daemon = Pyro4.Daemon(host='localhost',port=18)
+	pyro_daemon = Pyro4.Daemon(host='localhost',port=1888)
 	#pyro_daemon._pyroHmacKey = b"secretkey1234"
 	uri         = pyro_daemon.register(trackit,'trackit-daemon')
 	syslog.syslog('Reading to serve clients on URI: ' + str(uri))

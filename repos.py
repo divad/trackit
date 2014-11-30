@@ -454,7 +454,7 @@ def repo_view(name):
 
 	## POST (change settings or delete or add member or delete member)
 	else:
-		cur = g.db.cursor()	
+		cur = g.db.cursor()
 		
 		if 'action' in request.form:
 			action = request.form['action']
@@ -594,14 +594,14 @@ def repo_view(name):
 					elif source == 'adgroup':
 						## active directory group
 						## just...assume..its valid...
-						pass
+						## actually we need to look it up in LDAP to get the full DN :(
+						admin = 0
+						src = 0
 						
 					else:
 						flash('Invalid source','alert-danger')
 						return redirect(url_for('repo_view',name=repo['name']))	
-						
-					## TODO make sure rule for this source/name doesnt already exist
-					
+												
 					cur.execute('SELECT * FROM `rules` WHERE `source` = %s AND `name` = %s AND `rid` = %s', (source,name,repo['id']))
 					result = cur.fetchone()
 					if not result == None: 
@@ -631,8 +631,10 @@ def repo_view(name):
 					return(redirect(url_for('repo_view',name=repo['name'])))
 					
 				## Check that rule exists
-				cur.execute('SELECT 1 FROM `rules` WHERE `id` = %s;', (rid))
-				if cur.fetchone() is None:
+				curd = g.db.cursor(mysql.cursors.DictCursor)
+				curd.execute('SELECT * FROM `rules` WHERE `id` = %s;', (rid))
+				existing_rule = curd.fetchone()
+				if existing_rule is None:
 					flash('That rule has was not found', 'alert-danger')
 					return(redirect(url_for('repo_view',name=repo['name'])))			
 			
@@ -674,8 +676,11 @@ def repo_view(name):
 							had_error = 1
 							flash('Invalid admin flag', 'alert-danger')	
 					else:
-						admin = 0	
-
+						admin = 0
+						
+					if existing_rule['source'] == 'adgroup':
+						admin = 0
+						src = 0
 					
 					if not had_error:
 						cur.execute('UPDATE `rules` SET `src` = %s, `web` = %s, `admin` = %s WHERE id = %s', (src, web, admin, rid))

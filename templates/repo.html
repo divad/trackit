@@ -118,6 +118,7 @@ function selectSourceType(sourceType)
 		$('#add-title').text('Add account permission');
 		$('#ad-alert').addClass('hidden');
 		$('#admin-group').removeClass('hidden');
+		$('#src-control-select').removeClass('hidden');
 	}
 	else if (sourceType == 'team')
 	{
@@ -125,6 +126,7 @@ function selectSourceType(sourceType)
 		$('#add-title').text('Add team permission');
 		$('#ad-alert').addClass('hidden');
 		$('#admin-group').removeClass('hidden');
+		$('#src-control-select').removeClass('hidden');
 	}
 	else if (sourceType == 'adgroup')
 	{
@@ -132,6 +134,7 @@ function selectSourceType(sourceType)
 		$('#add-title').text('Add AD group permission');
 		$('#ad-alert').removeClass('hidden');
 		$('#admin-group').addClass('hidden');
+		$('#src-control-select').addClass('hidden');
 		
 	}
 		
@@ -178,7 +181,7 @@ function goBack()
 				</div>
 				<div class="modal-body" stlye="min-height: 200px">
 				
-					<div class="alert alert-danger hidden" role="alert" id="ad-alert"><strong>Warning!</strong> Granting permissions to active directory groups is <u>not recommended</u>. Admin rights cannot be granted to AD groups. Nested groups are not supported. Access over SVN+SSH is not supported. Git and Mercurial, though not yet available, are also not supported.</div>
+					<div class="alert alert-danger hidden" role="alert" id="ad-alert"><strong>Warning!</strong> Granting permissions to active directory groups is <u>not recommended</u>. Source code access (Subversion/Git/Mercurial) cannot be granted to such groups. Admin rights cannot be granted to such groups. Nested active directory groups are not (yet) supported.</div>
 
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 					<input type="hidden" name="action" value="addperm"/>
@@ -192,7 +195,7 @@ function goBack()
 						</div>
 					</div>
 					
-					<div class="form-group">
+					<div class="form-group" id="src-control-select">
 						<label class="col-lg-3 control-label">Source Control</label>
 						<div class="col-lg-9">							
 							<select name="src" class="form-control">
@@ -332,7 +335,7 @@ function goBack()
 						</div>
 					</div>
 					
-					<div class="form-group">
+					<div class="form-group" id="src_control_select_edit">
 						<label class="col-lg-3 control-label">Source Control</label>
 						<div class="col-lg-9">							
 							<select name="src" class="form-control" id="edit_perm_src">
@@ -357,7 +360,7 @@ function goBack()
 						
 					</div>
 					
-					<div class="form-group" id="admin_edit_group">
+					<div class="form-group" id="admin_group_edit">
 						<div class="col-lg-offset-3 col-lg-9">						
 							<label>
 							  <input name="admin" id="edit_perm_admin" type="checkbox" value="1"></input> Repository Administrator

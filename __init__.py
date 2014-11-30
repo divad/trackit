@@ -58,7 +58,7 @@ ADMIN_GROUP='sys'
 VERSION=0.1
 
 ## the trackitd pyro uri
-TRACKITD_URI="PYRO:trackit-daemon@localhost:18"
+TRACKITD_URI="PYRO:trackit-daemon@localhost:1888"
 
 ################################################################################
 
