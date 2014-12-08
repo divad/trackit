@@ -40,7 +40,7 @@
 					</div>
 					
 					<div class="form-group">
-						<label for="input_admin" class="col-lg-3 control-label">Visibility</label>
+						<label for="input_security" class="col-lg-3 control-label">Visibility</label>
 						<div class="col-lg-9">							
 							<select name="repo_security" class="form-control" id="input_security">
 								<option value="0"{% if repo.security == 0 %} selected="selected"{% endif %}>Private - Only visible to project members</option>
@@ -48,7 +48,20 @@
 								<option value="2"{% if repo.security == 2 %} selected="selected"{% endif %}>Public - Visible to anybody on the internet</option>
 							</select>
 
-							<span class="help-block">Who can see and logon to the public pages of the project
+							<span class="help-block">Who can see the project details on forge.soton.ac.uk
+							</span>
+						</div>
+					</div>
+					
+					<div class="form-group">
+						<label for="input_web_security" class="col-lg-3 control-label">Trac Security</label>
+						<div class="col-lg-9">							
+							<select name="repo_web_security" class="form-control" id="input_security">
+								<option value="0"{% if repo.web_security == 0 %} selected="selected"{% endif %}>Private - Users must have authenticated to access Trac</option>
+								<option value="1"{% if repo.web_security == 1 %} selected="selected"{% endif %}>Public - Users must only authenticate to make changes to Trac</option>
+							</select>
+
+							<span class="help-block">Do you need to logon to access the read-only parts of Trac?
 							</span>
 						</div>
 					</div>
@@ -445,6 +458,12 @@ function goBack()
 					<label class="col-sm-4 control-label bold-text">Visibility</label>
 					<div class="col-sm-8">
 						<p class="form-control-static">{{repo.visibility}}</p>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-4 control-label bold-text">Trac Security</label>
+					<div class="col-sm-8">
+						<p class="form-control-static">{{repo.web_security_str}}</p>
 					</div>
 				</div>
 			</form>

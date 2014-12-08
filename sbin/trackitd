@@ -151,12 +151,6 @@ class TracKitDaemon(object):
 ################################################################################	
 		
 	def trac_auth_config(self,name):
-	
-		## connect to db
-		## get repo from DB
-		## get all the users (select from rules)
-		## get all the teams, and explode to a users hash? (select from rules)
-			## select members from each team
 			
 		try:
 			

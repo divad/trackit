@@ -29,6 +29,9 @@ REPO_STATE = { 'REQUESTED': 0, 'ACTIVE': 1, 'SUSPEND_USER': 2, 'SUSPEND_ADMIN': 
 REPO_STATE_STR = { 0: 'Being created', 1: 'Active', 2: 'Suspended by repository admin', 3: 'Suspended by site administrator', 4: 'Scheduled for deletion' }
 REPO_SEC = { 'PRIVATE': 0, 'INTERNAL': 1, 'PUBLIC': 2 }
 REPO_SEC_STR = { 0: 'Private', 1: 'University only', 2: 'Public' }
+REPO_WEB_SEC = { 'PRIVATE': 0, 'PUBLIC': 1 }
+REPO_WEB_SEC_STR = { 0: 'Private', 1: 'Public' }
+
 
 ################################################################################
 
@@ -334,9 +337,10 @@ def get(value,selector='id'):
 	repo = curd.fetchone()
 
 	if repo is not None:
-		repo['link'] = url_for('repo_view', name = repo['name'])
-		repo['status'] = REPO_STATE_STR[repo['state']]
-		repo['visibility'] = REPO_SEC_STR[repo['security']]
+		repo['link']             = url_for('repo_view', name = repo['name'])
+		repo['status']           = REPO_STATE_STR[repo['state']]
+		repo['visibility']       = REPO_SEC_STR[repo['security']]
+		repo['web_security_str'] = REPO_WEB_SEC_STR[repo['web_security']]
 
 	return repo
 
@@ -483,6 +487,16 @@ def repo_view(name):
 					had_error = 1
 					flash("You must specify a repository security mode", 'alert-danger')
 					
+				if 'repo_web_security' in request.form:
+					repo_web_security = request.form['repo_web_security']
+
+					if not str(repo_web_security) in ['0','1']:
+						had_error = 1
+						flash('Invalid repository web security mode. Valid values are: 0 (private), 1 (public)', 'alert-danger')
+				else:
+					had_error = 1
+					flash("You must specify a repository web security mode", 'alert-danger')
+					
 				if repo['src_type'] == 'svn':
 				
 					if 'src_notify_email' in request.form:
@@ -507,7 +521,7 @@ def repo_view(name):
 							
 							
 					if not had_error:				
-						cur.execute('UPDATE `repos` SET `desc` = %s, `security` = %s, `src_notify_email` = %s, `autoversion` = %s WHERE `id` = %s', (repo_desc, repo_security, src_notify_email,repo_autoversion,repo['id']))
+						cur.execute('UPDATE `repos` SET `desc` = %s, `security` = %s, `web_security` = %s, `src_notify_email` = %s, `autoversion` = %s WHERE `id` = %s', (repo_desc, repo_security, repo_web_security, src_notify_email,repo_autoversion,repo['id']))
 						g.db.commit()
 						flash('Repository settings updated successfully', 'alert-success')
 						
