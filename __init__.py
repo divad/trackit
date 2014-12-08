@@ -59,6 +59,7 @@ VERSION=0.1
 
 ## the trackitd pyro uri
 TRACKITD_URI="PYRO:trackit-daemon@localhost:1888"
+TRACKITD_KEY="changeme"
 
 ################################################################################
 

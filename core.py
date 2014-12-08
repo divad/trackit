@@ -32,7 +32,9 @@ import re
 import Pyro4
 
 def trackitd_connect():
-	return Pyro4.Proxy(app.config['TRACKITD_URI'])
+	proxy = Pyro4.Proxy(app.config['TRACKITD_URI'])
+	proxy._pyroHmacKey = app.config['TRACKITD_KEY']
+	return proxy
 
 ################################################################################
 
