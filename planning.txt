@@ -1,18 +1,25 @@
 ## TODO
 
-# svn hook for email - trackitd will do this
-# instance usage/quotas
-# hooks? (samba) - trackitd will create a samba config file for each repo
+# add new web_mode flag to repo, if 'secure' then /inst is protected, otherwise just /inst/login
+
+# ldap group to DN in web app for AD groups :'( and do adgroup stuff in trac_auth_config
 # disable/enable repos  (not in webapp...yet)
 # svnautoversion
-# other auth types ("All university members", "public")...MAYBE
-# trackitd error checking, exception handling, error method back to caller
 # decide where the config files should be (trac ldap, authz file, etc.)
-# ldap group to DN in web app for AD groups :'(
-# httpd restart
-# add new web_mode flag to repo, if 'secure' then /inst is protected, otherwise just /inst/login
 # delete repos
 # hook in calls to trackitd on all trackitweb functions
+# trackitd error checking, exception handling, error method back to caller
+
+
+
+# svn hook for email - trackitd will do this
+# hooks? (samba) - trackitd will create a samba config file for each repo
+
+# other auth types ("All university members", "public")...MAYBE
+# instance usage/quotas
+
+
+
 
 CREATE REPO - nothing for svn. trac needs web server restart. :(
 DELETE REPO - nothing for svn. trac 

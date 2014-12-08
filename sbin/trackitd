@@ -131,7 +131,23 @@ class TracKitDaemon(object):
 			
 		## Create the auth file
 		self.trac_auth_config(name)
+		
+		## Restart httpd :(
+		self.server_graceful()
 
+################################################################################	
+		
+	def server_graceful(self):
+		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/sudo -n /usr/sbin/apachectl graceful')
+
+		if rcode > 0:
+			print "Could not graceful restart apache!" + str(rcode)
+			print stdoutdata
+			print stderrdata
+			return False
+		else:
+			print "Apache graceful restart successful"
+		
 ################################################################################	
 		
 	def trac_auth_config(self,name):
@@ -187,13 +203,18 @@ class TracKitDaemon(object):
 						
 						## TODO add AD GROUPS source
 
-
+						
+			location = "/trac/" + name 
+			
+			if repo['web_security'] == 1:
+				location = location + "/login"
+						
 			users_string = ""
 			for user in required_users:
 				users_string = users_string + user + " "
 		
 			f = open(os.path.join(TRAC_CONF_DIR, name + ".conf"), 'w')
-			f.write("""<Location /trac/%s>
+			f.write("""<Location %s>
 	AuthType Basic
 	AuthName "%s Trac Project"
 	AuthBasicProvider ldap
@@ -201,7 +222,7 @@ class TracKitDaemon(object):
 	Require ldap-user %s
 	</Location>
 	""" % (
-				name,
+				location,
 				name,
 				users_string,
 			))
