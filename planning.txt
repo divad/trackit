@@ -1,8 +1,5 @@
 ## TODO
 
-# add new web_mode flag to repo, if 'secure' then /inst is protected, otherwise just /inst/login
-
-# ldap group to DN in web app for AD groups :'( and do adgroup stuff in trac_auth_config
 # disable/enable repos  (not in webapp...yet)
 # svnautoversion
 # decide where the config files should be (trac ldap, authz file, etc.)

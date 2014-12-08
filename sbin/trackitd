@@ -26,20 +26,21 @@ import re
 import ConfigParser
 import MySQLdb as mysql
 import traceback # remove
+import ldap
 
-SECURITY_KEY = 'changeme'
-SET_UID=48
-SET_GID=48
-SVN_ROOT  = '/data/svnroot/'
-TRAC_ROOT = '/data/tracroot/'
-TRAC_CONF_DIR = '/data/trac.d'
+SECURITY_KEY   = 'changeme'
+SET_UID        = 48
+SET_GID        = 48
+SVN_ROOT       = '/data/svnroot/'
+TRAC_ROOT      = '/data/tracroot/'
+TRAC_CONF_DIR  = '/data/trac.d'
 SVN_AUTHZ_FILE = '/data/svn_authz_auth'
-VERSION = 0.2
-DB_SERV='mysql536.soton.ac.uk'
-DB_NAME='tracsvn'
-DB_USER='tracsvn'
-DB_PASS='zgg53v8Zu60W0hzy'
-DB_PORT='3306'
+VERSION        = 0.2
+DB_SERV        = 'mysql536.soton.ac.uk'
+DB_NAME        = 'tracsvn'
+DB_USER        = 'tracsvn'
+DB_PASS        = 'zgg53v8Zu60W0hzy'
+DB_PORT        = '3306'
 
 Pyro4.config.SERVERTYPE = "multiplex"
 Pyro4.config.SOCK_REUSE = True
@@ -162,6 +163,7 @@ class TracKitDaemon(object):
 				## create set
 				
 				required_users = set()
+				ldap_groups    = ""
 				
 				## get rules now
 				
@@ -194,9 +196,12 @@ class TracKitDaemon(object):
 								
 								for member in members:
 									required_users.add(member['username'])
-						
-						## TODO add AD GROUPS source
-
+									
+						elif rule['source'] == 'adgroup':
+							groupdn = self.ldap_get_group_dn(rule['name'])
+							
+							if not groupdn == None:
+								ldap_groups += "\nRequire ldap-group " + groupdn
 						
 			location = "/trac/" + name 
 			
@@ -214,11 +219,13 @@ class TracKitDaemon(object):
 	AuthBasicProvider ldap
 	AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn??
 	Require ldap-user %s
+	%s
 	</Location>
 	""" % (
 				location,
 				name,
 				users_string,
+				ldap_groups,
 			))
 		
 			f.close()
@@ -227,7 +234,25 @@ class TracKitDaemon(object):
 			traceback.print_exc()
 		
 		print "Wrote config file, maybe"
-			
+
+################################################################################
+
+	def ldap_get_group_dn(self,group_name):
+
+		ldapserver = ldap.initialize('ldaps://nlbldap.soton.ac.uk')
+		results = ldapserver.search_s("dc=soton,dc=ac,dc=uk", ldap.SCOPE_SUBTREE,"(cn=" + group_name +")")
+
+		for result in results:
+			dn    = result[0]
+			attrs = result[1]
+
+			if not dn == None:
+				if "member" in attrs:
+					return dn
+							
+		return None
+
+		
 ################################################################################	
 		
 	def trac_add_admin(self,trac_path,username):	

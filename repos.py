@@ -606,11 +606,12 @@ def repo_view(name):
 							return redirect(url_for('repo_view',name=repo['name']))					
 						
 					elif source == 'adgroup':
-						## active directory group
-						## just...assume..its valid...
-						## actually we need to look it up in LDAP to get the full DN :(
-						admin = 0
-						src = 0
+						if not trackit.core.ldap_check_group(name):
+							flash('I looked in Active Directory but could not find that group :(','alert-danger')
+							return redirect(url_for('repo_view',name=repo['name']))	
+						else:
+							admin = 0
+							src = 0
 						
 					else:
 						flash('Invalid source','alert-danger')

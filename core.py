@@ -30,6 +30,23 @@ import MySQLdb as mysql
 import datetime
 import re
 import Pyro4
+import ldap                   ## used in check_ldap_group
+
+################################################################################
+
+def ldap_check_group(group_name):
+	ldapserver = ldap.initialize('ldaps://nlbldap.soton.ac.uk')
+	results = ldapserver.search_s("dc=soton,dc=ac,dc=uk", ldap.SCOPE_SUBTREE,"(cn=" + group_name +")")
+
+	for result in results:
+		dn    = result[0]
+		attrs = result[1]
+
+		if not dn == None:
+			if "member" in attrs:
+				return True
+						
+	return False
 
 def trackitd_connect():
 	proxy = Pyro4.Proxy(app.config['TRACKITD_URI'])
