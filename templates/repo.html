@@ -3,14 +3,21 @@
 
 <div class="page-header">
 	{% if repo_admin %}
-	{% if repo.state != 4 %}
-	<div class="pull-right">
-  	<a href="" data-toggle="modal" data-target="#settings" class="btn btn-info" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Edit team settings"><i class="fa fa-fw fa-cog"></i><span class="hidden-xs"> Settings</span></a>		
-  	<a href="" data-toggle="modal" data-target="#delete" class="btn btn-danger" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Delete team"><i class="fa fa-fw fa-trash-o"></i><span class="hidden-xs"> Delete</span></a>		
-	</div>
-	{% else %}
-	<div class="alert alert-danger pull-right" role="alert"><i class="fa fa-fw fa-spin fa-cog"></i> This repository is being deleted</div>
-	{% endif %}
+		{% if repo.state > 0 %}
+			<div class="pull-right">
+			{% if global_admin %}
+				{% if repo.state == 1 %}
+					<a href="" data-toggle="modal" data-target="#suspend" class="btn btn-warning" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Suspend"><i class="fa fa-fw fa-pause"></i><span class="hidden-xs"> Suspend</span></a>		
+				{% elif repo.state == 2 %}
+					<a href="" data-toggle="modal" data-target="#enable" class="btn btn-success" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Enable"><i class="fa fa-fw fa-play"></i><span class="hidden-xs"> Enable</span></a>		
+				{% endif %}
+			{% endif %}
+			<a href="" data-toggle="modal" data-target="#settings" class="btn btn-info" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Edit team settings"><i class="fa fa-fw fa-cog"></i><span class="hidden-xs"> Settings</span></a>		
+			<a href="" data-toggle="modal" data-target="#delete" class="btn btn-danger" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Delete team"><i class="fa fa-fw fa-trash-o"></i><span class="hidden-xs"> Delete</span></a>		
+			</div>
+		{% else %}
+			<div class="alert alert-danger pull-right" role="alert"><i class="fa fa-fw fa-spin fa-cog"></i> This repository has not yet been created</div>
+		{% endif %}
 	{% endif %}
 	<h1><span class="fa-stack">
   <i class="fa fa-square fa-stack-2x"></i>
@@ -98,6 +105,56 @@
 		</div>
 	</div>
 </div>
+
+{% if repo.state == 1 %}
+<div class="modal fade" id="suspend">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">Suspend repository</h4>
+			</div>
+			<form class="form-horizontal" role="form" method="POST">
+				<div class="modal-body">
+					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+					<input type="hidden" name="action" value="suspend"/>
+
+					<p>Are you sure you want to suspend this repository?</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<button type="submit" class="btn btn-primary">Suspend</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+{% endif %}
+
+{% if repo.state == 2 %}
+<div class="modal fade" id="enable">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">Enable repository</h4>
+			</div>
+			<form class="form-horizontal" role="form" method="POST">
+				<div class="modal-body">
+					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+					<input type="hidden" name="action" value="enable"/>
+
+					<p>Are you sure you want to enable this repository?</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<button type="submit" class="btn btn-primary">Enable</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+{% endif %}
 
 <div class="modal fade" id="delete">
 	<div class="modal-dialog">

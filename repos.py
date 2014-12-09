@@ -24,14 +24,12 @@ import MySQLdb as mysql
 import math
 import Pyro4
 
-
-REPO_STATE = { 'REQUESTED': 0, 'ACTIVE': 1, 'SUSPEND_USER': 2, 'SUSPEND_ADMIN': 3, 'DELETE': 4 }
-REPO_STATE_STR = { 0: 'Being created', 1: 'Active', 2: 'Suspended by repository admin', 3: 'Suspended by site administrator', 4: 'Scheduled for deletion' }
-REPO_SEC = { 'PRIVATE': 0, 'INTERNAL': 1, 'PUBLIC': 2 }
-REPO_SEC_STR = { 0: 'Private', 1: 'University only', 2: 'Public' }
-REPO_WEB_SEC = { 'PRIVATE': 0, 'PUBLIC': 1 }
+REPO_STATE       = { 'REQUESTED': 0, 'ACTIVE': 1, 'SUSPEND': 2, 'DELETE': 3 }
+REPO_STATE_STR   = { 0: 'Being created', 1: 'Active', 2: 'Suspended', 3: 'Scheduled for deletion' }
+REPO_SEC         = { 'PRIVATE': 0, 'INTERNAL': 1, 'PUBLIC': 2 }
+REPO_SEC_STR     = { 0: 'Private', 1: 'University only', 2: 'Public' }
+REPO_WEB_SEC     = { 'PRIVATE': 0, 'PUBLIC': 1 }
 REPO_WEB_SEC_STR = { 0: 'Private', 1: 'Public' }
-
 
 ################################################################################
 
@@ -297,10 +295,6 @@ def repo_create():
 				repo_security=repo_security,
 				teams=teams,
 			)
-			
-		# Ask trackitd to create the repository 
-		trackitd = trackit.core.trackitd_connect()
-		trackitd.repo_create(repo_name,'svn','trac')
 		
 		# CREATE THE REPOSITORY
 		cur.execute('''INSERT INTO `repos` 
@@ -321,7 +315,17 @@ def repo_create():
 		g.db.commit()
 		
 		## what should the team default permission be? Why are repos grouped to a team? argh! Team repos could be calculated from 'rules' instead?
-	
+
+		# Ask trackitd to create the repository 
+		trackitd = trackit.core.trackitd_connect()
+		result = trackitd.repo_create(repo_name,repo_src_type,repo_web_type,session['username'])
+		
+		## todo check result
+		
+		## Mark repo as activated 
+		cur.execute("UPDATE `repos` SET `state` = %s WHERE `id` = %s",(REPO_STATE['ACTIVE'],rid))
+		g.db.commit()	
+		
 		# Notify that we've succeeded
 		flash('Repository successfully created', 'alert-success')
 
@@ -454,7 +458,7 @@ def repo_view(name):
 	
 	## GET (view) requests
 	if request.method == 'GET':
-		return render_template('repo.html',repo=repo,team=team,repo_admin=repo_admin,repo_member=repo_member,perms=perms,active='repos')
+		return render_template('repo.html',repo=repo,team=team,repo_admin=repo_admin,repo_member=repo_member,perms=perms,active='repos',global_admin=trackit.user.is_global_admin())
 
 	## POST (change settings or delete or add member or delete member)
 	else:
@@ -529,6 +533,26 @@ def repo_view(name):
 
 				else:
 					abort(501)
+					
+			## TODO - actually suspend/eanble by calling trackitd
+					
+			elif action == 'suspend':
+				if trackit.user.is_global_admin():
+					cur.execute('UPDATE `repos` SET `state` = %s WHERE `id` = %s', (REPO_STATE['SUSPEND'], repo['id']))
+					g.db.commit()
+					flash('Repository suspended', 'alert-success')
+					return redirect(url_for('repo_view',name=repo['name']))
+				else:
+					abort(403)
+					
+			elif action == 'enable':
+				if trackit.user.is_global_admin():
+					cur.execute('UPDATE `repos` SET `state` = %s WHERE `id` = %s', (REPO_STATE['ACTIVE'], repo['id']))
+					g.db.commit()
+					flash('Repository enabled', 'alert-success')
+					return redirect(url_for('repo_view',name=repo['name']))
+				else:
+					abort(403)
 
 			elif action == 'delete':
 				cur.execute('UPDATE `repos` SET `state` = %s WHERE `id` = %s', (REPO_STATE['DELETE'], repo['id']))

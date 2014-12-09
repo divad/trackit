@@ -211,6 +211,9 @@ class TracKitDaemon(object):
 			users_string = ""
 			for user in required_users:
 				users_string = users_string + user + " "
+				
+			if len(users_string) > 0:
+				users_string = "Require ldap-user " + users_string
 		
 			f = open(os.path.join(TRAC_CONF_DIR, name + ".conf"), 'w')
 			f.write("""<Location %s>
@@ -218,7 +221,7 @@ class TracKitDaemon(object):
 	AuthName "%s Trac Project"
 	AuthBasicProvider ldap
 	AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn??
-	Require ldap-user %s
+	%s
 	%s
 	</Location>
 	""" % (
@@ -346,7 +349,7 @@ class TracKitDaemon(object):
 ################################################################################
 
 			
-	def repo_create(self,name,src_type,web_type):
+	def repo_create(self,name,src_type,web_type,initial_admin):
 		if not re.search(r'^[a-zA-Z0-9_\-]{3,50}$', name):
 			## TODO bettar error
 			return False
@@ -374,7 +377,7 @@ class TracKitDaemon(object):
 				return False
 				
 			result = self.trac_create(name,trac_path,svn_path)
-			self.trac_add_admin(trac_path,'db2z07')
+			self.trac_add_admin(trac_path,initial_admin)
 			
 		self.regenerate_authz_file()
 

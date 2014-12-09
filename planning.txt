@@ -1,13 +1,14 @@
 ## TODO
 
-# disable/enable repos  (not in webapp...yet)
 # svnautoversion
 # decide where the config files should be (trac ldap, authz file, etc.)
 # delete repos
 # hook in calls to trackitd on all trackitweb functions
 # trackitd error checking, exception handling, error method back to caller
 
+# trac admin changes hook in web app
 
+# how to suspend??
 
 # svn hook for email - trackitd will do this
 # hooks? (samba) - trackitd will create a samba config file for each repo
