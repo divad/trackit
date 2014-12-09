@@ -1,7 +1,5 @@
 ## TODO
 
-# svnautoversion
-# decide where the config files should be (trac ldap, authz file, etc.)
 # delete repos
 # hook in calls to trackitd on all trackitweb functions
 # trackitd error checking, exception handling, error method back to caller
@@ -24,40 +22,3 @@ DELETE REPO - nothing for svn. trac
 needs web server restart.
 CHANGE REPO NOTIFY EMAIL - no restart needed. just 
 SET/UNSET AUTOVERSION - restart web server.
-
-add permission
-change permission
-delete permission
-
-PYRO SERVER METHODS
-	delete repo
-		delete stuff
-	
-	change repo settings
-		email hook
-		autoversion :/
-	
-	add permission
-		## if admin added, do admin add in trac
-		rebuild svn authz
-		rebuild_trac_auth and restart web server
-	change permission
-		## if admin added, do admin add in trac
-		## if admin removed, do admin remove in trac
-		rebuild svn authz
-		rebuild trac authz
-		restart
-	delete permission
-		rebuild svn authz
-		rebuild trac authz
-		delete trac admin status, if any
-		restart
-	
-	
-	rebuild_svn_authz 
-	rebuild_trac_auth (repo=None)
-	
-	trac_add_admin
-	trac_remove_admin
-	
-	graceful_restart

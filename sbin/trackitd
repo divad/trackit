@@ -33,9 +33,9 @@ SET_UID        = 48
 SET_GID        = 48
 SVN_ROOT       = '/data/svnroot/'
 TRAC_ROOT      = '/data/tracroot/'
-TRAC_CONF_DIR  = '/data/trac.d'
-SVN_AUTHZ_FILE = '/data/svn_authz_auth'
-VERSION        = 0.2
+TRAC_CONF_DIR  = '/data/httpd/trac.conf.d'
+SVN_AUTHZ_FILE = '/data/httpd/svn_authz_file'
+VERSION        = 0.3
 DB_SERV        = 'mysql536.soton.ac.uk'
 DB_NAME        = 'tracsvn'
 DB_USER        = 'tracsvn'
@@ -129,6 +129,8 @@ class TracKitDaemon(object):
 		
 		with open(config_path,'wb') as cfp:
 			tconfig.write(cfp)
+			tconfig.flush()
+			os.fsync(tconfig.fileno())
 			
 		## Create the auth file
 		self.trac_auth_config(name)
@@ -201,7 +203,7 @@ class TracKitDaemon(object):
 							groupdn = self.ldap_get_group_dn(rule['name'])
 							
 							if not groupdn == None:
-								ldap_groups += "\nRequire ldap-group " + groupdn
+								ldap_groups += "\n\tRequire ldap-group " + groupdn
 						
 			location = "/trac/" + name 
 			
@@ -213,16 +215,14 @@ class TracKitDaemon(object):
 				users_string = users_string + user + " "
 				
 			if len(users_string) > 0:
-				users_string = "Require ldap-user " + users_string
+				users_string = "\n\tRequire ldap-user " + users_string
 		
 			f = open(os.path.join(TRAC_CONF_DIR, name + ".conf"), 'w')
 			f.write("""<Location %s>
 	AuthType Basic
 	AuthName "%s Trac Project"
 	AuthBasicProvider ldap
-	AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn??
-	%s
-	%s
+	AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s
 	</Location>
 	""" % (
 				location,
@@ -230,6 +230,9 @@ class TracKitDaemon(object):
 				users_string,
 				ldap_groups,
 			))
+			
+			f.flush()
+			os.fsync(f.fileno())
 		
 			f.close()
 		except Exception as ex:
@@ -338,8 +341,10 @@ class TracKitDaemon(object):
 				elif int(rule['src']) == 2:
 					zconfig.set(section_name,prefix + rule['name'],'rw')
 		
-		with open('/tmp/authz_test','wb') as cfp:
+		with open(SVN_AUTHZ_FILE,'wb') as cfp:
 			zconfig.write(cfp)
+			cfp.flush()
+			os.fsync(cfp.fileno())
 			
 		print "Wrote out new authz file"
 		
