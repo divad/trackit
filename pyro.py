@@ -2,10 +2,10 @@
 import Pyro4
 
 svr=Pyro4.Proxy('PYRO:trackit-daemon@localhost:1888')  
-svr._pyroHmacKey = "changeme"
+svr._pyroHmacKey = "askgjio32904234kjsdflkjsfd09210jlkasd"
 print svr.trac_auth_config('tux2')
-print svr.trac_auth_config('apache')
-print svr.regenerate_authz_file()
+#print svr.trac_auth_config('apache')
+#print svr.regenerate_authz_file()
 
 
 print svr.server_graceful()

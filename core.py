@@ -35,8 +35,8 @@ import ldap                   ## used in check_ldap_group
 ################################################################################
 
 def ldap_check_group(group_name):
-	ldapserver = ldap.initialize('ldaps://nlbldap.soton.ac.uk')
-	results = ldapserver.search_s("dc=soton,dc=ac,dc=uk", ldap.SCOPE_SUBTREE,"(cn=" + group_name +")")
+	ldapserver = ldap.initialize(app.config['LDAP_SERVER'])
+	results = ldapserver.search_s(app.config['LDAP_BASE'], ldap.SCOPE_SUBTREE,"(cn=" + group_name +")")
 
 	for result in results:
 		dn    = result[0]

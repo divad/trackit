@@ -27,20 +27,10 @@ import ConfigParser
 import MySQLdb as mysql
 import traceback # remove
 import ldap
+import imp
 
-SECURITY_KEY   = 'changeme'
-SET_UID        = 48
-SET_GID        = 48
-SVN_ROOT       = '/data/svnroot/'
-TRAC_ROOT      = '/data/tracroot/'
-TRAC_CONF_DIR  = '/data/httpd/trac.conf.d'
-SVN_AUTHZ_FILE = '/data/httpd/svn_authz_file'
+TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
 VERSION        = 0.3
-DB_SERV        = 'mysql536.soton.ac.uk'
-DB_NAME        = 'tracsvn'
-DB_USER        = 'tracsvn'
-DB_PASS        = 'zgg53v8Zu60W0hzy'
-DB_PORT        = '3306'
 
 Pyro4.config.SERVERTYPE = "multiplex"
 Pyro4.config.SOCK_REUSE = True
@@ -56,8 +46,24 @@ class TracKitDaemon(object):
 		
 	def db_connect(self):
 		## Connect to MySQL
-		self.db = mysql.connect(DB_SERV,DB_USER,DB_PASS,DB_NAME)
+		self.db = mysql.connect(self.config['DB_SERV'],self.config['DB_USER'],self.config['DB_PASS'],self.config['DB_NAME'])
 		return self.db.cursor(mysql.cursors.DictCursor)
+		
+	def load_config(self, filename):
+		d = imp.new_module('config')
+		d.__file__ = filename
+		try:
+			with open(filename) as config_file:
+				exec(compile(config_file.read(), filename, 'exec'), d.__dict__)
+		except IOError as e:
+			syslog.syslog('Unable to load configuration file (%s)' % e.strerror)
+			sys.exit(1)
+		self.config = {}
+		for key in dir(d):
+			if key.isupper():
+				self.config[key] = getattr(d, key)
+				
+		return True
 
 ################################################################################
 		
@@ -129,8 +135,8 @@ class TracKitDaemon(object):
 		
 		with open(config_path,'wb') as cfp:
 			tconfig.write(cfp)
-			tconfig.flush()
-			os.fsync(tconfig.fileno())
+			cfp.flush()
+			os.fsync(cfp.fileno())
 			
 		## Create the auth file
 		self.trac_auth_config(name)
@@ -166,6 +172,8 @@ class TracKitDaemon(object):
 				
 				required_users = set()
 				ldap_groups    = ""
+				teamauthz_required = False
+				teamauthz_string = ""
 				
 				## get rules now
 				
@@ -192,12 +200,8 @@ class TracKitDaemon(object):
 							team = curd.fetchone()
 							
 							if not team == None:
-								## get members 
-								curd.execute('SELECT * FROM `team_members` WHERE `tid` = %s', (team['id']))
-								members = curd.fetchall()
-								
-								for member in members:
-									required_users.add(member['username'])
+								teamauthz_required = True
+								teamauthz_string += "\n\tRequire group " + team['name']
 									
 						elif rule['source'] == 'adgroup':
 							groupdn = self.ldap_get_group_dn(rule['name'])
@@ -216,17 +220,21 @@ class TracKitDaemon(object):
 				
 			if len(users_string) > 0:
 				users_string = "\n\tRequire ldap-user " + users_string
+				
+			if teamauthz_required:
+				teamauthz_string = "\n\tWSGIAuthGroupScript /data/trackit/trackit/teamauthz.wsgi" + teamauthz_string
 		
-			f = open(os.path.join(TRAC_CONF_DIR, name + ".conf"), 'w')
+			f = open(os.path.join(self.config['TRAC_CONF_DIR'], name + ".conf"), 'w')
 			f.write("""<Location %s>
 	AuthType Basic
 	AuthName "%s Trac Project"
 	AuthBasicProvider ldap
-	AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s
+	AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 	</Location>
 	""" % (
 				location,
 				name,
+				teamauthz_string,
 				users_string,
 				ldap_groups,
 			))
@@ -245,8 +253,8 @@ class TracKitDaemon(object):
 
 	def ldap_get_group_dn(self,group_name):
 
-		ldapserver = ldap.initialize('ldaps://nlbldap.soton.ac.uk')
-		results = ldapserver.search_s("dc=soton,dc=ac,dc=uk", ldap.SCOPE_SUBTREE,"(cn=" + group_name +")")
+		ldapserver = ldap.initialize(self.config['LDAP_SERVER'])
+		results = ldapserver.search_s(self.config['LDAP_BASE'], ldap.SCOPE_SUBTREE,"(cn=" + group_name +")")
 
 		for result in results:
 			dn    = result[0]
@@ -341,7 +349,7 @@ class TracKitDaemon(object):
 				elif int(rule['src']) == 2:
 					zconfig.set(section_name,prefix + rule['name'],'rw')
 		
-		with open(SVN_AUTHZ_FILE,'wb') as cfp:
+		with open(self.config['SVN_AUTHZ_FILE'],'wb') as cfp:
 			zconfig.write(cfp)
 			cfp.flush()
 			os.fsync(cfp.fileno())
@@ -366,7 +374,7 @@ class TracKitDaemon(object):
 			
 		if src_type == 'svn': 
 			## Check svn folder does not exist
-			svn_path = os.path.join(SVN_ROOT,name)
+			svn_path = os.path.join(self.config['SVN_ROOT'],name)
 			if os.path.lexists(name):
 				## TODO bettar errors
 				return False
@@ -376,7 +384,7 @@ class TracKitDaemon(object):
 		if web_type == 'trac':
 
 			## Check trac folder does not exist
-			trac_path = os.path.join(TRAC_ROOT,name)
+			trac_path = os.path.join(self.config['TRAC_ROOT'],name)
 			if os.path.lexists(name):
 				## TODO bettar errors
 				return False
@@ -386,6 +394,32 @@ class TracKitDaemon(object):
 			
 		self.regenerate_authz_file()
 
+
+	def repo_suspend(self,name):
+		return True
+		
+	def repo_enable(self,name):
+		return True
+		
+	def repo_delete(self,name):
+		return True
+		
+	def repo_update_rules(self,name):
+		## will cause apache restart if repo has trac ?
+		return True
+		
+	def repo_update_web_security(self,name):
+		## restat apache graceful
+		return True
+	
+	def repo_update_src_notify_email(self,name):
+		## no need to restart
+		return True
+		
+	def repo_update_src_autoversion(self,name):
+		## probably need to restart apache graceful
+		return True
+		
 ################################################################################
 
 def signal_handler_term(signal, frame):
@@ -405,17 +439,19 @@ def signal_handler(signal):
 
 ################################################################################
 	
-if __name__ == "__main__":
-	## Drop privileges
-	os.setgid(SET_GID)
-	os.setuid(SET_UID)
-	
+if __name__ == "__main__":	
 	## Set up the daemon
 	trackit     = TracKitDaemon()
+	trackit.load_config(TRACKIT_CONFIG_FILE)
+
+	## Drop privileges
+	os.setgid(trackit.config['TRACKITD_SET_GID'])
+	os.setuid(trackit.config['TRACKITD_SET_UID'])
+	
 	signal.signal(signal.SIGTERM, signal_handler_term)
 	signal.signal(signal.SIGINT, signal_handler_int)
 	pyro_daemon = Pyro4.Daemon(host='localhost',port=1888)
-	pyro_daemon._pyroHmacKey = SECURITY_KEY
+	pyro_daemon._pyroHmacKey = trackit.config['TRACKITD_KEY']
 	uri         = pyro_daemon.register(trackit,'trackit-daemon')
 	syslog.syslog('Ready to serve clients on URI: ' + str(uri))
 	pyro_daemon.requestLoop()

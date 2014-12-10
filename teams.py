@@ -158,7 +158,12 @@ def team_view(name):
 				## TODO why isn't this on delete cascade in MySQL???
 				cur.execute('DELETE FROM `team_members` WHERE `tid` = %s', (team['id']))
 				cur.execute('DELETE FROM `teams` WHERE `id` = %s', (team['id']))
+				cur.execute("DELETE FROM `rules` WHERE `source` = 'team' AND `name` = %s",(team['name']))
 				g.db.commit()
+				
+				## rebuild authz file 
+				## update groupdb or rebuild every single trac auth file
+				
 				flash('Team successfully deleted', 'alert-success')
 				return(redirect(url_for('team_list_mine')))
 			
@@ -181,6 +186,8 @@ def team_view(name):
 						if member == None:
 							cur.execute('INSERT INTO `team_members` (tid,username,admin) VALUES (%s, %s,%s)', (team['id'],username,admin))
 							g.db.commit()
+				## rebuild authz file 
+				## update groupdb or rebuild every single trac auth file
 							flash('Team member added', 'alert-success')
 						else:
 							flash('That person is already a team member','alert-danger')

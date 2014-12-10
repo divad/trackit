@@ -524,7 +524,12 @@ def repo_view(name):
 							flash('Invalid autoversion flag. Valid values are: 0 (off) and 1 (on)', 'alert-danger')
 							
 							
-					if not had_error:				
+					if not had_error:
+							
+						## TODO
+						## Check if things have changed
+						## If so do each update by calling trackitd and then sql.
+						
 						cur.execute('UPDATE `repos` SET `desc` = %s, `security` = %s, `web_security` = %s, `src_notify_email` = %s, `autoversion` = %s WHERE `id` = %s', (repo_desc, repo_security, repo_web_security, src_notify_email,repo_autoversion,repo['id']))
 						g.db.commit()
 						flash('Repository settings updated successfully', 'alert-success')
@@ -534,7 +539,7 @@ def repo_view(name):
 				else:
 					abort(501)
 					
-			## TODO - actually suspend/eanble by calling trackitd
+			## TODO - actually suspend/eanble/delete by calling trackitd
 					
 			elif action == 'suspend':
 				if trackit.user.is_global_admin():
@@ -654,6 +659,10 @@ def repo_view(name):
 
 					# Commit changes to the database
 					g.db.commit()
+					
+					## TODO rebuild permissions for this repo 
+					## trackitd.repo_update_rules(repo['name'])
+					## trackitd.repo_add_admin(repo['name'],username) (only if 'admin' is yes) 
 
 					# Notify that we've succeeded
 					flash('Permission added', 'alert-success')
@@ -682,6 +691,11 @@ def repo_view(name):
 				if submit == 'Remove':
 					cur.execute('DELETE FROM `rules` WHERE id = %s', (rid))
 					g.db.commit()
+					
+						## TODO rebuild permissions for this repo 
+						## trackitd.repo_update_rules(repo['name'])
+						## trackitd.repo_add_admin / repo_remove_admin (repo['name'],username) - only if admin has changed
+					
 					flash('Removed permission rule', 'alert-success')
 					return(redirect(url_for('repo_view',name=repo['name'])))	
 					
@@ -724,6 +738,11 @@ def repo_view(name):
 					if not had_error:
 						cur.execute('UPDATE `rules` SET `src` = %s, `web` = %s, `admin` = %s WHERE id = %s', (src, web, admin, rid))
 						g.db.commit()
+						
+						## TODO rebuild permissions for this repo 
+						## trackitd.repo_update_rules(repo['name'])
+						## trackitd.repo_add_admin / repo_remove_admin (repo['name'],username) - only if admin has changed
+						
 						flash('Permission rule updated', 'alert-success')
 						
 					return(redirect(url_for('repo_view',name=repo['name'])))

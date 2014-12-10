@@ -61,6 +61,9 @@ VERSION=0.1
 TRACKITD_URI="PYRO:trackit-daemon@localhost:1888"
 TRACKITD_KEY="changeme"
 
+LDAP_SERVER="ldap://localhost"
+LDAP_BASE=""
+
 ################################################################################
 
 
