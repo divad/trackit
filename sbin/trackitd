@@ -444,7 +444,7 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 	def repo_update_rules(self,name):
 		if DEBUG: syslog.syslog('method repo_update_rules called')
 
-		try:
+		try:		
 			self.regenerate_authz_file()
 			self.trac_auth_config(name)
 			self.server_graceful()
@@ -477,6 +477,42 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 		if DEBUG: syslog.syslog('method repo_update_autoversion called')
 			
 		## probably need to restart apache graceful
+		return True,""
+		
+	def team_delete_update(self):
+		if DEBUG: syslog.syslog('method team_delete_update called')
+		
+		try:
+			self.regenerate_authz_file()
+			
+			## TODO consider being smarter about this. Only regenerate repos which ever referenced this team?
+			## would mean doing the SQL delete after htis call instead of doing it first as now.
+			
+			curd = self.db_connect()
+			curd.execute('SELECT * FROM `repos` WHERE `state` = 1')
+			repos = curd.fetchall()
+			
+			for repo in repos:
+				self.trac_auth_config(repo['name'])
+			
+			self.server_graceful()
+			self.db_close()
+
+		except Exception as ex:
+			syslog.syslog('Unable to process team deletion update:' + str(ex))
+			return False,"Failed to update rules after team delete. The error was: " + str(ex)				
+		
+		return True,""
+		
+	def team_members_updated(self):
+		if DEBUG: syslog.syslog('method team_members_updated called')
+		
+		try:
+			self.regenerate_authz_file()
+		except Exception as ex:
+			syslog.syslog('Unable to process team members update:' + str(ex))
+			return False,"Failed to update rules after team members update. The error was: " + str(ex)				
+		
 		return True,""
 		
 ################################################################################

@@ -61,7 +61,8 @@ def get(value,selector='id'):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT * FROM `teams` WHERE `' + selector + '` = %s', (value))
 	team = curd.fetchone()
-	team['link'] = url_for('team_view', name = team['name'])
+	if team != None:
+		team['link'] = url_for('team_view', name = team['name'])
 	return team
 
 ################################################################################
@@ -144,6 +145,7 @@ def team_view(name):
 	## POST (change settings or delete or add member or delete member)
 	else:
 		cur = g.db.cursor()
+		trackitd = trackit.core.trackitd_connect()
 		
 		if not team_admin:
 			flash('You must be a team administrator to alter this team','alert-danger')
@@ -161,8 +163,12 @@ def team_view(name):
 				cur.execute("DELETE FROM `rules` WHERE `source` = 'team' AND `name` = %s",(team['name']))
 				g.db.commit()
 				
-				## rebuild authz file 
-				## update groupdb or rebuild every single trac auth file
+				## Now call trackitd to rebuild rules
+				result, error_string = trackitd.team_delete_update()
+	
+				if result == False:
+					flash('An internal error occured when rebuilding permission rules: ' + str(error_string), 'alert-danger')
+					return(redirect(url_for('team_list_mine')))
 				
 				flash('Team successfully deleted', 'alert-success')
 				return(redirect(url_for('team_list_mine')))
@@ -186,8 +192,13 @@ def team_view(name):
 						if member == None:
 							cur.execute('INSERT INTO `team_members` (tid,username,admin) VALUES (%s, %s,%s)', (team['id'],username,admin))
 							g.db.commit()
-				## rebuild authz file 
-				## update groupdb or rebuild every single trac auth file
+
+							result, error_string = trackitd.team_members_updated()
+				
+							if result == False:
+								flash('An internal error occured when rebuilding team member permission rules: ' + str(error_string), 'alert-danger')
+								return(redirect(url_for('team_view',name=team['name'])))
+							
 							flash('Team member added', 'alert-success')
 						else:
 							flash('That person is already a team member','alert-danger')
@@ -244,6 +255,12 @@ def team_view(name):
 								flash('Team member details saved', 'alert-success')
 							else:
 								flash('Unknown action','alert-danger')
+								
+							result, error_string = trackitd.team_members_updated()
+				
+							if result == False:
+								flash('An internal error occured when rebuilding team member permission rules: ' + str(error_string), 'alert-danger')
+								return(redirect(url_for('team_view',name=team['name'])))
 					
 					return(redirect(url_for('team_view',name=team['name'])))	
 				else:

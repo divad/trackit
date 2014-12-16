@@ -1,27 +1,16 @@
 ## TODO
 
 # hook in calls to trackitd on all trackitweb functions
-# trac admin changes hook in web app
-# delete repos
 
 
-# how to suspend??
-
-# svn hook for email - trackitd will do this
-# hooks? (samba) - trackitd will create a samba config file for each repo
+# Decide how to delete a repo
+# Decide how to suspend a repo
+# Decide how to do SVN email hook 
+# Samba hook dir sharing (trackitd)
+# teams stuff (repo member of a team)
+# Deal with repos without trac (most of the code assumes 'yes' without checking)
+# SVN autoversioning
 
 # other auth types ("All university members", "public")...MAYBE
 # instance usage/quotas
 
-# teams stuff (repo member of a team)
-
-# enable trac by default? if not... need to be able to add it later
-
-
-
-
-CREATE REPO - nothing for svn. trac needs web server restart. :(
-DELETE REPO - nothing for svn. trac 
-needs web server restart.
-CHANGE REPO NOTIFY EMAIL - no restart needed. just 
-SET/UNSET AUTOVERSION - restart web server.
