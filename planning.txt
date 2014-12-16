@@ -1,8 +1,5 @@
 ## TODO
 
-# hook in calls to trackitd on all trackitweb functions
-
-
 # Decide how to delete a repo
 # Decide how to suspend a repo
 # Decide how to do SVN email hook 
