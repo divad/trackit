@@ -263,18 +263,6 @@ def repo_create():
 			repo_src_type = 'trac'
 			flash("You must specify a repository web tool type", 'alert-danger')
 
-		## SECURITY MODE
-		if 'repo_security' in request.form:
-			repo_security = request.form['repo_security']
-
-			if not str(repo_security) in ['0','1','2']:
-				had_error = 1
-				flash('Invalid repository security mode. Valid values are: 0 (private), 1 (domain) or 2 (public)', 'alert-danger')
-		else:
-			had_error = 1
-			repo_security = 0
-			flash("You must specify a repository security mode", 'alert-danger')
-
 		# Ensure that the repo name doesn't already exist
 		cur = g.db.cursor()
 		cur.execute('SELECT 1 FROM `repos` WHERE `name` = %s;', (repo_name))
@@ -292,14 +280,13 @@ def repo_create():
 				repo_team=repo_team,
 				repo_src_type=repo_src_type,
 				repo_web_type=repo_web_type,
-				repo_security=repo_security,
 				teams=teams,
 			)
 		
 		# CREATE THE REPOSITORY
 		cur.execute('''INSERT INTO `repos` 
 		(`name`, `desc`, `tid`, `src_type`, `web_type`, `security`, `state`) 
-		VALUES (%s, %s, %s, %s, %s, %s, %s)''', (repo_name, repo_desc, repo_team, repo_src_type, repo_web_type, repo_security, REPO_STATE['REQUESTED']))
+		VALUES (%s, %s, %s, %s, %s, %s, %s)''', (repo_name, repo_desc, repo_team, repo_src_type, repo_web_type, REPO_SEC['PRIVATE'], REPO_STATE['REQUESTED']))
 		
 		# Commit changes to the database
 		g.db.commit()
@@ -318,9 +305,11 @@ def repo_create():
 
 		# Ask trackitd to create the repository 
 		trackitd = trackit.core.trackitd_connect()
-		result = trackitd.repo_create(repo_name,repo_src_type,repo_web_type,session['username'])
+		result, error_string = trackitd.repo_create(repo_name,repo_src_type,repo_web_type,session['username'])
 		
-		## todo check result
+		if result == False:
+			flash('Repository creation failed: ' + str(error_string), 'alert-danger')
+			return redirect(url_for('repo_view',name=repo_name))
 		
 		## Mark repo as activated 
 		cur.execute("UPDATE `repos` SET `state` = %s WHERE `id` = %s",(REPO_STATE['ACTIVE'],rid))
@@ -524,20 +513,50 @@ def repo_view(name):
 							flash('Invalid autoversion flag. Valid values are: 0 (off) and 1 (on)', 'alert-danger')
 							
 							
-					if not had_error:
-							
-						## TODO
-						## Check if things have changed
-						## If so do each update by calling trackitd and then sql.
-						
-						cur.execute('UPDATE `repos` SET `desc` = %s, `security` = %s, `web_security` = %s, `src_notify_email` = %s, `autoversion` = %s WHERE `id` = %s', (repo_desc, repo_security, repo_web_security, src_notify_email,repo_autoversion,repo['id']))
+				if not had_error:
+					## First update non-trackitd-fields
+					cur.execute('UPDATE `repos` SET `desc` = %s, `security` = %s WHERE `id` = %s', (repo_desc, repo_security, repo['id']))
+					g.db.commit()
+					
+					## Now update trackitd fields, if needed
+					trackitd = trackit.core.trackitd_connect()
+					
+					if not repo_web_security == repo['web_security']:
+						cur.execute('UPDATE `repos` SET `web_security` = %s WHERE `id` = %s', (repo_web_security, repo['id']))
 						g.db.commit()
-						flash('Repository settings updated successfully', 'alert-success')
+					
+						result, error_string = trackitd.repo_update_web_security(repo['name'])
+	
+						if result == False:
+							flash('Could not alter the web security mode: ' + str(error_string), 'alert-danger')
+							return redirect(url_for('repo_view',name=repo['name']))
+							
+					if repo['src_type'] == 'svn':
+					
+						if not src_notify_email == repo['src_notify_email']:
+							cur.execute('UPDATE `repos` SET `src_notify_email` = %s WHERE `id` = %s', (src_notify_email, repo['id']))
+							g.db.commit()
 						
-					return redirect(url_for('repo_view',name=repo['name']))
+							result, error_string = trackitd.repo_update_src_notify_email(repo['name'])
+		
+							if result == False:
+								flash('Could not alter the svn notification e-mail: ' + str(error_string), 'alert-danger')
+								return redirect(url_for('repo_view',name=repo['name']))
+					
+						if not repo_autoversion == repo['autoversion']:
+							cur.execute('UPDATE `repos` SET `autoversion` = %s WHERE `id` = %s', (repo_autoversion, repo['id']))
+							g.db.commit()
+								
+							result, error_string = trackitd.repo_update_autoversion(repo['name'])
+		
+							if result == False:
+								flash('Could not alter the svn auto versioning flag: ' + str(error_string), 'alert-danger')
+								return redirect(url_for('repo_view',name=repo['name']))
 
-				else:
-					abort(501)
+					flash('Repository settings updated successfully', 'alert-success')
+					
+				return redirect(url_for('repo_view',name=repo['name']))
+
 					
 			## TODO - actually suspend/eanble/delete by calling trackitd
 					

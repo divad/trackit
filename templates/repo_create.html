@@ -98,19 +98,6 @@ function onFormSubmit()
 		</div>
 	</div>
 	<div class="form-group">
-		<label for="input_security" class="col-lg-2 control-label">Security</label>
-		<div class="col-lg-6">
-			<select name="repo_security" class="form-control" id="input_security">
-				<option value="0"{% if repo_security and repo_security == "0" %} selected="selected"{% endif %}>Private - Only visible to project members</option>
-				<option value="1"{% if repo_security and repo_security == "1" %} selected="selected"{% endif %}>University - Visible to all university members</option>
-				<option value="2"{% if repo_security and repo_security == "2" %} selected="selected"{% endif %}>Public - Visible to anybody on the internet</option>
-			</select>
-
-			<span class="help-block">Who can search for, view details of the repository, and who can logon to the web based project management tool?
-			</span>
-		</div>
-	</div>
-	<div class="form-group">
 		<div class="col-lg-offset-2 col-lg-10">
 			<button type="submit" class="btn btn-default">Create</button>
 		</div>
