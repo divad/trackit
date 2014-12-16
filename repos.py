@@ -143,8 +143,8 @@ def repo_list_admin():
 	
 	## Add links / status text
 	for repo in repos:
-		repo['link'] = url_for('repo_view', name = repo['name'])
-		repo['status'] = REPO_STATE_STR[repo['state']]
+		repo['link']       = url_for('repo_view', name = repo['name'])
+		repo['status']     = REPO_STATE_STR[repo['state']]
 		repo['visibility'] = REPO_SEC_STR[repo['security']]
 
 	return render_template('god_repo_list.html',repos=repos,active='god')	
@@ -181,7 +181,99 @@ def repo_check_exists():
 	return jsonify(success=1, result='valid')
 
 ################################################################################
+
+def get(value,selector='id'):
+	""" Return a repo from the DB. Returns None when the repo doesn't exist"""
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT * FROM `repos` WHERE `' + selector + '` = %s', (value))
+	repo = curd.fetchone()
+
+	if repo is not None:
+		repo['link']             = url_for('repo_view', name = repo['name'])
+		repo['status']           = REPO_STATE_STR[repo['state']]
+		repo['visibility']       = REPO_SEC_STR[repo['security']]
+		repo['web_security_str'] = REPO_WEB_SEC_STR[repo['web_security']]
+
+	return repo
+
+################################################################################
+
+def get_perms(repoid):
+	""" Return all the permissions for a specific repo"""
+
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT * FROM `rules` WHERE `rid` = %s', (repoid))
+	rules = curd.fetchall()
+
+	return rules
+
 	
+################################################################################
+
+def is_admin(repo_id,username=None):
+	if username == None:
+		username = session['username']
+		
+	if trackit.user.is_global_admin():
+		return True
+		
+	cur = g.db.cursor()
+	cur.execute("""SELECT 1 FROM `rules` WHERE `source` = 'internal' AND `name` = %s AND `admin` = 1 AND `rid` = %s""", (username,repo_id))
+	result = cur.fetchone()
+	
+	if not result == None:
+		return True
+		
+	cur.execute("""
+		SELECT 1 FROM `rules` WHERE `source` = 'team' AND `admin` = 1 AND `rid` = %s AND `name` IN
+			(
+				SELECT `name` FROM `teams` WHERE `id` IN 
+				(
+					SELECT `tid` FROM `team_members` WHERE `domain` = 'internal' AND `username` = %s
+				)
+			)	
+	""",(repo_id,session['username']))
+	result = cur.fetchone()
+	
+	if not result == None:
+		return True
+
+	return False
+	
+################################################################################
+
+def has_access(repo_id,username=None):
+	if username == None:
+		username = session['username']
+		
+	if trackit.user.is_global_admin():
+		return True
+		
+	cur = g.db.cursor()
+	cur.execute("""SELECT 1 FROM `rules` WHERE `source` = 'internal' AND `name` = %s AND `rid` = %s""", (username,repo_id))
+	result = cur.fetchone()
+	
+	if not result == None:
+		return True
+		
+	cur.execute("""
+		SELECT 1 FROM `rules` WHERE `source` = 'team' AND `rid` = %s AND `name` IN
+			(
+				SELECT `name` FROM `teams` WHERE `id` IN 
+				(
+					SELECT `tid` FROM `team_members` WHERE `domain` = 'internal' AND `username` = %s
+				)
+			)	
+	""",(repo_id,session['username']))
+	result = cur.fetchone()
+	
+	if not result == None:
+		return True
+
+	return False
+		
+################################################################################
+
 @app.route('/repos/create', methods=['GET','POST'])
 @trackit.core.login_required
 def repo_create():
@@ -323,98 +415,6 @@ def repo_create():
 
 ################################################################################
 
-def get(value,selector='id'):
-	""" Return a repo from the DB. Returns None when the repo doesn't exist"""
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT * FROM `repos` WHERE `' + selector + '` = %s', (value))
-	repo = curd.fetchone()
-
-	if repo is not None:
-		repo['link']             = url_for('repo_view', name = repo['name'])
-		repo['status']           = REPO_STATE_STR[repo['state']]
-		repo['visibility']       = REPO_SEC_STR[repo['security']]
-		repo['web_security_str'] = REPO_WEB_SEC_STR[repo['web_security']]
-
-	return repo
-
-################################################################################
-
-def get_perms(repoid):
-	""" Return all the permissions for a specific repo"""
-
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT * FROM `rules` WHERE `rid` = %s', (repoid))
-	rules = curd.fetchall()
-
-	return rules
-
-	
-################################################################################
-
-def is_admin(repo_id,username=None):
-	if username == None:
-		username = session['username']
-		
-	if trackit.user.is_global_admin():
-		return True
-		
-	cur = g.db.cursor()
-	cur.execute("""SELECT 1 FROM `rules` WHERE `source` = 'internal' AND `name` = %s AND `admin` = 1 AND `rid` = %s""", (username,repo_id))
-	result = cur.fetchone()
-	
-	if not result == None:
-		return True
-		
-	cur.execute("""
-		SELECT 1 FROM `rules` WHERE `source` = 'team' AND `admin` = 1 AND `rid` = %s AND `name` IN
-			(
-				SELECT `name` FROM `teams` WHERE `id` IN 
-				(
-					SELECT `tid` FROM `team_members` WHERE `domain` = 'internal' AND `username` = %s
-				)
-			)	
-	""",(repo_id,session['username']))
-	result = cur.fetchone()
-	
-	if not result == None:
-		return True
-
-	return False
-	
-################################################################################
-
-def has_access(repo_id,username=None):
-	if username == None:
-		username = session['username']
-		
-	if trackit.user.is_global_admin():
-		return True
-		
-	cur = g.db.cursor()
-	cur.execute("""SELECT 1 FROM `rules` WHERE `source` = 'internal' AND `name` = %s AND `rid` = %s""", (username,repo_id))
-	result = cur.fetchone()
-	
-	if not result == None:
-		return True
-		
-	cur.execute("""
-		SELECT 1 FROM `rules` WHERE `source` = 'team' AND `rid` = %s AND `name` IN
-			(
-				SELECT `name` FROM `teams` WHERE `id` IN 
-				(
-					SELECT `tid` FROM `team_members` WHERE `domain` = 'internal' AND `username` = %s
-				)
-			)	
-	""",(repo_id,session['username']))
-	result = cur.fetchone()
-	
-	if not result == None:
-		return True
-
-	return False
-		
-################################################################################
-
 @app.route('/repo/<name>/', methods=['GET','POST'])
 @trackit.core.login_required
 def repo_view(name):
@@ -452,6 +452,7 @@ def repo_view(name):
 	## POST (change settings or delete or add member or delete member)
 	else:
 		cur = g.db.cursor()
+		trackitd = trackit.core.trackitd_connect()
 		
 		if 'action' in request.form:
 			action = request.form['action']
@@ -518,9 +519,6 @@ def repo_view(name):
 					cur.execute('UPDATE `repos` SET `desc` = %s, `security` = %s WHERE `id` = %s', (repo_desc, repo_security, repo['id']))
 					g.db.commit()
 					
-					## Now update trackitd fields, if needed
-					trackitd = trackit.core.trackitd_connect()
-					
 					if not repo_web_security == repo['web_security']:
 						cur.execute('UPDATE `repos` SET `web_security` = %s WHERE `id` = %s', (repo_web_security, repo['id']))
 						g.db.commit()
@@ -562,27 +560,49 @@ def repo_view(name):
 					
 			elif action == 'suspend':
 				if trackit.user.is_global_admin():
-					cur.execute('UPDATE `repos` SET `state` = %s WHERE `id` = %s', (REPO_STATE['SUSPEND'], repo['id']))
-					g.db.commit()
-					flash('Repository suspended', 'alert-success')
-					return redirect(url_for('repo_view',name=repo['name']))
+				
+					result, error_string = trackitd.repo_suspend(repo['name'])
+		
+					if result == False:
+						flash('Could not not suspend repository: ' + str(error_string), 'alert-danger')
+						return redirect(url_for('repo_view',name=repo['name']))
+					else:
+						cur.execute('UPDATE `repos` SET `state` = %s WHERE `id` = %s', (REPO_STATE['SUSPEND'], repo['id']))
+						g.db.commit()
+						flash('Repository suspended', 'alert-success')
+						return redirect(url_for('repo_view',name=repo['name']))
 				else:
 					abort(403)
 					
 			elif action == 'enable':
 				if trackit.user.is_global_admin():
-					cur.execute('UPDATE `repos` SET `state` = %s WHERE `id` = %s', (REPO_STATE['ACTIVE'], repo['id']))
-					g.db.commit()
-					flash('Repository enabled', 'alert-success')
-					return redirect(url_for('repo_view',name=repo['name']))
+				
+					result, error_string = trackitd.repo_suspend(repo['name'])
+		
+					if result == False:
+						flash('Could not not enable repository: ' + str(error_string), 'alert-danger')
+						return redirect(url_for('repo_view',name=repo['name']))
+					else:
+						cur.execute('UPDATE `repos` SET `state` = %s WHERE `id` = %s', (REPO_STATE['ACTIVE'], repo['id']))
+						g.db.commit()
+						flash('Repository enabled', 'alert-success')
+						return redirect(url_for('repo_view',name=repo['name']))
 				else:
 					abort(403)
 
 			elif action == 'delete':
 				cur.execute('UPDATE `repos` SET `state` = %s WHERE `id` = %s', (REPO_STATE['DELETE'], repo['id']))
 				g.db.commit()
-				flash('Repository marked for deletion', 'alert-success')
-				return redirect(url_for('repo_view',name=repo['name']))
+				
+				result, error_string = trackitd.repo_delete(repo['name'])
+	
+				if result == False:
+					flash('Could not not delete repository: ' + str(error_string), 'alert-danger')
+					return redirect(url_for('repo_view',name=repo['name']))
+				else:
+					## TODO delete sql maybe
+					flash('Repository deleted', 'alert-success')
+					return redirect(url_for('repo_list'))
 				
 			elif action == 'addperm':
 				had_error = 0
@@ -679,12 +699,24 @@ def repo_view(name):
 					# Commit changes to the database
 					g.db.commit()
 					
-					## TODO rebuild permissions for this repo 
-					## trackitd.repo_update_rules(repo['name'])
-					## trackitd.repo_add_admin(repo['name'],username) (only if 'admin' is yes) 
+					## Now get the rules to rebuilt in trackitd
+					
+					result, error_string = trackitd.repo_update_rules(repo['name'])
+		
+					if result == False:
+						flash('An internal error occured when rebuilding permission rules: ' + str(error_string), 'alert-danger')
+						return redirect(url_for('repo_view',name=repo['name']))
+					
+					if str(admin) == '1':
+						if source == 'internal':
+							result, error_string = trackitd.repo_add_admin(repo['name'],name)
+							
+							if result == False:
+								flash('An internal error occured when setting permission rules: ' + str(error_string), 'alert-danger')
+								return redirect(url_for('repo_view',name=repo['name']))
 
 					# Notify that we've succeeded
-					flash('Permission added', 'alert-success')
+					flash('Permission rule added', 'alert-success')
 
 					# redirect to server list
 					return redirect(url_for('repo_view',name=repo['name']))
@@ -708,12 +740,26 @@ def repo_view(name):
 				## Check if this is an edit or a delete of the rule
 				submit = request.form['submit']
 				if submit == 'Remove':
+				
+					## Remove web/trac admin rights if needed
+					if str(existing_rule['admin']) == '1':
+						if existing_rule['source'] == 'internal':
+							result, error_string = trackitd.repo_remove_admin(repo['name'],existing_rule['name'])
+							
+							if result == False:
+								flash('An internal error occured when deleting permission rules: ' + str(error_string), 'alert-danger')
+								return redirect(url_for('repo_view',name=repo['name']))
+								
+					## Update SQL
 					cur.execute('DELETE FROM `rules` WHERE id = %s', (rid))
 					g.db.commit()
 					
-						## TODO rebuild permissions for this repo 
-						## trackitd.repo_update_rules(repo['name'])
-						## trackitd.repo_add_admin / repo_remove_admin (repo['name'],username) - only if admin has changed
+					## Rebuild rules
+					result, error_string = trackitd.repo_update_rules(repo['name'])
+		
+					if result == False:
+						flash('An internal error occured when rebuilding permission rules: ' + str(error_string), 'alert-danger')
+						return redirect(url_for('repo_view',name=repo['name']))
 					
 					flash('Removed permission rule', 'alert-success')
 					return(redirect(url_for('repo_view',name=repo['name'])))	
@@ -755,12 +801,32 @@ def repo_view(name):
 						src = 0
 					
 					if not had_error:
+					
+						## Change web/trac admin rights if needed
+						if str(existing_rule['admin']) == '1' and str(admin) == '0' and existing_rule['source'] == 'internal':
+							result, error_string = trackitd.repo_remove_admin(repo['name'],existing_rule['name'])
+							
+							if result == False:
+								flash('An internal error occured when deleting permission rules: ' + str(error_string), 'alert-danger')
+								return redirect(url_for('repo_view',name=repo['name']))
+								
+						elif str(existing_rule['admin']) == '0' and str(admin) == '1' and existing_rule['source'] == 'internal':
+							result, error_string = trackitd.repo_add_admin(repo['name'],existing_rule['name'])
+							
+							if result == False:
+								flash('An internal error occured when adding permission rules: ' + str(error_string), 'alert-danger')
+								return redirect(url_for('repo_view',name=repo['name']))	
+					
+						## Now update SQL
 						cur.execute('UPDATE `rules` SET `src` = %s, `web` = %s, `admin` = %s WHERE id = %s', (src, web, admin, rid))
 						g.db.commit()
 						
-						## TODO rebuild permissions for this repo 
-						## trackitd.repo_update_rules(repo['name'])
-						## trackitd.repo_add_admin / repo_remove_admin (repo['name'],username) - only if admin has changed
+						## Now call trackitd to rebuild rules
+						result, error_string = trackitd.repo_update_rules(repo['name'])
+			
+						if result == False:
+							flash('An internal error occured when rebuilding permission rules: ' + str(error_string), 'alert-danger')
+							return redirect(url_for('repo_view',name=repo['name']))
 						
 						flash('Permission rule updated', 'alert-success')
 						

@@ -30,7 +30,7 @@ import ldap
 import imp
 
 TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
-VERSION        = 0.4
+VERSION        = 0.5
 DEBUG = True
 
 Pyro4.config.SERVERTYPE = "multiplex"
@@ -38,7 +38,7 @@ Pyro4.config.SOCK_REUSE = True
 
 class InternalError(Exception):
 	def __init__(self, message, error_data={}):
-		super(ValidationError, self).__init__(message)
+		super(InternalError, self).__init__(message)
 		self.data = error_data
 
 class TracKitDaemon(object):
@@ -82,7 +82,8 @@ class TracKitDaemon(object):
 		commands = command.split(' ')
 		proc = subprocess.Popen(commands,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 		(stdoutdata, stderrdata) = proc.communicate()
-		return (proc.returncode,stdoutdata,stderrdata)
+		
+		return (proc.returncode,str(stdoutdata),str(stderrdata))
 		
 ################################################################################
 		
@@ -112,7 +113,7 @@ class TracKitDaemon(object):
 	def trac_create(self,name,svn_path,repo_description="N/A"):
 		## Check trac folder does not exist
 		trac_path = os.path.join(self.config['TRAC_ROOT'],name)
-		if os.path.lexists(name):
+		if os.path.lexists(trac_path):
 			raise InternalError("The trac path " + trac_path + " already exists")
 	
 		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/trac-admin ' + trac_path + ' initenv ' + name + ' sqlite:db/trac.db svn ' + svn_path)
@@ -286,7 +287,7 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/trac-admin ' + trac_path + ' permission add ' + username + ' TRAC_ADMIN')		
 
 		if rcode > 0:
-			syslog.syslog('Error returned from trac-admin permission add on instance ' + trac_path + '. Error code:' + rcode)
+			syslog.syslog('Error returned from trac-admin permission add on instance ' + trac_path + '. Error code:' + str(rcode))
 			syslog.syslog('trac-admin stdout:' + stdoutdata)
 			syslog.syslog('trac-admin stderr:' + stderrdata)			
 			
@@ -301,12 +302,12 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/trac-admin ' + trac_path + ' permission remove ' + username + ' TRAC_ADMIN')		
 			
 		if rcode > 0:
-			syslog.syslog('Error returned from trac-admin permission remove on instance ' + trac_path + '. Error code:' + rcode)
+			syslog.syslog('Error returned from trac-admin permission remove on instance ' + trac_path + '. Error code:' + str(rcode))
 			syslog.syslog('trac-admin stdout:' + stdoutdata)
 			syslog.syslog('trac-admin stderr:' + stderrdata)
 			
 			error_data = {'stdout': stdoutdata, 'stderr': stderrdata, 'rcode': rcode}
-			raise InternalError("Could not set trac permissions",error_data)
+			raise InternalError("Could not set trac permissions",error_data) 
 		else:
 			syslog.syslog("Revoked TRAC_ADMIN from " + username + " on instance " + trac_path)
 
@@ -394,27 +395,77 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 				return False,"Failed to create repository. The error was: " + str(ex)
 				
 		return True,"Success"
+		
+	def repo_add_admin(self,name,username):
+		if DEBUG: syslog.syslog('method repo_add_admin called')
+	
+		## Check trac folder exists
+		trac_path = os.path.join(self.config['TRAC_ROOT'],name)
+		if not os.path.lexists(trac_path):
+			return False,"That repository does not exist!"
+			
+		try:
+			self.trac_add_admin(trac_path,username)
+		except Exception as ex:
+			syslog.syslog('Could not add admin to Trac:' + str(ex))
+			return False,"Could not grant admin rights. The error was: " + str(ex)
+			
+		return True,"Success"
 
-	def repo_suspend(self,name):
-		return True
+	def repo_remove_admin(self,name,username):
+		if DEBUG: syslog.syslog('method repo_remove_admin called')
+	
+		## Check trac folder exists
+		trac_path = os.path.join(self.config['TRAC_ROOT'],name)
+		if not os.path.lexists(trac_path):
+			return False,"That repository does not exist!"
+			
+		try:
+			self.trac_remove_admin(trac_path,username)
+		except Exception as ex:
+			syslog.syslog('Could not remove admin from Trac:' + str(ex))
+			traceback.print_exc(file=sys.stdout)
+			return False,"Could not revoke admin rights. The error was: " + str(ex)
+			
+		return True,"Success"
+			
+	def repo_suspend(self,name):		
+		if DEBUG: syslog.syslog('method repo_suspend called')
+		return True,""
 		
 	def repo_enable(self,name):
-		return True
+		if DEBUG: syslog.syslog('method repo_enable called')
+		return True,""
 		
 	def repo_delete(self,name):
-		return True
+		if DEBUG: syslog.syslog('method repo_delete called')
+		return True,""
 		
 	def repo_update_rules(self,name):
 		if DEBUG: syslog.syslog('method repo_update_rules called')
 
-		## will cause apache restart if repo has trac ?
+		try:
+			self.regenerate_authz_file()
+			self.trac_auth_config(name)
+			self.server_graceful()
+		except Exception as ex:
+			syslog.syslog('Permission rebuild failed:' + str(ex))
+			return False,"Failed to rebuild permissions. The error was: " + str(ex)
+			
+		## todo...trac update only if it has trac...
+		
 		return True,""
 		
 	def repo_update_web_security(self,name):
 		if DEBUG: syslog.syslog('method repo_update_web_security called')
 
-		self.trac_auth_config(name)
-		self.server_graceful()
+		try:
+			self.trac_auth_config(name)
+			self.server_graceful()
+		except Exception as ex:
+			syslog.syslog('Unable to rebuild trac auth config:' + str(ex))
+			return False,"Failed to set web security flag. The error was: " + str(ex)		
+		
 		return True,""
 	
 	def repo_update_src_notify_email(self,name):
