@@ -190,6 +190,7 @@ function selectSourceType(sourceType)
 		$('#name-label').text('Username');
 		$('#add-title').text('Add account permission');
 		$('#ad-alert').addClass('hidden');
+		$('#team-alert').addClass('hidden');
 		$('#admin-group').removeClass('hidden');
 		$('#src-control-select').removeClass('hidden');
 	}
@@ -198,6 +199,7 @@ function selectSourceType(sourceType)
 		$('#name-label').text('Team');
 		$('#add-title').text('Add team permission');
 		$('#ad-alert').addClass('hidden');
+		$('#team-alert').removeClass('hidden');
 		$('#admin-group').removeClass('hidden');
 		$('#src-control-select').removeClass('hidden');
 	}
@@ -206,6 +208,7 @@ function selectSourceType(sourceType)
 		$('#name-label').text('AD Group');
 		$('#add-title').text('Add AD group permission');
 		$('#ad-alert').removeClass('hidden');
+		$('#team-alert').addClass('hidden');
 		$('#admin-group').addClass('hidden');
 		$('#src-control-select').addClass('hidden');
 		
@@ -256,6 +259,7 @@ function goBack()
 				
 					<div class="alert alert-danger hidden" role="alert" id="ad-alert"><strong>Warning!</strong> Granting permissions to active directory groups is <u>not recommended</u>. Source code access (Subversion/Git/Mercurial) cannot be granted to such groups. Admin rights cannot be granted to such groups. Nested active directory groups are not (yet) supported.</div>
 
+					
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 					<input type="hidden" name="action" value="addperm"/>
 					<input type="hidden" name="source" value="internal" id="source-name"/>
@@ -298,7 +302,9 @@ function goBack()
 							<label>
 							  <input name="admin" type="checkbox" value="1"></input> Repository Administrator
 							</label>
-							<span class="help-block">Should this user be granted administrative rights over this repository?
+							<span class="help-block">Grant admin rights over the repository? 
+							<span class="hidden" id="team-alert"><br/><span class="label label-warning"><strong>Please note!</strong></span> Teams granted admin rights do not have admin rights within Trac</span>
+
 							</span>
 						</div>
 					</div>
