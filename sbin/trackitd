@@ -30,7 +30,7 @@ import ldap
 import imp
 
 TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
-VERSION        = 0.5
+VERSION        = 0.7
 DEBUG = True
 
 Pyro4.config.SERVERTYPE = "multiplex"
@@ -106,6 +106,7 @@ class TracKitDaemon(object):
 		
 		syslog.syslog('Created svn repository ' + name)
 		self.regenerate_authz_file()
+		self.regenerate_samba_hooks_file()
 		return svn_path
 		
 ################################################################################
@@ -367,6 +368,56 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 		syslog.syslog('SVN authz file regenerated')
 		curd.close()
 		self.db_close()
+
+################################################################################
+			
+	def regenerate_samba_hooks_file(self):	
+		smbconf = ""
+	
+		curd = self.db_connect()
+		curd.execute('SELECT * FROM `repos` WHERE `state` = 1')
+		repos = curd.fetchall()
+		
+		for repo in repos:
+		
+			curd.execute('SELECT * FROM `rules` WHERE `rid` = %s', (repo['id']))
+			rules = curd.fetchall()
+			
+			users = ""
+			
+			for rule in rules:
+				if str(rule['source']) == 'internal' and str(rule['admin']) == '1':
+					users = users + rule['name'] + " "
+					
+			svn_path = os.path.join(self.config['SVN_ROOT'],repo['name'])
+					
+			smbconf = smbconf + """[%s]
+comment     = Subversion Hooks directory for %s
+path        = %s/hooks/
+browseable  = yes
+writable    = yes
+read only   = no
+force user  = apache
+force group = apache
+valid users = %s
+
+""" % (
+				repo['name'],
+				repo['name'],
+				svn_path,
+				users
+			)
+			
+		
+		## Now write
+		with open(self.config['SAMBA_CONFIG_FILE'],'w') as sfp:
+			sfp.write(smbconf)
+			sfp.flush()
+			os.fsync(sfp.fileno())
+			
+		syslog.syslog('Samba SVN hooks configuration regenerated')
+		curd.close()
+		self.db_close()
 		
 ################################################################################
 
@@ -431,14 +482,20 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 			
 	def repo_suspend(self,name):		
 		if DEBUG: syslog.syslog('method repo_suspend called')
+#		self.regenerate_samba_hooks_file()
+
 		return True,""
 		
 	def repo_enable(self,name):
 		if DEBUG: syslog.syslog('method repo_enable called')
+#		self.regenerate_samba_hooks_file()
+
 		return True,""
 		
 	def repo_delete(self,name):
 		if DEBUG: syslog.syslog('method repo_delete called')
+		#		self.regenerate_samba_hooks_file()
+
 		return True,""
 		
 	def repo_update_rules(self,name):

@@ -1,11 +1,14 @@
 ## TODO
 
 # Decide how to delete a repo
+	mv and tmpwatch
 # Decide how to suspend a repo
-# Decide how to do SVN email hook 
-# Samba hook dir sharing (trackitd)
+	mv directory. Don't need to do anything else...
+	
 # teams stuff (repo member of a team)
 # Deal with repos without trac (most of the code assumes 'yes' without checking)
+
+# Decide how to do SVN email hook 
 # SVN autoversioning
 
 # other auth types ("All university members", "public")...MAYBE

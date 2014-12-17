@@ -64,6 +64,8 @@ TRACKITD_KEY="changeme"
 LDAP_SERVER="ldap://localhost"
 LDAP_BASE=""
 
+SAMBA_CONFIG_FILE="/etc/samba/conf.d/svnhooks.conf"
+
 ################################################################################
 
 
