@@ -166,6 +166,7 @@
 		{% if repos|length == 0 %}
 		<p>This team has no repositories yet </p>
 		{% else %}
+		<p>All repositories which reference this team:</p>
 		<div class="list-group">
 			{% for repo in repos %}
 			<a href="{{ repo.link }}" class="list-group-item">

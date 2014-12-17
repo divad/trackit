@@ -22,7 +22,7 @@
   <i class="fa fa-plus-square fa-stack-1x fa-inverse"></i>
 </span>Create repository</h1>
 <p>
-	Please fill out the following form to create your project. After creation you will be able to grant users permission to access the project.
+	Please fill out the following form to create your project. After creation you will be able to grant users permission to access the project and edit other settings.
 </p>
 </div>
 
@@ -55,20 +55,6 @@ function onFormSubmit()
 		</div>
 	</div>
 
-	<div class="form-group">
-		<label for="input_team" class="col-lg-2 control-label">Team</label>
-		<div class="col-lg-6">
-			<select name="repo_team" class="form-control" id="input_team">
-				<option value="-1"{% if repo_team and repo_team == "-1" %} selected="selected"{% endif %}>None</option>
-				{% for team in teams %}
-					<option value="{{team.id}}"{% if repo_team and repo_team|int == team.id|int %} selected="selected"{% endif %}>{{team.name}}</option>
-				{% endfor %}
-			</select>
-
-			<span class="help-block">The team this repository should be grouped under, if any. {{repo_team}}
-			</span>
-		</div>
-	</div>
 	<!--<div class="form-group">
 		<label for="input_src_type" class="col-lg-2 control-label">Source Control</label>
 		<div class="col-lg-6">

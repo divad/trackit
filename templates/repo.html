@@ -12,8 +12,8 @@
 					<a href="" data-toggle="modal" data-target="#enable" class="btn btn-success" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Enable"><i class="fa fa-fw fa-play"></i><span class="hidden-xs"> Enable</span></a>		
 				{% endif %}
 			{% endif %}
-			<a href="" data-toggle="modal" data-target="#settings" class="btn btn-info" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Edit team settings"><i class="fa fa-fw fa-cog"></i><span class="hidden-xs"> Settings</span></a>		
-			<a href="" data-toggle="modal" data-target="#delete" class="btn btn-danger" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Delete team"><i class="fa fa-fw fa-trash-o"></i><span class="hidden-xs"> Delete</span></a>		
+			<a href="" data-toggle="modal" data-target="#settings" class="btn btn-info" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Edit repository settings"><i class="fa fa-fw fa-cog"></i><span class="hidden-xs"> Settings</span></a>		
+			<a href="" data-toggle="modal" data-target="#delete" class="btn btn-danger" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Delete repository"><i class="fa fa-fw fa-trash-o"></i><span class="hidden-xs"> Delete</span></a>		
 			</div>
 		{% else %}
 			<div class="alert alert-danger pull-right" role="alert"><i class="fa fa-fw fa-spin fa-cog"></i> This repository has not yet been created</div>
@@ -468,18 +468,6 @@ function goBack()
 					</div>
 				</div>
 				<div class="form-group">
-					<label class="col-sm-4 control-label bold-text">Team</label>
-					<div class="col-sm-8">
-						<p class="form-control-static">
-						{% if team %}
-						<a href="{{ team.link }}">{{ team.name }}</a>
-						{% else %}
-						Not part of a team
-						{% endif %}
-						</p>
-					</div>
-				</div>
-				<div class="form-group">
 					<label class="col-sm-4 control-label bold-text">Source Control</label>
 					<div class="col-sm-8">
 						<p class="form-control-static">
@@ -552,6 +540,18 @@ function goBack()
 						<p class="form-control-static"><a href="https://trac.soton.ac.uk/{{repo.name}}/">https://trac.soton.ac.uk/{{repo.name}}</a></p>
 					</div>
 				</div>
+				<div class="form-group">
+					<label class="col-sm-4 control-label bold-text">SVN Hooks</label>
+					<div class="col-sm-8">
+						<p class="form-control-static"><a href="smb://svn.soton.ac.uk/{{repo.name}}">smb://svn.soton.ac.uk/{{repo.name}}</a> <i class="fa fa-fw fa-linux"></i> <i class="fa fa-fw fa-apple"></i></p>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-4 control-label bold-text">&nbsp;</label>
+					<div class="col-sm-8">
+						<p class="form-control-static"><a href="file://svn.soton.ac.uk/{{repo.name}}">\\svn.soton.ac.uk\{{repo.name}}</a> <i class="fa fa-fw fa-windows"></i></p>
+					</div>
+				</div>				
 			</form>
 		</div>
 	</div>

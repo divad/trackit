@@ -56,9 +56,9 @@ def get_user_repos():
 	
 ################################################################################
 
-def get_team_repos(team_id):
+def get_team_repos(team_name):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT * FROM `repos` WHERE `tid` = %s ORDER BY `name`',(team_id))
+	curd.execute("SELECT * FROM `repos` WHERE `id` IN (SELECT `rid` FROM `rules` WHERE `source` = 'team' AND `name` = %s)",(team_name))
 	repos = curd.fetchall()
 
 	for repo in repos:
@@ -311,26 +311,6 @@ def repo_create():
 			repo_desc = ''
 			flash("You must specify a repository description", 'alert-danger')		
 
-
-		## TEAM
-		if 'repo_team' in request.form:
-			repo_team = request.form['repo_team']
-
-			if not re.search(r'[0-9]+$',repo_team):
-				had_error = 1
-				flash('Invalid team ID', 'alert-danger')
-
-			if not int(repo_team) == -1:
-				if not trackit.teams.exists(repo_team):
-					had_error = 1
-					flash('Sorry, but that team does not exist', 'alert-danger')
-
-			## TODO check that they are allowed to create a repo in that team
-		else:
-			had_error = 1
-			repo_team = -1
-			flash("You must specify a team", 'alert-danger')
-
 		## SOURCE TYPE
 		if 'repo_src_type' in request.form:
 			repo_src_type = request.form['repo_src_type']
@@ -378,7 +358,7 @@ def repo_create():
 		# CREATE THE REPOSITORY
 		cur.execute('''INSERT INTO `repos` 
 		(`name`, `desc`, `tid`, `src_type`, `web_type`, `security`, `state`) 
-		VALUES (%s, %s, %s, %s, %s, %s, %s)''', (repo_name, repo_desc, repo_team, repo_src_type, repo_web_type, REPO_SEC['PRIVATE'], REPO_STATE['REQUESTED']))
+		VALUES (%s, %s, %s, %s, %s, %s, %s)''', (repo_name, repo_desc, '-1', repo_src_type, repo_web_type, REPO_SEC['PRIVATE'], REPO_STATE['REQUESTED']))
 		
 		# Commit changes to the database
 		g.db.commit()
@@ -392,8 +372,6 @@ def repo_create():
 		VALUES (%s, %s, %s, %s, %s, %s)''', (rid, 'internal', session['username'], 2, 1, 1))
 
 		g.db.commit()
-		
-		## what should the team default permission be? Why are repos grouped to a team? argh! Team repos could be calculated from 'rules' instead?
 
 		# Ask trackitd to create the repository 
 		trackitd = trackit.core.trackitd_connect()
@@ -433,11 +411,6 @@ def repo_view(name):
 	## Permissions checking
 	repo_admin = trackit.repos.is_admin(repo['id'])
 	repo_member = trackit.repos.has_access(repo['id'])
-
-	## get the team if any
-	team = None
-	if repo['tid'] != -1:
-		team = trackit.teams.get(repo['tid'])
 		
 	## Check visibility
 	if repo['security'] == 0:
@@ -447,7 +420,7 @@ def repo_view(name):
 	
 	## GET (view) requests
 	if request.method == 'GET':
-		return render_template('repo.html',repo=repo,team=team,repo_admin=repo_admin,repo_member=repo_member,perms=perms,active='repos',global_admin=trackit.user.is_global_admin())
+		return render_template('repo.html',repo=repo,repo_admin=repo_admin,repo_member=repo_member,perms=perms,active='repos',global_admin=trackit.user.is_global_admin())
 
 	## POST (change settings or delete or add member or delete member)
 	else:

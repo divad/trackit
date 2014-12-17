@@ -137,7 +137,7 @@ def team_view(name):
 	## GET (view) requests
 	if request.method == 'GET':
 
-		repos   = trackit.repos.get_team_repos(team['id'])
+		repos   = trackit.repos.get_team_repos(team['name'])
 		members = trackit.teams.members(team['id'])
 
 		return render_template('team.html',team=team,repos=repos,members=members,team_admin=team_admin,active='teams')
