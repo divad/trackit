@@ -1,6 +1,8 @@
 {% extends "layout.html" %}
 {% block body %}
 
+{% include "loading.html" %}
+
 <div class="page-header">
 	{% if repo_admin %}
 		{% if repo.state > 0 %}
@@ -34,7 +36,7 @@
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">Repository Settings</h4>
 			</div>
-			<form class="form-horizontal" role="form" method="POST">
+			<form class="form-horizontal" role="form" method="POST" onsubmit="return onFormSubmit();">
 				<div class="modal-body">
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 					<input type="hidden" name="action" value="settings"/>
@@ -60,6 +62,7 @@
 						</div>
 					</div>
 					
+					{% if repo.web_type == 'trac' %}
 					<div class="form-group">
 						<label for="input_web_security" class="col-lg-3 control-label">Trac Security</label>
 						<div class="col-lg-9">							
@@ -72,6 +75,7 @@
 							</span>
 						</div>
 					</div>
+					{% endif %}
 					
 				{% if repo.src_type == 'svn' %}
 					
@@ -117,7 +121,7 @@
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">Suspend repository</h4>
 			</div>
-			<form class="form-horizontal" role="form" method="POST">
+			<form class="form-horizontal" role="form" method="POST" onsubmit="return onFormSubmit();">
 				<div class="modal-body">
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 					<input type="hidden" name="action" value="suspend"/>
@@ -142,7 +146,7 @@
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">Enable repository</h4>
 			</div>
-			<form class="form-horizontal" role="form" method="POST">
+			<form class="form-horizontal" role="form" method="POST" onsubmit="return onFormSubmit();">
 				<div class="modal-body">
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 					<input type="hidden" name="action" value="enable"/>
@@ -166,7 +170,7 @@
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">Delete repository</h4>
 			</div>
-			<form class="form-horizontal" role="form" method="POST">
+			<form class="form-horizontal" role="form" method="POST" onsubmit="return onFormSubmit();">
 				<div class="modal-body">
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 					<input type="hidden" name="action" value="delete"/>
@@ -250,7 +254,7 @@ function goBack()
 <div class="modal" id="addpermform">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
-			<form class="form-horizontal" role="form" method="POST">
+			<form class="form-horizontal" role="form" method="POST" onsubmit="return onFormSubmit();">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 						<h4 class="modal-title" id="add-title">Add Permission</h4>
@@ -396,7 +400,7 @@ function goBack()
 <div class="modal" id="edit_perm">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
-			<form class="form-horizontal" role="form" method="POST">
+			<form class="form-horizontal" role="form" method="POST" onsubmit="return onFormSubmit();">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 						<h4 class="modal-title" id="add-title">Edit Permission Rule</h4>

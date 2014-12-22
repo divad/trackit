@@ -199,56 +199,57 @@ class TracKitDaemon(object):
 		curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 		repo = curd.fetchone()
 		
-		if not repo == None:
+		if repo == None:
+			raise InternalError("Could not find repo '" + name + "' in the database")
 		
-			if repo['web_type'] != 'trac':
-				raise InternalError("Could not build trac auth config for repo '" + name + "' because web_type is not set to trac")
-				
-			if str(repo['state']) == "2":
-				## suspend 
-				location = "/trac/" + name 
-				f = open(os.path.join(self.config['TRAC_CONF_DIR'], name + ".conf"), 'w')
-				f.write("""<Location %s>\nDeny from all\n</Location>""" % (location))
-				f.flush()
-				os.fsync(f.fileno())
-				f.close()
-				syslog.syslog('Suspended trac auth config for: ' + name)
-				return 
-			elif str(repo['state']) == "3":
-				## delete
-				os.remove(os.path.join(self.config['TRAC_CONF_DIR'], name + ".conf"))
-				syslog.syslog('Removed trac auth config for: ' + name)
-				return 
-		
-			## create set
-			required_users = set()
-			ldap_groups    = ""
-			teamauthz_required = False
-			teamauthz_string = ""
+		if repo['web_type'] != 'trac':
+			raise InternalError("Could not build trac auth config for repo '" + name + "' because web_type is not set to trac")
 			
-			## get rules now
-			curd.execute('SELECT * FROM `rules` WHERE `rid` = %s', (repo['id']))
-			rules = curd.fetchall()	
+		if str(repo['state']) == "2":
+			## suspend 
+			location = "/trac/" + name 
+			f = open(os.path.join(self.config['TRAC_CONF_DIR'], name + ".conf"), 'w')
+			f.write("""<Location %s>\nDeny from all\n</Location>""" % (location))
+			f.flush()
+			os.fsync(f.fileno())
+			f.close()
+			syslog.syslog('Suspended trac auth config for: ' + name)
+			return 
+		elif str(repo['state']) == "3":
+			## delete
+			os.remove(os.path.join(self.config['TRAC_CONF_DIR'], name + ".conf"))
+			syslog.syslog('Removed trac auth config for: ' + name)
+			return 
+	
+		## create set
+		required_users = set()
+		ldap_groups    = ""
+		teamauthz_required = False
+		teamauthz_string = ""
+		
+		## get rules now
+		curd.execute('SELECT * FROM `rules` WHERE `rid` = %s', (repo['id']))
+		rules = curd.fetchall()	
 
-			for rule in rules:
-				if rule['web'] == 1:
-					if rule['source'] == 'internal':
-						required_users.add(rule['name'])
-						
-					elif rule['source'] == 'team':
-						curd.execute('SELECT * FROM `teams` WHERE `name` = %s',(rule['name']))
-						team = curd.fetchone()
-						
-						if not team == None:
-							teamauthz_required = True
-							teamauthz_string += "\n\tRequire group " + team['name']
-								
-					elif rule['source'] == 'adgroup':
-						groupdn = self.ldap_get_group_dn(rule['name'])
-						
-						if not groupdn == None:
-							ldap_groups += "\n\tRequire ldap-group " + groupdn
+		for rule in rules:
+			if rule['web'] == 1:
+				if rule['source'] == 'internal':
+					required_users.add(rule['name'])
 					
+				elif rule['source'] == 'team':
+					curd.execute('SELECT * FROM `teams` WHERE `name` = %s',(rule['name']))
+					team = curd.fetchone()
+					
+					if not team == None:
+						teamauthz_required = True
+						teamauthz_string += "\n\tRequire group " + team['name']
+							
+				elif rule['source'] == 'adgroup':
+					groupdn = self.ldap_get_group_dn(rule['name'])
+					
+					if not groupdn == None:
+						ldap_groups += "\n\tRequire ldap-group " + groupdn
+				
 		location = "/trac/" + name 
 		
 		if repo['web_security'] == 1:
@@ -284,6 +285,7 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 		f.close()
 		
 		syslog.syslog('trac auth config rebuilt for instance ' + name)
+		self.db_close()
 
 
 ################################################################################
@@ -470,32 +472,53 @@ valid users = %s
 		
 	def repo_add_admin(self,name,username):
 		if DEBUG: syslog.syslog('method repo_add_admin called')
-	
-		## Check trac folder exists
-		trac_path = os.path.join(self.config['TRAC_ROOT'],name)
-		if not os.path.lexists(trac_path):
-			return False,"That repository does not exist!"
-			
+		
 		try:
-			self.trac_add_admin(trac_path,username)
+			curd = self.db_connect()
+			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
+			repo = curd.fetchone()
+			
+			if repo == None:
+				raise InternalError("Could not find repo '" + name + "' in the database")
+			
+			if repo['web_type'] == 'trac':	
+				## Check trac folder exists
+				trac_path = os.path.join(self.config['TRAC_ROOT'],name)
+				if not os.path.lexists(trac_path):
+					return False,"That repository does not exist!"
+					
+				self.trac_add_admin(trac_path,username)
+				
 		except Exception as ex:
-			syslog.syslog('Could not add admin to Trac:' + str(ex))
+			syslog.syslog('Could not add admin to repo:' + str(ex))
 			return False,"Could not grant admin rights. The error was: " + str(ex)
 			
 		return True,"Success"
 
 	def repo_remove_admin(self,name,username):
 		if DEBUG: syslog.syslog('method repo_remove_admin called')
-	
-		## Check trac folder exists
-		trac_path = os.path.join(self.config['TRAC_ROOT'],name)
-		if not os.path.lexists(trac_path):
-			return False,"That repository does not exist!"
-			
+		
+		
 		try:
-			self.trac_remove_admin(trac_path,username)
+		
+			curd = self.db_connect()
+			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
+			repo = curd.fetchone()
+			
+			if repo == None:
+				raise InternalError("Could not find repo '" + name + "' in the database")
+			
+			if repo['web_type'] == 'trac':	
+		
+				## Check trac folder exists
+				trac_path = os.path.join(self.config['TRAC_ROOT'],name)
+				if not os.path.lexists(trac_path):
+					return False,"That repository does not exist!"
+					
+
+				self.trac_remove_admin(trac_path,username)
 		except Exception as ex:
-			syslog.syslog('Could not remove admin from Trac:' + str(ex))
+			syslog.syslog('Could not remove admin from repo:' + str(ex))
 			traceback.print_exc(file=sys.stdout)
 			return False,"Could not revoke admin rights. The error was: " + str(ex)
 			
@@ -509,6 +532,8 @@ valid users = %s
 			curd = self.db_connect()
 			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 			repo = curd.fetchone()
+			self.db_close()
+
 			
 			if repo == None:
 				raise InternalError("Could not suspend repo name '" + name + "' because it does not exist!")
@@ -531,8 +556,6 @@ valid users = %s
 
 				self.trac_auth_config(name)
 				self.server_graceful()
-
-			self.db_close()
 		
 		except Exception as ex:
 		
@@ -544,29 +567,109 @@ valid users = %s
 		
 	def repo_enable(self,name):
 		if DEBUG: syslog.syslog('method repo_enable called')
-		## self.regenerate_samba_hooks_file()
+
+		try:
+		
+			curd = self.db_connect()
+			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
+			repo = curd.fetchone()
+			self.db_close()
+
+			
+			if repo == None:
+				raise InternalError("Could not enable repo name '" + name + "' because it does not exist!")
+				
+			if repo['src_type'] == 'svn':
+			
+				svn_path = os.path.join(self.config['SVN_ROOT'],name)
+				svn_suspend_path = os.path.join(self.config['SVN_SUSPENDED_ROOT'],name)
+				shutil.move(svn_suspend_path,svn_path)
+				syslog.syslog('Moved svn directory to active for repo: ' + name)
+			
+				self.regenerate_authz_file()
+				self.regenerate_samba_hooks_file()
+				
+			if repo['web_type'] == 'trac':
+				trac_path = os.path.join(self.config['TRAC_ROOT'],name)
+				trac_suspend_path = os.path.join(self.config['TRAC_SUSPENDED_ROOT'],name)
+				shutil.move(trac_suspend_path,trac_path)
+				syslog.syslog('Moved trac directory to active for repo: ' + name)
+
+				self.trac_auth_config(name)
+				self.server_graceful()
+		
+		except Exception as ex:
+		
+			syslog.syslog('Could not enable repo ' + name + ':' + str(ex))
+			traceback.print_exc(file=sys.stdout)
+			return False,"Could not enable the repo. The error was: " + str(ex)
 
 		return True,""
 		
 	def repo_delete(self,name):
 		if DEBUG: syslog.syslog('method repo_delete called')
-		#		self.regenerate_samba_hooks_file()
+
+		try:
+		
+			curd = self.db_connect()
+			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
+			repo = curd.fetchone()
+			
+			if repo == None:
+				raise InternalError("Could not delete repo name '" + name + "' because it does not exist!")
+				
+			if repo['src_type'] == 'svn':
+			
+				svn_path = os.path.join(self.config['SVN_ROOT'],name)
+				svn_delete_path = os.path.join(self.config['SVN_DELETED_ROOT'],name)
+				shutil.move(svn_path,svn_delete_path)
+				syslog.syslog('Moved svn directory to deleted for repo: ' + name)
+			
+				self.regenerate_authz_file()
+				self.regenerate_samba_hooks_file()
+				
+			if repo['web_type'] == 'trac':
+				trac_path = os.path.join(self.config['TRAC_ROOT'],name)
+				trac_delete_path = os.path.join(self.config['TRAC_DELETED_ROOT'],name)
+				shutil.move(trac_path,trac_delete_path)
+				syslog.syslog('Moved trac directory to deleted for repo: ' + name)
+
+				self.trac_auth_config(name)
+				self.server_graceful()
+
+			self.db_close()
+		
+		except Exception as ex:
+		
+			syslog.syslog('Could not delete repo ' + name + ':' + str(ex))
+			traceback.print_exc(file=sys.stdout)
+			return False,"Could not delete the repo. The error was: " + str(ex)
 
 		return True,""
 		
 	def repo_update_rules(self,name):
 		if DEBUG: syslog.syslog('method repo_update_rules called')
 
-		try:		
-			self.regenerate_authz_file()
-			self.trac_auth_config(name)
-			self.server_graceful()
+		try:	
+
+			curd = self.db_connect()
+			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
+			repo = curd.fetchone()
+			
+			if repo == None:
+				raise InternalError("Could not delete repo name '" + name + "' because it does not exist!")
+				
+			if repo['src_type'] == 'svn':
+				self.regenerate_authz_file()
+				
+			if repo['web_type'] == 'trac':
+				self.trac_auth_config(name)
+				self.server_graceful()
+				
 		except Exception as ex:
 			syslog.syslog('Permission rebuild failed:' + str(ex))
 			return False,"Failed to rebuild permissions. The error was: " + str(ex)
-			
-		## todo...trac update only if it has trac...
-		
+					
 		return True,""
 		
 	def repo_update_web_security(self,name):
@@ -606,7 +709,8 @@ valid users = %s
 			repos = curd.fetchall()
 			
 			for repo in repos:
-				self.trac_auth_config(repo['name'])
+				if repo['web_type'] == 'trac':
+					self.trac_auth_config(repo['name'])
 			
 			self.server_graceful()
 			self.db_close()

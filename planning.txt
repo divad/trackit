@@ -1,16 +1,12 @@
 ## TODO
 
-# Decide how to delete a repo
-	mv and tmpwatch
-	
-# Decide how to suspend a repo
-	mv directory. Don't need to do anything else...
-	
-# Deal with repos without trac (most of the code assumes 'yes' without checking)
-
 # Decide how to do SVN email hook 
 # SVN autoversioning
+
+# add trac later somehow?
+# pulic/private repo views 
 
 # other auth types ("All university members", "public")...MAYBE
 # instance usage/quotas
 # kill off the table entry for 'tid' in repos
+# set up tmpwatch - 3 months

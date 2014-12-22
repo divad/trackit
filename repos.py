@@ -453,16 +453,21 @@ def repo_view(name):
 				else:
 					had_error = 1
 					flash("You must specify a repository security mode", 'alert-danger')
-					
-				if 'repo_web_security' in request.form:
-					repo_web_security = request.form['repo_web_security']
+				
+				
+				if repo['web_type'] == 'trac':
+				
+					if 'repo_web_security' in request.form:
+						repo_web_security = request.form['repo_web_security']
 
-					if not str(repo_web_security) in ['0','1']:
+						if not str(repo_web_security) in ['0','1']:
+							had_error = 1
+							flash('Invalid repository web security mode. Valid values are: 0 (private), 1 (public)', 'alert-danger')
+					else:
 						had_error = 1
-						flash('Invalid repository web security mode. Valid values are: 0 (private), 1 (public)', 'alert-danger')
+						flash("You must specify a repository web security mode", 'alert-danger')
 				else:
-					had_error = 1
-					flash("You must specify a repository web security mode", 'alert-danger')
+					repo_web_security = repo['web_security']
 					
 				if repo['src_type'] == 'svn':
 				
@@ -492,15 +497,17 @@ def repo_view(name):
 					cur.execute('UPDATE `repos` SET `desc` = %s, `security` = %s WHERE `id` = %s', (repo_desc, repo_security, repo['id']))
 					g.db.commit()
 					
-					if not repo_web_security == repo['web_security']:
-						cur.execute('UPDATE `repos` SET `web_security` = %s WHERE `id` = %s', (repo_web_security, repo['id']))
-						g.db.commit()
+					if repo['web_type'] == 'trac':
 					
-						result, error_string = trackitd.repo_update_web_security(repo['name'])
-	
-						if result == False:
-							flash('Could not alter the web security mode: ' + str(error_string), 'alert-danger')
-							return redirect(url_for('repo_view',name=repo['name']))
+						if not repo_web_security == repo['web_security']:
+							cur.execute('UPDATE `repos` SET `web_security` = %s WHERE `id` = %s', (repo_web_security, repo['id']))
+							g.db.commit()
+						
+							result, error_string = trackitd.repo_update_web_security(repo['name'])
+		
+							if result == False:
+								flash('Could not alter the web security mode: ' + str(error_string), 'alert-danger')
+								return redirect(url_for('repo_view',name=repo['name']))
 							
 					if repo['src_type'] == 'svn':
 					

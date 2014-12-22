@@ -1,6 +1,8 @@
 {% extends "layout.html" %}
 {% block body %}
 
+{% include "loading.html" %}
+
 {% if team_admin %}
 <div class="modal fade" id="add">
 	<div class="modal-dialog">
@@ -9,7 +11,7 @@
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">Add team member</h4>
 			</div>
-			<form class="form-horizontal" role="form" method="POST">
+			<form class="form-horizontal" role="form" method="POST" onsubmit="return onFormSubmit();">
 				<div class="modal-body">
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 					<input type="hidden" name="action" value="add"/>
@@ -80,7 +82,7 @@
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">Delete team</h4>
 			</div>
-			<form class="form-horizontal" role="form" method="POST">
+			<form class="form-horizontal" role="form" method="POST" onsubmit="return onFormSubmit();">
 				<div class="modal-body">
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 					<input type="hidden" name="action" value="delete"/>
@@ -103,7 +105,7 @@
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">Edit Team Member</h4>
 			</div>
-			<form class="form-horizontal" role="form" method="POST">
+			<form class="form-horizontal" role="form" method="POST" onsubmit="return onFormSubmit();">
 				<div class="modal-body">
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 					<input type="hidden" name="action" value="member"/>
