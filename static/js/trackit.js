@@ -46,11 +46,14 @@ $(document).ready(function()
 		var source = parent.data('source');
 		if (source == 'adgroup')
 		{
-			$('#admin_edit_group').addClass('hidden');
+			$('#admin_group_edit').addClass('hidden');
+			$('#src_control_select_edit').addClass('hidden');
 		}
 		else
 		{
-			$('#admin_edit_group').removeClass('hidden');
+			$('#admin_group_edit').removeClass('hidden');
+			$('#src_control_select_edit').removeClass('hidden');
+
 		}
 		
 		$('#edit_perm').modal({show: true});
