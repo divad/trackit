@@ -28,9 +28,10 @@ import MySQLdb as mysql
 import traceback # remove
 import ldap
 import imp
+import shutil
 
 TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
-VERSION        = 0.7
+VERSION        = 0.8
 DEBUG = True
 
 Pyro4.config.SERVERTYPE = "multiplex"
@@ -199,6 +200,26 @@ class TracKitDaemon(object):
 		repo = curd.fetchone()
 		
 		if not repo == None:
+		
+			if repo['web_type'] != 'trac':
+				raise InternalError("Could not build trac auth config for repo '" + name + "' because web_type is not set to trac")
+				
+			if str(repo['state']) == "2":
+				## suspend 
+				location = "/trac/" + name 
+				f = open(os.path.join(self.config['TRAC_CONF_DIR'], name + ".conf"), 'w')
+				f.write("""<Location %s>\nDeny from all\n</Location>""" % (location))
+				f.flush()
+				os.fsync(f.fileno())
+				f.close()
+				syslog.syslog('Suspended trac auth config for: ' + name)
+				return 
+			elif str(repo['state']) == "3":
+				## delete
+				os.remove(os.path.join(self.config['TRAC_CONF_DIR'], name + ".conf"))
+				syslog.syslog('Removed trac auth config for: ' + name)
+				return 
+		
 			## create set
 			required_users = set()
 			ldap_groups    = ""
@@ -279,7 +300,7 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 			if not dn == None:
 				if "member" in attrs:
 					return dn
-							
+
 		return None
 
 ################################################################################	
@@ -338,7 +359,7 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 				zconfig.set('groups',team['name'],memberstr)
 				
 		## Generate each repo rules
-		curd.execute('SELECT * FROM `repos`')
+		curd.execute('SELECT * FROM `repos` WHERE `state` = 1')
 		repos = curd.fetchall()
 		
 		for repo in repos:
@@ -482,13 +503,48 @@ valid users = %s
 			
 	def repo_suspend(self,name):		
 		if DEBUG: syslog.syslog('method repo_suspend called')
-#		self.regenerate_samba_hooks_file()
+		
+		try:
+		
+			curd = self.db_connect()
+			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
+			repo = curd.fetchone()
+			
+			if repo == None:
+				raise InternalError("Could not suspend repo name '" + name + "' because it does not exist!")
+				
+			if repo['src_type'] == 'svn':
+			
+				svn_path = os.path.join(self.config['SVN_ROOT'],name)
+				svn_suspend_path = os.path.join(self.config['SVN_SUSPENDED_ROOT'],name)
+				shutil.move(svn_path,svn_suspend_path)
+				syslog.syslog('Moved svn directory to suspended for repo: ' + name)
+			
+				self.regenerate_authz_file()
+				self.regenerate_samba_hooks_file()
+				
+			if repo['web_type'] == 'trac':
+				trac_path = os.path.join(self.config['TRAC_ROOT'],name)
+				trac_suspend_path = os.path.join(self.config['TRAC_SUSPENDED_ROOT'],name)
+				shutil.move(trac_path,trac_suspend_path)
+				syslog.syslog('Moved trac directory to suspended for repo: ' + name)
+
+				self.trac_auth_config(name)
+				self.server_graceful()
+
+			self.db_close()
+		
+		except Exception as ex:
+		
+			syslog.syslog('Could not suspend repo ' + name + ':' + str(ex))
+			traceback.print_exc(file=sys.stdout)
+			return False,"Could not suspend the repo. The error was: " + str(ex)
 
 		return True,""
 		
 	def repo_enable(self,name):
 		if DEBUG: syslog.syslog('method repo_enable called')
-#		self.regenerate_samba_hooks_file()
+		## self.regenerate_samba_hooks_file()
 
 		return True,""
 		

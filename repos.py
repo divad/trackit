@@ -527,21 +527,19 @@ def repo_view(name):
 					flash('Repository settings updated successfully', 'alert-success')
 					
 				return redirect(url_for('repo_view',name=repo['name']))
-
-					
-			## TODO - actually suspend/eanble/delete by calling trackitd
 					
 			elif action == 'suspend':
 				if trackit.user.is_global_admin():
 				
+					cur.execute('UPDATE `repos` SET `state` = %s WHERE `id` = %s', (REPO_STATE['SUSPEND'], repo['id']))
+					g.db.commit()
+					
 					result, error_string = trackitd.repo_suspend(repo['name'])
 		
 					if result == False:
 						flash('Could not not suspend repository: ' + str(error_string), 'alert-danger')
 						return redirect(url_for('repo_view',name=repo['name']))
 					else:
-						cur.execute('UPDATE `repos` SET `state` = %s WHERE `id` = %s', (REPO_STATE['SUSPEND'], repo['id']))
-						g.db.commit()
 						flash('Repository suspended', 'alert-success')
 						return redirect(url_for('repo_view',name=repo['name']))
 				else:
@@ -550,7 +548,7 @@ def repo_view(name):
 			elif action == 'enable':
 				if trackit.user.is_global_admin():
 				
-					result, error_string = trackitd.repo_suspend(repo['name'])
+					result, error_string = trackitd.repo_enable(repo['name'])
 		
 					if result == False:
 						flash('Could not not enable repository: ' + str(error_string), 'alert-danger')
