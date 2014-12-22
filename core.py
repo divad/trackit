@@ -79,6 +79,17 @@ def login_required(f):
 
 ################################################################################
 
+def admin_required(f):
+	@wraps(f)
+	def decorated_function(*args, **kwargs):
+		if session.get('admin',False) is False:
+			flash('You must be logged in as an administrator to do that!','alert-danger')
+			return redirect(url_for('repo_list'))
+		return f(*args, **kwargs)
+	return decorated_function
+	
+################################################################################
+
 @app.before_request
 def before_request():
 	"""This function is run before the request is handled by Flask. At present it checks

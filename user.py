@@ -68,6 +68,8 @@ def login():
 		if is_global_admin():
 			session['admin'] = True
 			flash('You are logged in as a global administrator with full privileges over all repositories and teams.','alert-warning')
+		else:
+			session['admin'] = False
 
 		## determine if "next" variable is set (the URL to be sent to)
 		if 'next_url' in session:

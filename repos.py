@@ -136,6 +136,7 @@ def repo_list_all(page=None):
 
 @app.route('/god/repos')
 @trackit.core.login_required
+@trackit.core.admin_required
 def repo_list_admin():
 	"""View handler to list all repositories"""
 	
@@ -349,7 +350,6 @@ def repo_create():
 				active='servers',
 				repo_name=repo_name,
 				repo_desc=repo_desc,
-				repo_team=repo_team,
 				repo_src_type=repo_src_type,
 				repo_web_type=repo_web_type,
 				teams=teams,

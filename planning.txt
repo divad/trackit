@@ -14,5 +14,3 @@
 # other auth types ("All university members", "public")...MAYBE
 # instance usage/quotas
 # kill off the table entry for 'tid' in repos
-
-
