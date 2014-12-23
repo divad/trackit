@@ -2,8 +2,6 @@
 
 # Decide how to do SVN email hook 
 
-# SVN autoversioning
-
 # other auth types ("All university members", "public")... - version 2 IF required.
 # instance usage/quotas 								   - version 2 on RHEL7 with XFS per-project quotas.
 # kill off the table entry for 'tid' in repos			   - cleanupaction

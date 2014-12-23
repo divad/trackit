@@ -537,7 +537,7 @@ def repo_view(name):
 							cur.execute('UPDATE `repos` SET `autoversion` = %s WHERE `id` = %s', (repo_autoversion, repo['id']))
 							g.db.commit()
 								
-							result, error_string = trackitd.repo_update_autoversion(repo['name'])
+							result, error_string = trackitd.update_autoversion()
 		
 							if result == False:
 								flash('Could not alter the svn auto versioning flag: ' + str(error_string), 'alert-danger')

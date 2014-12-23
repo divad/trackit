@@ -31,7 +31,7 @@ import imp
 import shutil
 
 TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
-VERSION        = 0.8
+VERSION        = 0.9
 DEBUG = True
 
 Pyro4.config.SERVERTYPE = "multiplex"
@@ -361,7 +361,7 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 				zconfig.set('groups',team['name'],memberstr)
 				
 		## Generate each repo rules
-		curd.execute('SELECT * FROM `repos` WHERE `state` = 1')
+		curd.execute('SELECT * FROM `repos` WHERE `state` = 1 OR `state` = 0')
 		repos = curd.fetchall()
 		
 		for repo in repos:
@@ -439,6 +439,34 @@ valid users = %s
 			os.fsync(sfp.fileno())
 			
 		syslog.syslog('Samba SVN hooks configuration regenerated')
+		curd.close()
+		self.db_close()
+		
+################################################################################
+			
+	def regenerate_autoversion_config(self):	
+		autoconf = ""
+	
+		curd = self.db_connect()
+		curd.execute('SELECT * FROM `repos` WHERE `state` = 1 AND `autoversion` = 1')
+		repos = curd.fetchall()
+		
+		for repo in repos:
+					
+			autoconf = autoconf + """
+<Location /svn/%s>
+SVNAutoversioning on
+</Location>
+""" % (repo['name'])
+			
+		
+		## Now write
+		with open(self.config['SVN_AUTOVERSION_CONFIG_FILE'],'w') as sfp:
+			sfp.write(autoconf)
+			sfp.flush()
+			os.fsync(sfp.fileno())
+			
+		syslog.syslog('SVN autoversion configuration regenerated')
 		curd.close()
 		self.db_close()
 		
@@ -723,10 +751,16 @@ valid users = %s
 		## no need to restart
 		return True,""
 		
-	def repo_update_autoversion(self,name):
-		if DEBUG: syslog.syslog('method repo_update_autoversion called')
+	def update_autoversion(self):
+		if DEBUG: syslog.syslog('method update_autoversion called')
 			
-		## probably need to restart apache graceful
+		try:
+			self.regenerate_autoversion_config()
+			self.server_graceful()
+		except Exception as ex:
+			syslog.syslog('Unable to rebuild svn autoversion config:' + str(ex))
+			return False,"Failed to set set autoversion. The error was: " + str(ex)		
+		
 		return True,""
 		
 	def team_delete_update(self):
