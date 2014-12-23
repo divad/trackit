@@ -15,6 +15,9 @@
 				{% endif %}
 			{% endif %}
 			<a href="" data-toggle="modal" data-target="#settings" class="btn btn-info" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Edit repository settings"><i class="fa fa-fw fa-cog"></i><span class="hidden-xs"> Settings</span></a>		
+			{% if repo.web_type == 'none' %}
+				<a href="" data-toggle="modal" data-target="#addweb" class="btn btn-primary" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Enable Trac"><i class="fa fa-fw fa-bug"></i><span class="hidden-xs"> Enable Trac</span></a>		
+			{% endif %}
 			<a href="" data-toggle="modal" data-target="#delete" class="btn btn-danger" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Delete repository"><i class="fa fa-fw fa-trash-o"></i><span class="hidden-xs"> Delete</span></a>		
 			</div>
 		{% else %}
@@ -112,6 +115,31 @@
 		</div>
 	</div>
 </div>
+
+{% if repo.web_type == 'none' %}
+<div class="modal fade" id="addweb">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">Enable Trac</h4>
+			</div>
+			<form class="form-horizontal" role="form" method="POST" onsubmit="return onFormSubmit();">
+				<div class="modal-body">
+					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+					<input type="hidden" name="action" value="addweb"/>
+
+					<p>At present this repository does not have a Trac instance. Would you like to add one?</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<button type="submit" class="btn btn-primary">Enable Trac</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+{% endif %}
 
 {% if repo.state == 1 %}
 <div class="modal fade" id="suspend">
@@ -482,14 +510,11 @@ function goBack()
 						<p class="form-control-static">
 				{% if repo.src_type == 'git' %}
 					<span class="label label-primary">GIT</span>
-				{% endif %}
-				{% if repo.src_type == 'svn' %}
+				{% elif repo.src_type == 'svn' %}
 					<span class="label label-primary">SVN</span>
-				{% endif %}
-				{% if repo.src_type == 'hg' %}
+				{% elif repo.src_type == 'hg' %}
 					<span class="label label-primary">HG</span>
-				{% endif %}
-				{% if repo.src_type == 'none' %}
+				{% elif repo.src_type == 'none' %}
 					<span class="label label-default">N/A</span>
 				{% endif %}
 					</p>
@@ -501,12 +526,10 @@ function goBack()
 						<p class="form-control-static">
 				{% if repo.web_type == 'trac' %}
 					<span class="label label-info">Trac</span>
-				{% endif %}
-				{% if repo.web_type == 'redmine' %}
+				{% elif repo.web_type == 'redmine' %}
 					<span class="label label-info">Redmine</span>
-				{% endif %}
-				{% if repo.web_type == 'none' %}
-					<span class="label label-default">N/A</span>
+				{% elif repo.web_type == 'none' %}
+					<span class="label label-default">None</span>
 				{% endif %}
 						</p>
 					</div>
@@ -520,7 +543,13 @@ function goBack()
 				<div class="form-group">
 					<label class="col-sm-4 control-label bold-text">Trac Security</label>
 					<div class="col-sm-8">
-						<p class="form-control-static">{{repo.web_security_str}}</p>
+						<p class="form-control-static">
+						{% if repo.web_type == 'none' %}
+							<span class="label label-default">N/A</span>
+						{% else %}
+						{{repo.web_security_str}}
+						{% endif %}
+						</p>
 					</div>
 				</div>
 			</form>

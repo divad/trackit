@@ -55,7 +55,7 @@ DB_PORT='3306'
 ADMIN_GROUP='sys'
 
 ## Version
-VERSION=0.1
+VERSION=0.9
 
 ## the trackitd pyro uri
 TRACKITD_URI="PYRO:trackit-daemon@localhost:1888"

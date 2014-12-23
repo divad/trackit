@@ -546,7 +546,27 @@ def repo_view(name):
 					flash('Repository settings updated successfully', 'alert-success')
 					
 				return redirect(url_for('repo_view',name=repo['name']))
+
+			elif action == 'addweb':
+			
+				if repo['web_type'] == 'none':
+				
+					cur.execute('UPDATE `repos` SET `web_type` = %s WHERE `id` = %s', ("trac", repo['id']))
+					g.db.commit()
 					
+					result, error_string = trackitd.repo_add_web(repo['name'],"trac")
+		
+					if result == False:
+						flash('Could not not add Trac: ' + str(error_string), 'alert-danger')
+						return redirect(url_for('repo_view',name=repo['name']))
+					else:
+						flash('Trac has been added to this repository', 'alert-success')
+						return redirect(url_for('repo_view',name=repo['name']))
+						
+				else:
+					abort(400)
+
+				
 			elif action == 'suspend':
 				if trackit.user.is_global_admin():
 				

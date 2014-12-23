@@ -469,6 +469,38 @@ valid users = %s
 				return False,"Failed to create repository. The error was: " + str(ex)
 				
 		return True,"Success"
+
+	def repo_add_web(self,name,web_type):
+		if DEBUG: syslog.syslog('method repo_add_web called')
+
+		if not re.search(r'^[a-zA-Z0-9_\-]{3,50}$', name):
+			## This should never happen of course, but we do this test just to make sure.
+			return (False,"Invalid repository name")
+			
+		try:
+			curd = self.db_connect()
+			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
+			repo = curd.fetchone()
+			
+			if repo == None:
+				raise InternalError("Could not find repo '" + name + "' in the database")
+								
+			if web_type == 'trac':
+				svn_path = os.path.join(self.config['SVN_ROOT'],name)		
+				trac_path = self.trac_create(name,svn_path)
+					
+				curd.execute('SELECT * FROM `rules` WHERE `rid` = %s',(repo['id']))
+				rules = curd.fetchall()
+			
+				for rule in rules:
+					if rule['source'] == 'internal' and str(rule['admin']) == "1":
+						self.trac_add_admin(trac_path,rule['name'])
+						
+		except Exception as ex:
+			syslog.syslog('Trac creation call failed:' + str(ex))
+			return False,"Failed to add Trac. The error was: " + str(ex)
+					
+		return True,"Success"
 		
 	def repo_add_admin(self,name,username):
 		if DEBUG: syslog.syslog('method repo_add_admin called')
@@ -477,6 +509,7 @@ valid users = %s
 			curd = self.db_connect()
 			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 			repo = curd.fetchone()
+			self.db_close()
 			
 			if repo == None:
 				raise InternalError("Could not find repo '" + name + "' in the database")
@@ -504,6 +537,7 @@ valid users = %s
 			curd = self.db_connect()
 			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 			repo = curd.fetchone()
+			self.db_close()
 			
 			if repo == None:
 				raise InternalError("Could not find repo '" + name + "' in the database")

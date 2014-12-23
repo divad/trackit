@@ -1,12 +1,10 @@
 ## TODO
 
 # Decide how to do SVN email hook 
+
 # SVN autoversioning
 
-# add trac later somehow?
-# pulic/private repo views 
-
-# other auth types ("All university members", "public")...MAYBE
-# instance usage/quotas
-# kill off the table entry for 'tid' in repos
-# set up tmpwatch - 3 months
+# other auth types ("All university members", "public")... - version 2 IF required.
+# instance usage/quotas 								   - version 2 on RHEL7 with XFS per-project quotas.
+# kill off the table entry for 'tid' in repos			   - cleanupaction
+# set up tmpwatch - 3 months							   - server build.
