@@ -2,9 +2,11 @@
 {% block body %}
 
 <div class="page-header">
+  {% if session.logged_in %}
   <div class="pull-right">
   	<a href="{{ url_for('repo_create') }}" class="btn btn-info" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Create new repository"><i class="fa fa-fw fa-plus"></i><span class="hidden-xs"> Create repository</span></a>
   </div>
+  {% endif %}
   <h1>
 <span class="fa-stack">
   <i class="fa fa-square fa-stack-2x"></i>
@@ -15,7 +17,7 @@
 <div class="row">
 
 {% if repos|length == 0 %}
-		<h3>No projects found</h3>
+		<h4>You do not yet have any repositories to show</h4>
 {% else %}
 	{% for repo in repos %}
 		<div class="col-md-3 qq">

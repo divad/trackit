@@ -58,7 +58,7 @@ def get_user_repos():
 
 def get_team_repos(team_name):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute("SELECT * FROM `repos` WHERE `id` IN (SELECT `rid` FROM `rules` WHERE `source` = 'team' AND `name` = %s)",(team_name))
+	curd.execute("SELECT * FROM `repos` WHERE `state` = %s AND `id` IN (SELECT `rid` FROM `rules` WHERE `source` = 'team' AND `name` = %s)",(REPO_STATE['ACTIVE'],team_name))
 	repos = curd.fetchall()
 
 	for repo in repos:
@@ -79,7 +79,7 @@ def repo_list_handler(repos,title,page,function):
 		repo['visibility'] = REPO_SEC_STR[repo['security']]
 		
 	## Pagination
-	itemsPerPage = 8
+	itemsPerPage = 12
 		
 	repos_length = len(repos)
 	number_of_pages = int(math.ceil(float(repos_length) / float(itemsPerPage)))
@@ -122,16 +122,22 @@ def repo_list(page=None):
 
 @app.route('/public')
 @app.route('/public/<page>')
-@trackit.core.login_required
 def repo_list_all(page=None):
 	"""View handler to list all repositories"""
 	
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT * FROM `repos` WHERE `security` > 0 AND `state` <= 2 ORDER BY `name`')
-	repos = curd.fetchall()
+	if session.get('logged_in',False) is False:
+		curd = g.db.cursor(mysql.cursors.DictCursor)
+		curd.execute('SELECT * FROM `repos` WHERE `security` = %s AND `state` = %s ORDER BY `name`',(REPO_SEC['PUBLIC'],REPO_STATE['ACTIVE']))
+		repos = curd.fetchall()
 
-	return repo_list_handler(repos,"All Repositories",page,'repo_list_all')
+		return repo_list_handler(repos,"Public Projects",page,'repo_list_all')
+	else:
+		curd = g.db.cursor(mysql.cursors.DictCursor)
+		curd.execute('SELECT * FROM `repos` WHERE `security` >= %s AND `state` = %s ORDER BY `name`',(REPO_SEC['INTERNAL'],REPO_STATE['ACTIVE']))
+		repos = curd.fetchall()
 
+		return repo_list_handler(repos,"All Repositories",page,'repo_list_all')
+		
 ################################################################################
 
 @app.route('/god/repos')
@@ -394,16 +400,22 @@ def repo_create():
 ################################################################################
 
 @app.route('/repo/<name>/', methods=['GET','POST'])
-@trackit.core.login_required
 def repo_view(name):
 	"""View handler to manage a repo"""
 
 	## Get the repo
 	repo    = get(name,selector='name')
 
-	## No such team found!
+	## No such repo found!
 	if repo == None:
 		abort(404)
+		
+	## If the user is not logged in show a public page, IF its public 
+	if session.get('logged_in',False) is False:
+		if repo['security'] == REPO_SEC['PUBLIC']:
+			return render_template('public_repo.html',repo=repo,active='repos')
+		else:
+			abort(403)
 
 	## Get permissions list for the repo
 	perms = trackit.repos.get_perms(repo['id'])

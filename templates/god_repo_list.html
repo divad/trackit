@@ -28,7 +28,7 @@ $(document).ready(function() {
 		<tbody>
 
 	{% if repos|length == 0 %}
-			<tr><td colspan="">No teams found</td></tr>
+			<tr><td colspan="4">No repos found</td></tr>
 	{% else %}
 		{% for repo in repos %}
 			<tr data-url="{{repo.link}}" class="rowclick-tr">
