@@ -511,7 +511,7 @@ def repo_view(name):
 					
 					if repo['web_type'] == 'trac':
 					
-						if not repo_web_security == repo['web_security']:
+						if not str(repo_web_security) == str(repo['web_security']):
 							cur.execute('UPDATE `repos` SET `web_security` = %s WHERE `id` = %s', (repo_web_security, repo['id']))
 							g.db.commit()
 						
@@ -527,13 +527,13 @@ def repo_view(name):
 							cur.execute('UPDATE `repos` SET `src_notify_email` = %s WHERE `id` = %s', (src_notify_email, repo['id']))
 							g.db.commit()
 						
-							result, error_string = trackitd.repo_update_src_notify_email(repo['name'])
+							result, error_string = trackitd.repo_update_src_notify_email(repo['name'],src_notify_email)
 		
 							if result == False:
 								flash('Could not alter the svn notification e-mail: ' + str(error_string), 'alert-danger')
 								return redirect(url_for('repo_view',name=repo['name']))
 					
-						if not repo_autoversion == repo['autoversion']:
+						if not str(repo_autoversion) == str(repo['autoversion']):
 							cur.execute('UPDATE `repos` SET `autoversion` = %s WHERE `id` = %s', (repo_autoversion, repo['id']))
 							g.db.commit()
 								

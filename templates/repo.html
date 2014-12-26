@@ -610,9 +610,9 @@ function goBack()
 			<thead>
 				<tr>
 					<th width="24%">Name</th>
-					<th width="24%">Type</th>
-					<th width="24%">Web</th>
-					<th width="24%">Admin</th>
+					<th width="24%">Source Access</th>
+					<th width="24%">Trac Access</th>
+					<th width="24%">Admin Rights</th>
 					<th width="4%"></th>
 				</tr>
 			</thead>
@@ -625,25 +625,25 @@ function goBack()
 					</td>
 					<td>
 						{% if rule.src == 0 %}
-							<i class="fa fa-check fa-remove fa-fw"></i>
+							<i class="fa fa-check fa-remove fa-fw" rel="tooltip" data-toggle="tooltip" data-placement="left" title="No access"></i>
 						{% elif rule.src == 1 %}
-							<i class="fa fa-binoculars fa-fw"></i>
+							<i class="fa fa-binoculars fa-fw" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Read-only"></i>
 						{% elif rule.src == 2 %}
-							<i class="fa fa-check fa-edit fa-fw"></i>
+							<i class="fa fa-check fa-edit fa-fw" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Read/write"></i>
 						{% endif %}
 					</td>
 					<td>
 						{% if rule.web == 0 %}
-							<i class="fa fa-check fa-remove fa-fw"></i>
+							<i class="fa fa-check fa-remove fa-fw" rel="tooltip" data-toggle="tooltip" data-placement="left" title="No access to Trac"></i>
 						{% elif rule.web == 1 %}
-							<i class="fa fa-check fa-fw"></i>
+							<i class="fa fa-check fa-fw" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Access to Trac"></i>
 						{% endif %}
 					</td>
 					<td>
 						{% if rule.admin == 0 %}
-							<i class="fa fa-check fa-remove fa-fw"></i>
+							<i class="fa fa-check fa-remove fa-fw" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Normal User"></i>
 						{% elif rule.admin == 1 %}
-							<i class="fa fa-check fa-fw"></i>
+							<i class="fa fa-check fa-fw" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Administrator"></i>
 						{% endif %}
 					</td>
 					<td data-source="{{rule.source}}" data-src="{{rule.src}}" data-web="{{rule.web}}" data-admin="{{rule.admin}}" data-rid="{{rule.id}}" data-name="{{rule.name}}">
