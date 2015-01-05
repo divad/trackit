@@ -136,3 +136,57 @@ def logout():
 	flash('You have been logged out. Goodbye.','alert-success')
 
 	return redirect(url_for('default'))
+
+################################################################################
+#### ALTERNATIVE PASSWORD SYSTEM
+
+@app.route('/passwd', methods=['GET','POST'])
+def passwd():
+
+	if request.method == 'GET':
+		return render_template('passwd.html', next=next)
+	else:
+
+		try:
+			## Check password with kerberos
+			kerberos.checkPassword(request.form['username'], request.form['password'], app.config['KRB5_SERVICE'], app.config['KRB5_DOMAIN'])
+		except kerberos.BasicAuthError as e:
+			flash('Incorrect username and/or password','alert-danger')
+			return redirect(url_for('default'))
+		except kerberos.KrbError as e:
+			flash('Kerberos Error: ' + e.__str__(),'alert-danger')
+			return redirect(url_for('default'))
+		except kerberos.GSSError as e:
+			flash('GSS Error: ' + e.__str__(),'alert-danger')
+			return redirect(url_for('default'))
+		except Exception as e:
+			trackit.errors.fatal(e)
+
+		## Set logged in (if we got this far)
+		session['logged_in'] = True
+		session['username'] = request.form['username']
+
+		## Check if the user selected "Log me out when I close the browser"
+		permanent = request.form.get('sec',default="")
+
+		## Set session as permanent or not
+		if permanent == 'sec':
+			session.permanent = True
+		else:
+			session.permanent = False
+
+		## Log a successful login
+		app.logger.info('User "' + session['username'] + '" logged in from "' + request.remote_addr + '" using ' + request.user_agent.string)
+		
+		if is_global_admin():
+			session['admin'] = True
+			flash('You are logged in as a global administrator with full privileges over all repositories and teams.','alert-warning')
+		else:
+			session['admin'] = False
+
+		## determine if "next" variable is set (the URL to be sent to)
+		if 'next_url' in session:
+			if session['next_url'] != None:
+				return redirect(session['next_url'])
+
+		return redirect(url_for('repo_list'))

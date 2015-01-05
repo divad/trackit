@@ -57,7 +57,6 @@
 						<li class="dropdown{%if active == 'help'%} active{%endif%}">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-fw fa-question-circle"></i> Help <b class="caret"></b></a>
 							<ul class="dropdown-menu">
-								<li><a href="{{ url_for('about') }}"><i class="fa fa-fw fa-question-circle"></i> Help</a></li>
 								<li><a href="{{ url_for('about') }}"><i class="fa fa-fw fa-thumbs-up"></i> About</a></li>
 							</ul>
 						</li>
@@ -67,6 +66,7 @@
 						<li class="dropdown{%if active == 'user'%} active{%endif%}">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">{% if session.admin %}<i class="fa fa-fw fa-unlock-alt"></i>{%else%}<i class="fa fa-fw fa-user"></i>  {%endif%} {{ session.username }} <b class="caret"></b></a>
 							<ul class="dropdown-menu">
+								<li><a href="{{ url_for('passwd') }}"><i class="fa fa-fw fa-key"></i> SVN Password</a></li>
 								<li><a href="{{ url_for('logout') }}"><i class="fa fa-fw fa-sign-out"></i>  Sign Out</a></li>
 							</ul>
 						</li>
