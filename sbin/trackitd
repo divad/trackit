@@ -31,7 +31,7 @@ import imp
 import shutil
 
 TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
-VERSION        = "0.10"
+VERSION        = "0.11"
 DEBUG = True
 
 Pyro4.config.SERVERTYPE = "multiplex"
@@ -242,13 +242,13 @@ class TracKitDaemon(object):
 					
 					if not team == None:
 						teamauthz_required = True
-						teamauthz_string += "\n\tRequire group " + team['name']
+						teamauthz_string += "\nRequire group " + team['name']
 							
 				elif rule['source'] == 'adgroup':
 					groupdn = self.ldap_get_group_dn(rule['name'])
 					
 					if not groupdn == None:
-						ldap_groups += "\n\tRequire ldap-group " + groupdn
+						ldap_groups += "\nRequire ldap-group " + groupdn
 				
 		location = "/trac/" + name 
 		
@@ -260,10 +260,10 @@ class TracKitDaemon(object):
 			users_string = users_string + user + " "
 			
 		if len(users_string) > 0:
-			users_string = "\n\tRequire ldap-user " + users_string
+			users_string = "\nRequire ldap-user " + users_string
 			
 		if teamauthz_required:
-			teamauthz_string = "\n\tWSGIAuthGroupScript /data/trackit/trackit/teamauthz.wsgi" + teamauthz_string
+			teamauthz_string = "\nAuthzLDAPAuthoritative off\nWSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi" + teamauthz_string
 	
 		f = open(os.path.join(self.config['TRAC_CONF_DIR'], name + ".conf"), 'w')
 		f.write("""<Location %s>

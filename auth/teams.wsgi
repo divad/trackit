@@ -40,6 +40,9 @@ def load_config():
 def groups_for_user(environ, username):
 	config = load_config()
 
+	syslog.openlog("trackit-auth",syslog.LOG_PID)
+	syslog.syslog('groups_for_user called')
+
 	db = mysql.connect(config['DB_SERV'],config['DB_USER'],config['DB_PASS'],config['DB_NAME'])
 	curd = db.cursor(mysql.cursors.DictCursor)
 	
