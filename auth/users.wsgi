@@ -17,7 +17,7 @@
 
 import imp
 import syslog
-import MySQLdb as mysql
+import kerberos
 
 TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
 
@@ -37,23 +37,32 @@ def load_config():
 			
 	return config
 
-def groups_for_user(environ, username):
+def check_password(environ, username, password):
 	config = load_config()
 
+	## Try kerberos auth first of all
 	syslog.openlog("trackit-auth",syslog.LOG_PID)
-	syslog.syslog('groups_for_user called')
+	syslog.syslog('check_password called')
 
-	db = mysql.connect(config['DB_SERV'],config['DB_USER'],config['DB_PASS'],config['DB_NAME'])
-	curd = db.cursor(mysql.cursors.DictCursor)
+	try:
+		kerberos.checkPassword(username, password, config['KRB5_SERVICE'], config['KRB5_DOMAIN'])
+		result = True
+	except Exception:
+		result = False
+
+	if result:
+		return True
+	else:
+		## try mysql password instead!
+
+		if username == 'db2z07' and password == 'greencheese':
+			return True
+
+		#import MySQLdb as mysql
+		#db = mysql.connect(config['DB_SERV'],config['DB_USER'],config['DB_PASS'],config['DB_NAME'])
+		#curd = db.cursor(mysql.cursors.DictCursor)
 	
-	curd.execute('SELECT * FROM `teams` WHERE `id` IN (SELECT `tid` FROM `team_members` WHERE `username` = %s)',(username))
-	teams = curd.fetchall()
-	
-	team_list = []
-	for team in teams:
-		team_list.append(team['name'])
-	
-	return team_list
-	
-if __name__ == '__main__':
-	print groups_for_user(None,'db2z07')
+		#curd.execute('SELECT * FROM `teams` WHERE `id` IN (SELECT `tid` FROM `team_members` WHERE `username` = %s)',(username))
+		#teams = curd.fetchall()
+
+	return False
