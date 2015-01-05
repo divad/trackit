@@ -432,7 +432,11 @@ def repo_view(name):
 	
 	## GET (view) requests
 	if request.method == 'GET':
-		return render_template('repo.html',repo=repo,repo_admin=repo_admin,repo_member=repo_member,perms=perms,active='repos',global_admin=trackit.user.is_global_admin())
+	
+		## Get all teams :/ fix this later via AJAX call!
+		teams = trackit.teams.get_all_teams()
+	
+		return render_template('repo.html',teams=teams,repo=repo,repo_admin=repo_admin,repo_member=repo_member,perms=perms,active='repos',global_admin=trackit.user.is_global_admin())
 
 	## POST (change settings or delete or add member or delete member)
 	else:

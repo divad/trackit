@@ -18,7 +18,7 @@
 from trackit import app
 import trackit.core
 import trackit.errors
-from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, jsonify
+from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, jsonify, Response
 import re
 import MySQLdb as mysql
 import math
@@ -116,6 +116,21 @@ def is_admin(team_id,username=None):
 		return False
 	else:
 		return True
+
+################################################################################
+
+@app.route('/api/teams')
+def api_teams():
+	teams = trackit.teams.get_all_teams()
+	
+	strr = '{ "data": ['
+	for team in teams:
+		strr += '["' + team['name'] + '","' + team['desc'] +'"],'
+
+	strr = strr[:-1]
+	strr += "]}"
+		
+	return Response(strr, mimetype='application/json')
 
 ################################################################################
 
