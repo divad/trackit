@@ -55,21 +55,20 @@ function onFormSubmit()
 		</div>
 	</div>
 
-	<!--<div class="form-group">
+	<div class="form-group">
 		<label for="input_src_type" class="col-lg-2 control-label">Source Control</label>
 		<div class="col-lg-6">
 			<select name="repo_src_type" class="form-control" id="input_src_type">
 				<option value="git"{% if repo_src_type and repo_src_type == "git" %} selected="selected"{% endif %}>Git</option>
 				<option value="svn"{% if repo_src_type and repo_src_type == "svn" %} selected="selected"{% endif %}>Subversion</option>
-				<option value="hg"{% if repo_src_type and repo_src_type == "hg" %} selected="selected"{% endif %}>Mercurial</option>
-				<option value="none"{% if repo_src_type and repo_src_type == "none" %} selected="selected"{% endif %}>None - source control disabled</option>
+				<!--<option value="hg"{% if repo_src_type and repo_src_type == "hg" %} selected="selected"{% endif %}>Mercurial</option>
+				<option value="none"{% if repo_src_type and repo_src_type == "none" %} selected="selected"{% endif %}>None - source control disabled</option>-->
 			</select>
 
 			<span class="help-block">The type of repository source control, if any. <a href="">How do I choose?</a>
 			</span>
 		</div>
-	</div>-->
-	<input type="hidden" name="repo_src_type" value="svn"/>
+	</div>
 	<div class="form-group">
 		<label for="input_web_type" class="col-lg-2 control-label">Project Tool</label>
 		<div class="col-lg-6">

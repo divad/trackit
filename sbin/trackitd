@@ -31,8 +31,8 @@ import imp
 import shutil
 
 TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
-VERSION        = "0.11"
-DEBUG = True
+VERSION             = "0.13"
+DEBUG               = True
 
 Pyro4.config.SERVERTYPE = "multiplex"
 Pyro4.config.SOCK_REUSE = True
@@ -109,6 +109,28 @@ class TracKitDaemon(object):
 		self.regenerate_authz_file()
 		self.regenerate_samba_hooks_file()
 		return svn_path
+
+################################################################################
+		
+	def git_create(self,name):
+		git_path = os.path.join(self.config['GIT_ROOT'],name)
+		if os.path.lexists(git_path):
+			syslog.syslog('Could not create git repo ' + git_path + ': the directory already exists')
+			raise InternalError("The git repository path " + git_path + " already exists")
+
+		## Run git init
+		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/git init --bare ' + git_path)
+		if rcode > 0:
+			syslog.syslog('Could not create git repo ' + git_path + ': git init returned an error code')
+			syslog.syslog('svnadmin stdout:' + stdoutdata)
+			syslog.syslog('svnadmin stderr:' + stderrdata)			
+			
+			error_data = {'stdout': stdoutdata, 'stderr': stderrdata, 'rcode': rcode}
+			raise InternalError("git init returned an error. Please contact your system administrator.",error_data)
+		
+		syslog.syslog('Created git repository ' + name)
+		self.git_auth_config(name)
+		return git_path
 		
 ################################################################################
 			
@@ -182,9 +204,9 @@ class TracKitDaemon(object):
 		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/sudo -n /usr/sbin/apachectl graceful')
 
 		if rcode > 0:
-			syslog.syslog('CRITICAL: httpd graceful restart failed - apachectl returned an error code:' + rcode)
-			syslog.syslog('trac-admin stdout:' + stdoutdata)
-			syslog.syslog('trac-admin stderr:' + stderrdata)			
+			syslog.syslog('CRITICAL: httpd graceful restart failed - apachectl returned an error code:' + str(rcode))
+			syslog.syslog('apachectl stdout:' + stdoutdata)
+			syslog.syslog('apachectl stderr:' + stderrdata)			
 			
 			error_data = {'stdout': stdoutdata, 'stderr': stderrdata, 'rcode': rcode}
 			raise InternalError("The web server restart failed. Please contact ServiceLine",error_data)
@@ -287,6 +309,104 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 		syslog.syslog('trac auth config rebuilt for instance ' + name)
 		self.db_close()
 
+################################################################################	
+		
+	def git_auth_config(self,name):			
+		curd = self.db_connect()
+		curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
+		repo = curd.fetchone()
+		
+		if repo == None:
+			raise InternalError("Could not find repo '" + name + "' in the database")
+		
+		if repo['src_type'] != 'git':
+			raise InternalError("Could not build git auth config for repo '" + name + "' because src_type is not set to git")
+			
+		if str(repo['state']) == "2":
+			## suspend 
+			location = "/git/" + name 
+			f = open(os.path.join(self.config['GIT_CONF_DIR'], name + ".conf"), 'w')
+			f.write("""<Location %s>\nDeny from all\n</Location>""" % (location))
+			f.flush()
+			os.fsync(f.fileno())
+			f.close()
+			syslog.syslog('Suspended git auth config for: ' + name)
+			return 
+		elif str(repo['state']) == "3":
+			## delete
+			os.remove(os.path.join(self.config['GIT_CONF_DIR'], name + ".conf"))
+			syslog.syslog('Removed git auth config for: ' + name)
+			return 
+	
+		## create set
+		ro_users = ""
+		rw_users = ""
+		ro_teams = ""
+		rw_teams = ""	
+		
+		## get rules now
+		curd.execute('SELECT * FROM `rules` WHERE `rid` = %s', (repo['id']))
+		rules = curd.fetchall()	
+
+		for rule in rules:
+			if rule['source'] == 'internal':
+				if rule['src'] >= 1:
+					ro_users += rule['name'] + " "
+
+					if rule['src'] == 2:
+						rw_users += rule['name'] + " "
+				
+			elif rule['source'] == 'team':
+				if rule['src'] >= 1:
+					ro_teams += "\nRequire group " + rule['name']
+
+					if rule['src'] == 2:
+						rw_teams += "\nRequire group " + rule['name']
+
+		location = "/git/" + name 
+		
+		if len(ro_users) > 0:
+			ro_users = "\nRequire user " + ro_users
+
+		if len(rw_users) > 0:
+			rw_users = "\nRequire user " + rw_users
+
+		f = open(os.path.join(self.config['GIT_CONF_DIR'], name + ".conf"), 'w')
+		f.write("""<Location %s>
+AuthType Basic
+AuthName "%s Git Repository"
+AuthBasicProvider wsgi
+WSGIAuthUserScript /data/trackit/trackit/auth/users.wsgi
+WSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi
+%s %s
+</Location>
+<Location %s/git-receive-pack>
+AuthType Basic
+AuthName "%s Git Repository"
+AuthBasicProvider wsgi
+WSGIAuthUserScript /data/trackit/trackit/auth/users.wsgi
+WSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi
+%s %s
+</Location>
+""" % (
+			location,
+			name,
+			ro_users,
+			ro_teams,
+			location,
+			name,
+			rw_users,
+			rw_teams,
+		))
+		
+		f.flush()
+		os.fsync(f.fileno())
+		f.close()
+		
+		self.server_graceful()
+		syslog.syslog('git auth config rebuilt for instance ' + name)
+		self.db_close()
+
 
 ################################################################################
 
@@ -294,7 +414,7 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 		curd = self.db_connect()
 		curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 		repo = curd.fetchone()
-		
+	
 		if repo == None:
 			raise InternalError("Could not find repo '" + name + "' in the database")
 		
@@ -528,15 +648,18 @@ SVNAutoversioning on
 			## This should never happen of course, but we do this test just to make sure.
 			return (False,"Invalid repository name")
 			
-		## we only support svn atm
-		if not src_type == 'svn': 
-			return (False,"Invalid repository src type")
-			
 		if src_type == 'svn': 
 			try:
 				svn_path = self.svn_create(name)
 			except Exception as ex:
 				syslog.syslog('SVN creation call failed')
+				return (False,"Failed to create repository. The error was: " + str(ex))
+
+		if src_type == 'git': 
+			try:
+				git_path = self.git_create(name)
+			except Exception as ex:
+				syslog.syslog('git init call failed')
 				return (False,"Failed to create repository. The error was: " + str(ex))
 			
 		if web_type == 'trac':
@@ -548,6 +671,8 @@ SVNAutoversioning on
 				return False,"Failed to create repository. The error was: " + str(ex)
 				
 		return True,"Success"
+
+################################################################################
 
 	def repo_add_web(self,name,web_type):
 		if DEBUG: syslog.syslog('method repo_add_web called')
@@ -580,6 +705,8 @@ SVNAutoversioning on
 			return False,"Failed to add Trac. The error was: " + str(ex)
 					
 		return True,"Success"
+
+################################################################################
 		
 	def repo_add_admin(self,name,username):
 		if DEBUG: syslog.syslog('method repo_add_admin called')
@@ -607,9 +734,10 @@ SVNAutoversioning on
 			
 		return True,"Success"
 
+################################################################################
+
 	def repo_remove_admin(self,name,username):
 		if DEBUG: syslog.syslog('method repo_remove_admin called')
-		
 		
 		try:
 		
@@ -636,7 +764,9 @@ SVNAutoversioning on
 			return False,"Could not revoke admin rights. The error was: " + str(ex)
 			
 		return True,"Success"
-			
+
+################################################################################
+		
 	def repo_suspend(self,name):		
 		if DEBUG: syslog.syslog('method repo_suspend called')
 		
@@ -660,6 +790,7 @@ SVNAutoversioning on
 			
 				self.regenerate_authz_file()
 				self.regenerate_samba_hooks_file()
+				self.regenerate_autoversion_config()
 				
 			if repo['web_type'] == 'trac':
 				trac_path = os.path.join(self.config['TRAC_ROOT'],name)
@@ -677,6 +808,8 @@ SVNAutoversioning on
 			return False,"Could not suspend the repo. The error was: " + str(ex)
 
 		return True,""
+
+################################################################################
 		
 	def repo_enable(self,name):
 		if DEBUG: syslog.syslog('method repo_enable called')
@@ -701,6 +834,7 @@ SVNAutoversioning on
 			
 				self.regenerate_authz_file()
 				self.regenerate_samba_hooks_file()
+				self.regenerate_autoversion_config()
 				
 			if repo['web_type'] == 'trac':
 				trac_path = os.path.join(self.config['TRAC_ROOT'],name)
@@ -719,6 +853,8 @@ SVNAutoversioning on
 
 		return True,""
 		
+################################################################################
+
 	def repo_delete(self,name):
 		if DEBUG: syslog.syslog('method repo_delete called')
 
@@ -740,6 +876,7 @@ SVNAutoversioning on
 			
 				self.regenerate_authz_file()
 				self.regenerate_samba_hooks_file()
+				self.regenerate_autoversion_config()
 				
 			if repo['web_type'] == 'trac':
 				trac_path = os.path.join(self.config['TRAC_ROOT'],name)
@@ -759,6 +896,8 @@ SVNAutoversioning on
 			return False,"Could not delete the repo. The error was: " + str(ex)
 
 		return True,""
+
+################################################################################
 		
 	def repo_update_rules(self,name):
 		if DEBUG: syslog.syslog('method repo_update_rules called')
@@ -784,6 +923,8 @@ SVNAutoversioning on
 			return False,"Failed to rebuild permissions. The error was: " + str(ex)
 					
 		return True,""
+
+################################################################################
 		
 	def repo_update_web_security(self,name):
 		if DEBUG: syslog.syslog('method repo_update_web_security called')
@@ -796,6 +937,8 @@ SVNAutoversioning on
 			return False,"Failed to set web security flag. The error was: " + str(ex)		
 		
 		return True,""
+
+################################################################################
 	
 	def repo_update_src_notify_email(self,name,address):
 		if DEBUG: syslog.syslog('method repo_update_src_notify_email called')
@@ -807,6 +950,8 @@ SVNAutoversioning on
 			return False,"Failed to set set notification e-mail. The error was: " + str(ex)		
 		
 		return True,""
+
+################################################################################
 		
 	def update_autoversion(self):
 		if DEBUG: syslog.syslog('method update_autoversion called')
@@ -819,6 +964,8 @@ SVNAutoversioning on
 			return False,"Failed to set set autoversion. The error was: " + str(ex)		
 		
 		return True,""
+
+################################################################################
 		
 	def team_delete_update(self):
 		if DEBUG: syslog.syslog('method team_delete_update called')
@@ -845,6 +992,8 @@ SVNAutoversioning on
 			return False,"Failed to update rules after team delete. The error was: " + str(ex)				
 		
 		return True,""
+
+################################################################################
 		
 	def team_members_updated(self):
 		if DEBUG: syslog.syslog('method team_members_updated called')
