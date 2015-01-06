@@ -284,6 +284,11 @@ function selectTeam(name)
 	$('#addpermform').modal('show');
 	$("#inputName").trigger("input");
 }
+function cancelTeamBrowse()
+{
+	$('#addpermform').modal('hide');
+	$('#teambrowse').modal('show');
+}
 </script>
 
 <div class="modal" id="teambrowse">
@@ -317,7 +322,7 @@ $(document).ready(function() {
 			<tr>
 				<td>{{team.name}}</td>
 				<td>{{team.desc|truncate(30)}}</td>
-				<td><button class="btn btn-primary" onclick="return selectTeam('{{team.name}}')">Select Team</button>
+				<td><button class="btn btn-xs btn-primary" onclick="return selectTeam('{{team.name}}')">Select Team</button>
 			</tr>	
 		{% endfor %}
 	{%endif%}
@@ -327,7 +332,7 @@ $(document).ready(function() {
 
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-default" onclick="return cancelTeamBrowse()">Cancel</button>
 			</div>
 		</div>
 	</div>
