@@ -53,16 +53,17 @@ def check_password(environ, username, password):
 	if result:
 		return True
 	else:
-		## try mysql password instead!
-
-		if username == 'db2z07' and password == 'greencheese':
-			return True
-
-		#import MySQLdb as mysql
-		#db = mysql.connect(config['DB_SERV'],config['DB_USER'],config['DB_PASS'],config['DB_NAME'])
-		#curd = db.cursor(mysql.cursors.DictCursor)
+		import MySQLdb as mysql
+		db = mysql.connect(config['DB_SERV'],config['DB_USER'],config['DB_PASS'],config['DB_NAME'])
+		curd = db.cursor(mysql.cursors.DictCursor)
 	
-		#curd.execute('SELECT * FROM `teams` WHERE `id` IN (SELECT `tid` FROM `team_members` WHERE `username` = %s)',(username))
-		#teams = curd.fetchall()
+		curd.execute('SELECT * FROM `alt_passwords` WHERE `username` = %s',(username))
+		user = curd.fetchone()
+
+		if user == None:
+			return False
+		else:
+			if password == user['password']:
+				return True
 
 	return False
