@@ -17,7 +17,8 @@
 
 import imp
 import syslog
-import kerberos
+import hashlib
+import redis
 
 TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
 
@@ -38,19 +39,62 @@ def load_config():
 	return config
 
 def check_password(environ, username, password):
-	config = load_config()
+	enc_password = hashlib.sha512(password).hexdigest()
 
-	## Try kerberos auth first of all
-	syslog.openlog("trackit-auth",syslog.LOG_PID)
-	syslog.syslog('check_password called')
+	## We use REDIS password caching for both to reduce having to hit
+	## kerberos (AD) (dog slow!) or MySQL (which has a cache, but redis is in memory)
 
 	try:
+		r = redis.StrictRedis(host='localhost', port=6379, db=0)
+		use_redis = True
+	except Exception as ex:
+		syslog.openlog("trackit-auth",syslog.LOG_PID)
+		syslog.syslog('ERROR could not connect to REDIS: ' + str(ex))	
+		use_redis = False
+
+	if use_redis:
+		try:		
+			cached_password = r.get('user' + ':' + username + ':cached_password')
+			cached_alt_password  = r.get('user' + ':' + username + ':cached_alt_password')
+
+			## Check the cache for the main password
+			if not cached_password == None:
+				## redis cache exists
+				if cached_password == enc_password:
+					return True
+
+			## Try the alt password cache instead
+			if not cached_alt_password == None:
+				if cached_alt_password == enc_password:
+					return True
+				else:
+					return False
+			
+
+		except Exception as ex:
+			syslog.openlog("trackit-auth",syslog.LOG_PID)
+			syslog.syslog('check_password redis get call failed! - ' + str(ex))
+
+	## If we got here then redis didnt' have a password cache for this user
+	config = load_config()
+
+	try:
+		import kerberos
 		kerberos.checkPassword(username, password, config['KRB5_SERVICE'], config['KRB5_DOMAIN'])
 		result = True
+		
 	except Exception:
 		result = False
 
 	if result:
+		if use_redis:
+			try:
+				encrypted_password = hashlib.sha512(password).hexdigest()
+				r.setex('user' + ':' + username + ':cached_password', 300, encrypted_password)
+			except Exception as ex:
+				syslog.openlog("trackit-auth",syslog.LOG_PID)
+				syslog.syslog('check_password redis set call failed! - ' + str(ex))
+
 		return True
 	else:
 		import MySQLdb as mysql
@@ -64,6 +108,15 @@ def check_password(environ, username, password):
 			return False
 		else:
 			if password == user['password']:
+
+				if use_redis:
+					try:
+						encrypted_password = hashlib.sha512(password).hexdigest()
+						r.setex('user' + ':' + username + ':cached_alt_password', 300, encrypted_password)
+					except Exception as ex:
+						syslog.openlog("trackit-auth",syslog.LOG_PID)
+						syslog.syslog('check_password redis set call failed! - ' + str(ex))
+
 				return True
 
 	return False

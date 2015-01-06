@@ -146,7 +146,6 @@ def logout():
 @app.route('/passwd', methods=['GET','POST'])
 @trackit.core.login_required
 def passwd():
-
 	## see if there is an existing password
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT * FROM `alt_passwords` WHERE `username` = %s', (session['username']))
