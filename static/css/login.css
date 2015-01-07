@@ -52,16 +52,19 @@ p {
 
 .navbar-default {
   position: absolute;
-  /*background-color: transparent;*/
+  background-color: transparent;
+  border: none;
 }
 
 .navbar-default .navbar-brand {
   font-size: 20px;
+  color: #FFFFFF;
 }
 
 .navbar-default .navbar-brand,
 .navbar-default .navbar-nav > li > a {
   font-weight: 400;
+  color: #FFFFFF;
 }
 
 .navbar-default .navbar-nav > li > a:hover {
