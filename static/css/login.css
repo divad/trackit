@@ -81,8 +81,13 @@ text-shadow: 1px 1px #000;
   color: #FFFFFF;
 }
 
-.navbar-default .navbar-nav > li > a:hover {
+.navbar-default .navbar-brand .navbar-nav > li > a:hover {
   background-color: transparent;
+  color: #FFFFFF;
+}
+
+a:hover, a:active, a:visited {
+  color: #FFFFFF !important;
 }
 
 .btn {
