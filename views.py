@@ -38,3 +38,9 @@ def default():
 @trackit.core.login_required
 def about():
 	return render_template('about.html', active='help')
+
+#### Suspended
+
+@app.route('/suspended')
+def suspended():
+	return render_template('suspended.html')

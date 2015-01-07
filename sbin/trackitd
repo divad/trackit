@@ -241,7 +241,7 @@ class TracKitDaemon(object):
 			## suspend 
 			location = "/trac/" + name 
 			f = open(os.path.join(self.config['TRAC_CONF_DIR'], name + ".conf"), 'w')
-			f.write("""<Location %s>\nDeny from all\n</Location>""" % (location))
+			f.write("""<Location %s>\nRedirectMatch .* https://forge.soton.ac.uk/suspended\n</Location>""" % (location))
 			f.flush()
 			os.fsync(f.fileno())
 			f.close()
@@ -336,7 +336,7 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 			## suspend 
 			location = "/git/" + name 
 			f = open(os.path.join(self.config['GIT_CONF_DIR'], name + ".conf"), 'w')
-			f.write("""<Location %s>\nDeny from all\n</Location>""" % (location))
+			f.write("""<Location %s>\nRedirectMatch .* https://forge.soton.ac.uk/suspended\n</Location>""" % (location))
 			f.flush()
 			os.fsync(f.fileno())
 			f.close()
