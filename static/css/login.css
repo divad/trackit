@@ -1,3 +1,5 @@
+@import url(https://fonts.googleapis.com/css?family=Lato:400,700);
+
 body {
   font-weight: 300;
 }
@@ -11,16 +13,17 @@ p {
 
 .splash
 {
+text-shadow: 1px 1px #000;
   min-height: 35em;
   padding-top: 8em;
   margin-bottom: 3em;
-  /*background-image: url("/static/img/statues.jpg");
-  background-size: cover;*/
+  background-image: url("/static/img/colors.jpg");
+  background-size: cover;
   color: #fff;
   text-align: center;
+	border-bottom: 1px solid #191919;
 
-
-	/*position: relative;*/
+	/*
 	background-color: #0a1855;
 	background-image: -webkit-gradient(linear,left bottom,right top,color-stop(0%,#0a1855),color-stop(100%,#da0024));
 	background-image: -webkit-linear-gradient(45deg,#0a1855 0,#da0024 100%);
@@ -28,7 +31,7 @@ p {
 	background-image: -ms-linear-gradient(45deg,#0a1855 0,#da0024 100%);
 	background-image: -o-linear-gradient(45deg,#0a1855 0,#da0024 100%);
 	background-image: linear-gradient(45deg,#0a1855 0,#da0024 100%);
-	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0a1855', endColorstr='#da0024', GradientType=1);
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0a1855', endColorstr='#da0024', GradientType=1);*/
 }
 
 .headline
@@ -38,22 +41,33 @@ p {
 
 .splash h1
 {
-	font-size: 5em;
-	font-weight: 500;
+	font-size: 5.5em;
+	font-weight: 700;
 	/*text-shadow: 2px 1px 0 #666666, 9px 8px 0 rgba(0,0,0,0.15);*/
 	color: #FFFFFF;
+    font-family: 'Lato', sans-serif;
 }
 
 .splash h2
 {
 	color: #FFFFFF;
 	font-size: 2em;
+    font-family: 'Lato', sans-serif;
+}
+
+.splash p
+{
+    font-family: 'Lato', sans-serif;
+	font-size: 1.5em;
+	font-weight: 500;
 }
 
 .navbar-default {
+  text-shadow: 1px 1px #000;
   position: absolute;
   background-color: transparent;
   border: none;
+  font-family: 'Lato', sans-serif;
 }
 
 .navbar-default .navbar-brand {
