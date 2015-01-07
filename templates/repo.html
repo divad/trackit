@@ -32,7 +32,7 @@
   <i class="fa fa-square fa-stack-2x"></i>
   <i class="fa fa-flag fa-stack-1x fa-inverse"></i>
 </span> {{repo.name}}</h1>
-	<p>{{repo.desc}}</p>
+	<p><strong>Description:</strong> {{repo.desc}}</p>
 </div>
 
 {% if repo_admin %}
@@ -369,7 +369,7 @@ $(document).ready(function() {
 				</div>
 				<div class="modal-body" stlye="min-height: 200px">
 				
-					<div class="alert alert-danger hidden" role="alert" id="ad-alert"><strong>Warning!</strong> Granting permissions to active directory groups is <u>not recommended</u>. Source code access (Subversion/Git/Mercurial) cannot be granted to such groups. Admin rights cannot be granted to such groups. Nested active directory groups are not (yet) supported.</div>
+					<div class="alert alert-danger hidden" role="alert" id="ad-alert"><strong>Warning!</strong> Granting permissions to active directory groups is <u>not recommended</u>. Source code access (Subversion/Git) cannot be granted to such groups. Admin rights cannot be granted to such groups. Nested active directory groups are not (yet) supported.</div>
 
 					
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
@@ -579,8 +579,9 @@ $(document).ready(function() {
 
 <div class="row">
 	<div class="col-md-6">
-		<div class="well">
-			<h3>About</h3>
+		<div class="panel panel-default">
+			<div class="panel-heading">Repository Information</div>
+			<div class="panel-body">
 			<form class="form-horizontal" role="form">
 				<div class="form-group">
 					<label class="col-sm-4 control-label bold-text">Status</label>
@@ -639,57 +640,70 @@ $(document).ready(function() {
 			</form>
 		</div>
 	</div>
+	</div>
 
 	<div class="col-md-6">
-		<div class="well">
-			<h3>Links</h3>
-			<form class="form-horizontal" role="form">
-				<div class="form-group">
-					<label class="col-sm-4 control-label bold-text">Subversion</label>
-					<div class="col-sm-8">
-						<p class="form-control-static"><a href="https://svn.soton.ac.uk/{{repo.name}}">https://svn.soton.ac.uk/{{repo.name}}</a></p>
+		<div class="panel panel-default">
+			<div class="panel-heading">Service Links</div>
+			<div class="panel-body">
+				<form class="form-horizontal" role="form">
+					{% if repo.src_type == 'svn' %}
+					<div class="form-group">
+						<label class="col-sm-3 control-label bold-text">Subversion</label>
+						<div class="col-sm-9">
+							<p class="form-control-static"><a href="https://svn.soton.ac.uk/{{repo.name}}">https://svn.soton.ac.uk/{{repo.name}}</a></p>
+						</div>
 					</div>
-				</div>
-				<div class="form-group">
-					<label class="col-sm-4 control-label bold-text">Trac</label>
-					<div class="col-sm-8">
-						<p class="form-control-static"><a href="https://trac.soton.ac.uk/{{repo.name}}/">https://trac.soton.ac.uk/{{repo.name}}</a></p>
+					{% endif %}
+					{% if repo.src_type == 'git' %}
+					<div class="form-group">
+						<label class="col-sm-3 control-label bold-text">Git</label>
+						<div class="col-sm-9">
+							<p class="form-control-static"><a href="https://{{session.username}}@git.soton.ac.uk/{{repo.name}}">https://{{session.username}}@git.soton.ac.uk/{{repo.name}}</a></p>
+						</div>
 					</div>
-				</div>
-				<div class="form-group">
-					<label class="col-sm-4 control-label bold-text">SVN Hooks</label>
-					<div class="col-sm-8">
-						<p class="form-control-static"><a href="smb://svn.soton.ac.uk/{{repo.name}}">smb://svn.soton.ac.uk/{{repo.name}}</a> <i class="fa fa-fw fa-linux"></i> <i class="fa fa-fw fa-apple"></i></p>
+					{% endif %}
+					{% if repo.web_type == 'trac' %}
+					<div class="form-group">
+						<label class="col-sm-3 control-label bold-text">Trac</label>
+						<div class="col-sm-9">
+							<p class="form-control-static"><a href="https://trac.soton.ac.uk/{{repo.name}}/">https://trac.soton.ac.uk/{{repo.name}}</a></p>
+						</div>
 					</div>
-				</div>
-				<div class="form-group">
-					<label class="col-sm-4 control-label bold-text">&nbsp;</label>
-					<div class="col-sm-8">
-						<p class="form-control-static"><a href="file://svn.soton.ac.uk/{{repo.name}}">\\svn.soton.ac.uk\{{repo.name}}</a> <i class="fa fa-fw fa-windows"></i></p>
+					{% endif %}
+					{% if repo.src_type == 'svn' %}
+					<div class="form-group">
+						<label class="col-sm-3 control-label bold-text">SVN Hooks</label>
+						<div class="col-sm-9">
+							<p class="form-control-static"><a href="smb://svn.soton.ac.uk/{{repo.name}}">smb://svn.soton.ac.uk/{{repo.name}}</a> <i class="fa fa-fw fa-linux"></i> <i class="fa fa-fw fa-apple"></i></p>
+						</div>
 					</div>
-				</div>
-				<div class="form-group">
-					<label class="col-sm-4 control-label bold-text">&nbsp;</label>
-					<div class="col-sm-8">
-						<p class="form-control-static">&nbsp;</p>
+					<div class="form-group">
+						<label class="col-sm-3 control-label bold-text">&nbsp;</label>
+						<div class="col-sm-9">
+							<p class="form-control-static"><a href="file://svn.soton.ac.uk/{{repo.name}}">\\svn.soton.ac.uk\{{repo.name}}</a> <i class="fa fa-fw fa-windows"></i></p>
+						</div>
 					</div>
-				</div>
-			</form>
+					{% endif %}
+				</form>
+			</div>
 		</div>
 	</div>
 </div>
-<div class="row">
 	{% if repo_member %}
-	<div class="col-md-12">
-		<div class="well">
+		<div class="panel panel-default">
+			<div class="panel-heading">Repository Permission Rules
 		{% if repo_admin %}
-		{% if repo.state != 4 %}
+		{% if repo.state == 1 %}
 		<div class="pull-right">
-	  	<a href="" data-toggle="modal" data-target="#addperm" class="btn btn-success" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Add permission"><i class="fa fa-fw fa-plus"></i><span class="hidden-xs"> Add Permission</span></a>		
+	  	<a href="" data-toggle="modal" data-target="#addperm" class="btn btn-success btn-xs" rel="tooltip" data-toggle="tooltip" data-placement="left" title="Add permission"><i class="fa fa-fw fa-plus"></i><span class="hidden-xs"> Add Permission</span></a>		
 		</div>
 		{% endif %}
 		{% endif %}
-		<h3>Permissions</h3>
+
+			</div>
+			<div class="panel-body">
+
 		<table id="tsort" class="table table-hover table-striped">
 			<thead>
 				<tr>
@@ -743,7 +757,6 @@ $(document).ready(function() {
 			</tbody>
 		</table>
 		</div>
-	</div>
 	{% endif %}
 </div>
 {% endblock %}

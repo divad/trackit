@@ -6,14 +6,15 @@
   <i class="fa fa-square fa-stack-2x"></i>
   <i class="fa fa-flag fa-stack-1x fa-inverse"></i>
 </span> {{repo.name}}</h1>
-	<p>{{repo.desc}}</p>
+	<p><strong>Project Description:</strong> {{repo.desc}}</p>
 </div>
 
 
 <div class="row">
 	<div class="col-md-6">
-		<div class="well">
-			<h3>About</h3>
+		<div class="panel panel-default">
+			<div class="panel-heading">Project Information</div>
+			<div class="panel-body">
 			<form class="form-horizontal" role="form">
 				<div class="form-group">
 					<label class="col-sm-4 control-label bold-text">Status</label>
@@ -35,7 +36,7 @@
 					<span class="label label-primary">HG</span>
 				{% endif %}
 				{% if repo.src_type == 'none' %}
-					<span class="label label-default">N/A</span>
+					<span class="label label-default">None</span>
 				{% endif %}
 					</p>
 					</div>
@@ -51,38 +52,41 @@
 					<span class="label label-info">Redmine</span>
 				{% endif %}
 				{% if repo.web_type == 'none' %}
-					<span class="label label-default">N/A</span>
+					<span class="label label-default">None</span>
 				{% endif %}
 						</p>
 					</div>
+				</div>
 				</div>
 			</form>
 		</div>
 	</div>
 
 	<div class="col-md-6">
-		<div class="well">
-			<h3>Links</h3>
+		<div class="panel panel-default">
+			<div class="panel-heading">Service Links</div>
+			<div class="panel-body">
 			<form class="form-horizontal" role="form">
 				<div class="form-group">
-					<label class="col-sm-4 control-label bold-text">SVN</label>
-					<div class="col-sm-8">
+					<label class="col-sm-3 control-label bold-text">SVN</label>
+					<div class="col-sm-9">
 						<p class="form-control-static"><a href="https://svn.soton.ac.uk/{{repo.name}}">https://svn.soton.ac.uk/{{repo.name}}</a></p>
 					</div>
 				</div>
 				<div class="form-group">
-					<label class="col-sm-4 control-label bold-text">SVN+SSH</label>
-					<div class="col-sm-8">
+					<label class="col-sm-3 control-label bold-text">SVN+SSH</label>
+					<div class="col-sm-9">
 						<p class="form-control-static">ssh+svn://svn.soton.ac.uk/{{repo.name}}</p>
 					</div>
 				</div>
 				<div class="form-group">
-					<label class="col-sm-4 control-label bold-text">Trac</label>
-					<div class="col-sm-8">
+					<label class="col-sm-3 control-label bold-text">Trac</label>
+					<div class="col-sm-9">
 						<p class="form-control-static"><a href="https://trac.soton.ac.uk/{{repo.name}}/">https://trac.soton.ac.uk/{{repo.name}}</a></p>
 					</div>
 				</div>			
 			</form>
+			</div>
 		</div>
 	</div>
 </div>

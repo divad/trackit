@@ -31,7 +31,7 @@ import imp
 import shutil
 
 TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
-VERSION             = "0.13"
+VERSION             = "0.14"
 DEBUG               = True
 
 Pyro4.config.SERVERTYPE = "multiplex"
@@ -134,13 +134,20 @@ class TracKitDaemon(object):
 		
 ################################################################################
 			
-	def trac_create(self,name,svn_path,repo_description="N/A"):
+	def trac_create(self,name,src_type,src_path=""):
+		if DEBUG: syslog.syslog('internal method trac_create called with 1:' + name + ' 2:' + src_type + ' 3:' + src_path)
 		## Check trac folder does not exist
 		trac_path = os.path.join(self.config['TRAC_ROOT'],name)
 		if os.path.lexists(trac_path):
 			raise InternalError("The trac path " + trac_path + " already exists")
+
+		trac_str = ""
+		if src_type == "svn":
+			trac_str = " svn " + src_path
+		elif src_type == "git":
+			trac_str = " git " + src_path
 	
-		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/trac-admin ' + trac_path + ' initenv ' + name + ' sqlite:db/trac.db svn ' + svn_path)
+		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/trac-admin ' + trac_path + ' initenv ' + name + ' sqlite:db/trac.db' + trac_str)
 
 		if rcode > 0:
 			syslog.syslog('Could not trac instance ' + trac_path + ': trac-admin returned an error code')
@@ -150,7 +157,7 @@ class TracKitDaemon(object):
 			error_data = {'stdout': stdoutdata, 'stderr': stderrdata, 'rcode': rcode}
 			raise InternalError("The Trac instance could not be created due to an internal error. Please contact your system administrator.",error_data)
 		else:
-			syslog.syslog('Created trac instance ' + name)
+			syslog.syslog('Created trac instance ' + name + " with source type: " + src_type)
 
 		## Open the config file		
 		config_path = os.path.join(trac_path,'conf','trac.ini')
@@ -163,9 +170,13 @@ class TracKitDaemon(object):
 		tconfig.set('header_logo','alt','Trac')
 		tconfig.set('header_logo','link','https://trac.soton.ac.uk/' + name + '/')
 		
-		## Enable SVN component
-		tconfig.add_section('components')
-		tconfig.set('components','tracopt.versioncontrol.svn.*','enabled')
+
+		if src_type == "svn":	
+			tconfig.add_section('components')
+			tconfig.set('components','tracopt.versioncontrol.svn.*','enabled')
+		elif src_type == "git":
+			tconfig.add_section('components')
+			tconfig.set('components','tracopt.versioncontrol.git.*','enabled')
 
 		## email notifications
 		tconfig.set('notification','always_notify_owner','true')
@@ -178,7 +189,6 @@ class TracKitDaemon(object):
 		
 		## other settings
 		tconfig.set('project','admin','noreply@soton.ac.uk')
-		tconfig.set('project','descr',repo_description)
 		
 		with open(config_path,'wb') as cfp:
 			tconfig.write(cfp)
@@ -650,21 +660,22 @@ SVNAutoversioning on
 			
 		if src_type == 'svn': 
 			try:
-				svn_path = self.svn_create(name)
+				src_path = self.svn_create(name)
 			except Exception as ex:
 				syslog.syslog('SVN creation call failed')
 				return (False,"Failed to create repository. The error was: " + str(ex))
-
-		if src_type == 'git': 
+		elif src_type == 'git': 
 			try:
-				git_path = self.git_create(name)
+				src_path = self.git_create(name)
 			except Exception as ex:
 				syslog.syslog('git init call failed')
 				return (False,"Failed to create repository. The error was: " + str(ex))
+		elif src_type == 'none':
+			src_path = ""
 			
 		if web_type == 'trac':
 			try:
-				trac_path = self.trac_create(name,svn_path)
+				trac_path = self.trac_create(name,src_type,src_path)
 				self.trac_add_admin(trac_path,initial_admin)
 			except Exception as ex:
 				syslog.syslog('Trac creation call failed:' + str(ex))
@@ -690,8 +701,14 @@ SVNAutoversioning on
 				raise InternalError("Could not find repo '" + name + "' in the database")
 								
 			if web_type == 'trac':
-				svn_path = os.path.join(self.config['SVN_ROOT'],name)		
-				trac_path = self.trac_create(name,svn_path)
+				if repo['src_type'] == 'svn':
+					src_path = os.path.join(self.config['SVN_ROOT'],name)
+				elif repo['src_type'] == 'git':
+					src_path = os.path.join(self.config['GIT_ROOT'],name)
+				elif repo['src_type'] == 'none':
+					src_path = ''
+
+				trac_path = self.trac_create(name,repo['src_type'],src_path)
 					
 				curd.execute('SELECT * FROM `rules` WHERE `rid` = %s',(repo['id']))
 				rules = curd.fetchall()
@@ -791,6 +808,15 @@ SVNAutoversioning on
 				self.regenerate_authz_file()
 				self.regenerate_samba_hooks_file()
 				self.regenerate_autoversion_config()
+
+			if repo['src_type'] == 'git':
+			
+				git_path = os.path.join(self.config['GIT_ROOT'],name)
+				git_suspend_path = os.path.join(self.config['GIT_SUSPENDED_ROOT'],name)
+				shutil.move(git_path,git_suspend_path)
+				syslog.syslog('Moved git directory to suspended for repo: ' + name)
+			
+				self.git_auth_config(name)
 				
 			if repo['web_type'] == 'trac':
 				trac_path = os.path.join(self.config['TRAC_ROOT'],name)
@@ -799,7 +825,8 @@ SVNAutoversioning on
 				syslog.syslog('Moved trac directory to suspended for repo: ' + name)
 
 				self.trac_auth_config(name)
-				self.server_graceful()
+
+			self.server_graceful()
 		
 		except Exception as ex:
 		
@@ -835,6 +862,15 @@ SVNAutoversioning on
 				self.regenerate_authz_file()
 				self.regenerate_samba_hooks_file()
 				self.regenerate_autoversion_config()
+
+			if repo['src_type'] == 'git':
+			
+				git_path = os.path.join(self.config['GIT_ROOT'],name)
+				git_suspend_path = os.path.join(self.config['GIT_SUSPENDED_ROOT'],name)
+				shutil.move(git_suspend_path,git_path)
+				syslog.syslog('Moved git directory to active for repo: ' + name)
+			
+				self.git_auth_config(name)
 				
 			if repo['web_type'] == 'trac':
 				trac_path = os.path.join(self.config['TRAC_ROOT'],name)
@@ -843,7 +879,8 @@ SVNAutoversioning on
 				syslog.syslog('Moved trac directory to active for repo: ' + name)
 
 				self.trac_auth_config(name)
-				self.server_graceful()
+			
+			self.server_graceful()
 		
 		except Exception as ex:
 		
@@ -877,6 +914,15 @@ SVNAutoversioning on
 				self.regenerate_authz_file()
 				self.regenerate_samba_hooks_file()
 				self.regenerate_autoversion_config()
+
+			if repo['src_type'] == 'git':
+			
+				git_path = os.path.join(self.config['GIT_ROOT'],name)
+				git_delete_path = os.path.join(self.config['GIT_DELETED_ROOT'],name)
+				shutil.move(git_path,git_delete_path)
+				syslog.syslog('Moved git directory to deleted for repo: ' + name)
+			
+				self.git_auth_config(name)
 				
 			if repo['web_type'] == 'trac':
 				trac_path = os.path.join(self.config['TRAC_ROOT'],name)
@@ -885,8 +931,8 @@ SVNAutoversioning on
 				syslog.syslog('Moved trac directory to deleted for repo: ' + name)
 
 				self.trac_auth_config(name)
-				self.server_graceful()
-
+			
+			self.server_graceful()
 			self.db_close()
 		
 		except Exception as ex:
@@ -913,6 +959,8 @@ SVNAutoversioning on
 				
 			if repo['src_type'] == 'svn':
 				self.regenerate_authz_file()
+			elif repo['src_type'] == 'git':
+				self.git_auth_config(name)
 				
 			if repo['web_type'] == 'trac':
 				self.trac_auth_config(name)
@@ -930,10 +978,19 @@ SVNAutoversioning on
 		if DEBUG: syslog.syslog('method repo_update_web_security called')
 
 		try:
-			self.trac_auth_config(name)
-			self.server_graceful()
+			curd = self.db_connect()
+			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
+			repo = curd.fetchone()
+			
+			if repo == None:
+				raise InternalError("Could not update web security for repo '" + name + "' because it does not exist!")
+				
+			if repo['web_type'] == 'trac':
+				self.trac_auth_config(name)
+				self.server_graceful()
+
 		except Exception as ex:
-			syslog.syslog('Unable to rebuild trac auth config:' + str(ex))
+			syslog.syslog('Unable to set web security flag:' + str(ex))
 			return False,"Failed to set web security flag. The error was: " + str(ex)		
 		
 		return True,""
@@ -942,9 +999,18 @@ SVNAutoversioning on
 	
 	def repo_update_src_notify_email(self,name,address):
 		if DEBUG: syslog.syslog('method repo_update_src_notify_email called')
-		
+
 		try:
-			self.svn_notify_config(name,address)
+			curd = self.db_connect()
+			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
+			repo = curd.fetchone()
+			
+			if repo == None:
+				raise InternalError("Could not update web security for repo '" + name + "' because it does not exist!")
+				
+			if repo['src_type'] == 'svn':
+				self.svn_notify_config(name,address)
+
 		except Exception as ex:
 			syslog.syslog('Unable to set svn notify email:' + str(ex))
 			return False,"Failed to set set notification e-mail. The error was: " + str(ex)		
@@ -955,7 +1021,7 @@ SVNAutoversioning on
 		
 	def update_autoversion(self):
 		if DEBUG: syslog.syslog('method update_autoversion called')
-			
+
 		try:
 			self.regenerate_autoversion_config()
 			self.server_graceful()
@@ -973,9 +1039,6 @@ SVNAutoversioning on
 		try:
 			self.regenerate_authz_file()
 			
-			## TODO consider being smarter about this. Only regenerate repos which ever referenced this team?
-			## would mean doing the SQL delete after htis call instead of doing it first as now.
-			
 			curd = self.db_connect()
 			curd.execute('SELECT * FROM `repos` WHERE `state` = 1')
 			repos = curd.fetchall()
@@ -983,6 +1046,8 @@ SVNAutoversioning on
 			for repo in repos:
 				if repo['web_type'] == 'trac':
 					self.trac_auth_config(repo['name'])
+				if repo['src_type'] == 'git':
+					self.git_auth_config(repo['name'])
 			
 			self.server_graceful()
 			self.db_close()

@@ -136,7 +136,7 @@ def repo_list_all(page=None):
 		curd.execute('SELECT * FROM `repos` WHERE `security` >= %s AND `state` = %s ORDER BY `name`',(REPO_SEC['INTERNAL'],REPO_STATE['ACTIVE']))
 		repos = curd.fetchall()
 
-		return repo_list_handler(repos,"All Repositories",page,'repo_list_all')
+		return repo_list_handler(repos,"All Public Repositories",page,'repo_list_all')
 		
 ################################################################################
 
@@ -310,9 +310,9 @@ def repo_create():
 		if 'repo_desc' in request.form:
 			repo_desc = request.form['repo_desc']
 
-			if not re.search(r'^[a-zA-Z0-9_\-\,\.\(\)\s\+]{3,255}$',repo_desc):
+			if not re.search(r'^[a-zA-Z0-9_\-\,\.\(\)\s\+\!\&]{3,255}$',repo_desc):
 				had_error = 1
-				flash('Invalid repository description. Allowed characters are a-z, 0-9, comma, full stop, backslash, whitespace, plus, underscore and hyphen', 'alert-danger')
+				flash('Invalid repository description. Allowed characters are a-z, 0-9, comma, full stop, backslash, whitespace, plus, underscore, ampersand, exclamation mark and hyphen', 'alert-danger')
 		else:
 			had_error = 1
 			repo_desc = ''
@@ -341,6 +341,11 @@ def repo_create():
 			had_error = 1
 			repo_src_type = 'trac'
 			flash("You must specify a repository web tool type", 'alert-danger')
+
+		## both web and src can't both be none
+		if repo_src_type == 'none' and repo_web_type == 'none':
+			had_error = 1
+			flash("A repository must have at a revision control system or a web project management tool, or both!","alert-danger")
 
 		# Ensure that the repo name doesn't already exist
 		cur = g.db.cursor()
@@ -453,9 +458,9 @@ def repo_view(name):
 				if 'repo_desc' in request.form:
 					repo_desc = request.form['repo_desc']
 
-					if not re.search(r'^[a-zA-Z0-9_\-\,\.\(\)\s\+]{3,255}$',repo_desc):
+					if not re.search(r'^[a-zA-Z0-9_\-\,\.\(\)\s\+\!\&]{3,255}$',repo_desc):
 						had_error = 1
-						flash('Invalid repository description. Allowed characters are a-z, 0-9, comma, full stop, backslash, whitespace, plus, underscore and hyphen', 'alert-danger')
+						flash('Invalid repository description. Allowed characters are a-z, 0-9, comma, full stop, backslash, whitespace, plus, underscore, ampersand, exclamation mark and hyphen', 'alert-danger')
 				else:
 					had_error = 1
 					flash("You must specify a repository description", 'alert-danger')
