@@ -16,6 +16,40 @@
 	</div>
 </div>
 
+<div class="modal fade" id="choose">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">How do I choose what revision control system to use?</h4>
+			</div>
+			<div class="modal-body">
+
+				<p><a href="http://git-scm.com/">Git</a> and <a href="">Subversion (SVN)</a> are both revision control systems and Forge offers both. So how do you choose?</p>
+				<p>The biggest difference between them is that Subversion is a <em>centralised</em> revision/version control system, and Git is a <em>distributed</em> revision/version control system. When working with the former (Subversion) virtually all tasks (commits, etc) take place on the server, but with the latter (Git) most tasks take place locally on your own local repository and can then be pushed/merged back to the Forge server.</p>
+				<ul>
+					<li>We recommend that you use Git if you're going to be developing computer software</li>
+					<li>If you're storing binary data (such as Office documents) we recommend using Subversion</li>
+					<li>If you are a sole user, or a small team, Subverison may be easier since it is a centralised system</li>
+					<li>For large teams, or teams that plan to use branching and merging, Git is a much better choice</li>
+					<li>Git is much faster than Subversion and require less disk space</li>
+					<li>Subversion's workflow and tools (and revision numbers) are much simpler and easier to understand than Git</li>
+				</ul
+				<p>Ultimatley the choice is personal, some people prefer Subversion over Git, and vice versa. Below are some more links to help you decide:</p>
+				<ul>
+					<li><a href="http://svnbook.red-bean.com/en/1.7/svn.intro.whatis.html#svn.intro.righttool">Is SVN the right tool?</a></li>
+					<li><a href="http://git-scm.com/about">Git's about page</a></li>
+					<li><a href="http://en.wikipedia.org/wiki/Comparison_of_revision_control_software">Wikipedia's comparison</a></li>
+				</ul>
+				<p>Note - the Forge application itself is managed via Git.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <div class="page-header">
   <h1><span class="fa-stack">
   <i class="fa fa-square fa-stack-2x"></i>
@@ -65,7 +99,7 @@ function onFormSubmit()
 				<option value="none"{% if repo_src_type and repo_src_type == "none" %} selected="selected"{% endif %}>None - source control disabled</option>-->
 			</select>
 
-			<span class="help-block">The type of repository source control, if any. <a href="">How do I choose?</a>
+			<span class="help-block">The type of repository source control, if any. <a href="" data-toggle="modal" data-target="#choose">How do I choose?</a>
 			</span>
 		</div>
 	</div>
