@@ -37,11 +37,11 @@
           </button>
         </div>
         <div class="navbar-collapse collapse" id="navbar-main">
-					<ul class="nav navbar-nav navbar-right">
-						<li>
-							<a href="{{url_for('repo_list_all')}}"><i class="fa fa-fw fa-code"></i> Public Projects</a>
-						</li>
-					</ul>
+			<ul class="nav navbar-nav navbar-right">
+				<li>
+					<a href="{{url_for('repo_list_all')}}"><i class="fa fa-fw fa-code"></i> Public Projects</a>
+				</li>
+			</ul>
 		</div>
       </div>
     </div>
@@ -83,25 +83,33 @@
 
    <div class="container marketing">
 
-      <!-- Three columns of text below the carousel -->
       <div class="row">
         <div class="col-lg-4">
-          <i class="fa fa-fw fa-5x fa-code"></i>
+			<span class="fa-stack fa-lg feature-icon">
+  <i class="fa fa-square fa-stack-2x"></i>
+  <i class="fa fa-code fa-stack-1x fa-inverse"></i>
+</span>
+          <!--<i class="fa fa-fw fa-5x fa-code"></i>-->
           <h2>Version Control</h2>
           <p>Need to store your software or project somewhere? Need to store/track the changes you make? Soton Forge can help! You can choose from Git or Subversion to store your files in. We'll be adding Mercurial support soon.</p>
-          <!--<p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>-->
-        </div><!-- /.col-lg-4 -->
+        </div>
         <div class="col-lg-4">
-          <i class="fa fa-fw fa-5x fa-code-fork"></i>
+<span class="fa-stack fa-lg feature-icon">
+  <i class="fa fa-square fa-stack-2x"></i>
+  <i class="fa fa-code-fork fa-stack-1x fa-inverse"></i>
+</span>
           <h2>Self Provisioning</h2>
 			<p>Create and manage teams of people, and within the teams, create as many repositories as you need. Each repository can have individual permissions and different revision control and web management tools</p>
-        </div><!-- /.col-lg-4 -->
+        </div>
         <div class="col-lg-4">
-          <i class="fa fa-fw fa-5x fa-bug"></i>
+<span class="fa-stack fa-lg feature-icon">
+  <i class="fa fa-square fa-stack-2x"></i>
+  <i class="fa fa-bug fa-stack-1x fa-inverse"></i>
+</span>
           <h2>Project Management</h2>
 			<p>Use can use Trac to manage your project. Trac optionally integrates with Subversion and Git. Trac offers features such as bug/ticket tracking, a wiki, milestones and other project management features</p>
-        </div><!-- /.col-lg-4 -->
-      </div><!-- /.row -->
+        </div>
+      </div>
 
 
       <!-- START THE FEATURETTES -->
@@ -123,7 +131,7 @@
 
 		<div class="row featurette">
 		<div class="col-md-5">
-		<img class="featurette-image img-responsive" src="{{ url_for('static', filename='img/redmine.png') }}" alt="Generic placeholder image">
+		<img class="featurette-image img-responsive" src="{{ url_for('static', filename='img/manage.png') }}" alt="Generic placeholder image">
 		</div>
 		<div class="col-md-7">
 		<h2 class="featurette-heading">...Or manage your project <span class="text-muted">with Redmine!</span></h2>

@@ -81,6 +81,15 @@ text-shadow: 1px 1px #000;
   color: #FFFFFF;
 }
 
+span.feature-icon
+{
+	font-size: 4em;
+}
+span:hover.feature-icon
+{
+	color: #666666;
+}
+
 .navbar-default .navbar-brand .navbar-nav > li > a:hover {
   background-color: transparent;
   color: #FFFFFF;
