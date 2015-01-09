@@ -52,6 +52,17 @@ def login():
 		except Exception as e:
 			trackit.errors.fatal(e)
 
+		## Check this user is allowed to logon
+		result = trackit.core.ldap_check_user_access(request.form['username'])
+
+		## Check they can logon
+		if result == None:
+			flash("Sorry, I couldn't find your details in Active Directory! Please contact your system administrator.","alert-danger")
+			return redirect(url_for('default'))
+		elif result == False:
+			flash("Sorry, you are not allowed to access this service. If you believe this is in error please contact ServiceLine.","alert-danger")
+			return redirect(url_for('default'))
+
 		## Set logged in (if we got this far)
 		session['logged_in'] = True
 		session['username'] = request.form['username']

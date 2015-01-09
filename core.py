@@ -48,6 +48,24 @@ def ldap_check_group(group_name):
 						
 	return False
 
+def ldap_check_user_access(username):
+	ldapserver = ldap.initialize(app.config['LDAP_SERVER'])
+	results = ldapserver.search_s(app.config['LDAP_BASE'], ldap.SCOPE_SUBTREE,"(cn=" + username +")")
+
+	for result in results:
+		dn    = result[0]
+		attrs = result[1]
+
+		if not dn == None:
+			if "employeeID" in attrs:
+				idnum = attrs['employeeID']
+				session['employeeID'] = idnum[0]
+				if idnum[0].startswith("1") or idnum[0].startswith("2"):
+					return True
+				else:
+					return False
+	return None
+
 def trackitd_connect():
 	proxy = Pyro4.Proxy(app.config['TRACKITD_URI'])
 	proxy._pyroHmacKey = app.config['TRACKITD_KEY']
