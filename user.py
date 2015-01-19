@@ -181,5 +181,7 @@ def regenerate_alt_password():
 	cur.execute('INSERT INTO `alt_passwords` (username,password) VALUES (%s, %s)', (session['username'],new_password))
 	g.db.commit()
 
+	trackit.core.audit_event(session['username'],'user','alt_password.regenerate',0,'Alternative password (re)generated for ' + session['username'])
+
 	return new_password
 

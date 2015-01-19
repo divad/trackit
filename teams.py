@@ -177,12 +177,14 @@ def team_view(name):
 				cur.execute('DELETE FROM `teams` WHERE `id` = %s', (team['id']))
 				cur.execute("DELETE FROM `rules` WHERE `source` = 'team' AND `name` = %s",(team['name']))
 				g.db.commit()
+
+				trackit.core.audit_event(session['username'],'teams','delete',team['id'],'Deleted team: ' + team['name'])
 				
 				## Now call trackitd to rebuild rules
 				result, error_string = trackitd.team_delete_update()
 	
 				if result == False:
-					flash('An internal error occured when rebuilding permission rules: ' + str(error_string), 'alert-danger')
+					flash('The team was deleted, however an internal error occured when rebuilding permission rules: ' + str(error_string), 'alert-danger')
 					return(redirect(url_for('team_list_mine')))
 				
 				flash('Team successfully deleted', 'alert-success')
@@ -215,6 +217,7 @@ def team_view(name):
 								return(redirect(url_for('team_view',name=team['name'])))
 							
 							flash('Team member added', 'alert-success')
+							trackit.core.audit_event(session['username'],'teams','member.add',team['id'],'New team member ' + username + ' was added to team: ' + team['name'])
 						else:
 							flash('That person is already a team member','alert-danger')
 					
@@ -235,6 +238,7 @@ def team_view(name):
 					cur.execute('UPDATE `teams` SET `desc` = %s WHERE `id` = %s', (team_desc,team['id']))
 					g.db.commit()
 					flash('Team settings updated successfully', 'alert-success')
+					trackit.core.audit_event(session['username'],'teams','settings',team['id'],'Team settings were updated for team: ' + team['name'])
 					return(redirect(url_for('team_view',name=team['name'])))
 					
 				else:
@@ -263,10 +267,12 @@ def team_view(name):
 							if submit == 'Remove':
 								cur.execute('DELETE FROM `team_members` WHERE tid = %s AND username = %s', (team['id'],username))
 								g.db.commit()
+								trackit.core.audit_event(session['username'],'teams','member.remove',team['id'],'Team member ' + username + ' was removed from team: ' + team['name'])
 								flash('Removed team member', 'alert-success')
 							elif submit == 'Save':
 								cur.execute('UPDATE `team_members` SET `admin` = %s WHERE tid = %s AND username = %s', (admin, team['id'],username))
 								g.db.commit()
+								trackit.core.audit_event(session['username'],'teams','member.update',team['id'],'Admin flag changed for ' + username + ' in team: ' + team['name'])
 								flash('Team member details saved', 'alert-success')
 							else:
 								flash('Unknown action','alert-danger')
@@ -348,6 +354,7 @@ def team_list_mine(page=None):
 
 @app.route('/god/teams')
 @trackit.core.login_required
+@trackit.core.admin_required
 def team_list_admin():
 
 	teams = get_all_teams()
@@ -447,6 +454,8 @@ def team_create():
 		## add a team member to manage the team!
 		cur.execute('INSERT INTO `team_members` (tid,username,admin) VALUES (%s, %s,%s)', (team_id,session['username'],1))
 		g.db.commit()
+
+		trackit.core.audit_event(session['username'],'teams','create.success',team_id,'Team created with name: ' + team_name)
 
 		# Notify that we've succeeded
 		flash('Team created successfully', 'alert-success')

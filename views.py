@@ -19,6 +19,7 @@ from trackit import app
 import trackit.core
 import trackit.errors
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash
+import MySQLdb as mysql
 
 ################################################################################
 #### HOME PAGE
@@ -39,8 +40,25 @@ def default():
 def about():
 	return render_template('about.html', active='help')
 
-#### Suspended
+################################################################################
+#### Suspended page
 
 @app.route('/suspended')
 def suspended():
 	return render_template('suspended.html')
+
+################################################################################
+#### God audit
+
+@app.route('/god/audit')
+@trackit.core.login_required
+@trackit.core.admin_required
+def audit():
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT * FROM `audit` ORDER BY `utime` DESC')
+	log = curd.fetchall()
+
+	for entry in log:
+		entry['when'] = trackit.core.ut_to_string(entry['utime'])
+
+	return render_template('audit.html',log=log,active='god')	

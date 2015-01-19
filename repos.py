@@ -365,6 +365,9 @@ def repo_create():
 				repo_web_type=repo_web_type,
 				teams=teams,
 			)
+
+		# Audit log we're about to create a repo
+		trackit.core.audit_event(session['username'],'repos','create.request',0,'Creation request for new repository named ' + repo_name)
 		
 		# CREATE THE REPOSITORY
 		cur.execute('''INSERT INTO `repos` 
@@ -389,15 +392,21 @@ def repo_create():
 		result, error_string = trackitd.repo_create(repo_name,repo_src_type,repo_web_type,session['username'])
 		
 		if result == False:
+			trackit.core.audit_event(session['username'],'repos','create.error',rid,'Creation failed for new repository named ' + repo_name)
 			flash('Repository creation failed: ' + str(error_string), 'alert-danger')
 			return redirect(url_for('repo_view',name=repo_name))
 		
 		## Mark repo as activated 
 		cur.execute("UPDATE `repos` SET `state` = %s WHERE `id` = %s",(REPO_STATE['ACTIVE'],rid))
 		g.db.commit()	
+
+		## audit the creation
+		trackit.core.audit_event(session['username'],'repos','create.success',rid,'Creation was successful for new repository named ' + repo_name)
 		
 		# Notify that we've succeeded
 		flash('Repository successfully created', 'alert-success')
+
+		# 
 
 		# redirect to server list
 		return redirect(url_for('repo_view',name=repo_name))
@@ -552,6 +561,7 @@ def repo_view(name):
 								flash('Could not alter the svn auto versioning flag: ' + str(error_string), 'alert-danger')
 								return redirect(url_for('repo_view',name=repo['name']))
 
+					trackit.core.audit_event(session['username'],'repos','settings.changed',repo['id'],'Settings updated on repository ' + repo['name'])
 					flash('Repository settings updated successfully', 'alert-success')
 					
 				return redirect(url_for('repo_view',name=repo['name']))
@@ -566,9 +576,11 @@ def repo_view(name):
 					result, error_string = trackitd.repo_add_web(repo['name'],"trac")
 		
 					if result == False:
+						trackit.core.audit_event(session['username'],'repos','addweb.error',repo['id'],'Could not add Trac onto repository ' + repo['name'])
 						flash('Could not not add Trac: ' + str(error_string), 'alert-danger')
 						return redirect(url_for('repo_view',name=repo['name']))
 					else:
+						trackit.core.audit_event(session['username'],'repos','addweb.success',repo['id'],'Trac was added onto repository ' + repo['name'])
 						flash('Trac has been added to this repository', 'alert-success')
 						return redirect(url_for('repo_view',name=repo['name']))
 						
@@ -585,9 +597,11 @@ def repo_view(name):
 					result, error_string = trackitd.repo_suspend(repo['name'])
 		
 					if result == False:
+						trackit.core.audit_event(session['username'],'repos','suspend.error',repo['id'],'Could not suspend repository ' + repo['name'])
 						flash('Could not not suspend repository: ' + str(error_string), 'alert-danger')
 						return redirect(url_for('repo_view',name=repo['name']))
 					else:
+						trackit.core.audit_event(session['username'],'repos','suspend.success',repo['id'],'Suspended repository ' + repo['name'])
 						flash('Repository suspended', 'alert-success')
 						return redirect(url_for('repo_view',name=repo['name']))
 				else:
@@ -599,11 +613,13 @@ def repo_view(name):
 					result, error_string = trackitd.repo_enable(repo['name'])
 		
 					if result == False:
+						trackit.core.audit_event(session['username'],'repos','enable.error',repo['id'],'Could not enable repository ' + repo['name'])
 						flash('Could not not enable repository: ' + str(error_string), 'alert-danger')
 						return redirect(url_for('repo_view',name=repo['name']))
 					else:
 						cur.execute('UPDATE `repos` SET `state` = %s WHERE `id` = %s', (REPO_STATE['ACTIVE'], repo['id']))
 						g.db.commit()
+						trackit.core.audit_event(session['username'],'repos','enable.success',repo['id'],'Enabled repository ' + repo['name'])
 						flash('Repository enabled', 'alert-success')
 						return redirect(url_for('repo_view',name=repo['name']))
 				else:
@@ -616,10 +632,13 @@ def repo_view(name):
 				result, error_string = trackitd.repo_delete(repo['name'])
 	
 				if result == False:
+					trackit.core.audit_event(session['username'],'repos','delete.error',repo['id'],'Could not delete repository ' + repo['name'])
 					flash('Could not not delete repository: ' + str(error_string), 'alert-danger')
 					return redirect(url_for('repo_view',name=repo['name']))
 				else:
-					## TODO delete sql maybe
+					cur.execute('DELETE FROM `repos` WHERE `id` = %s', (repo['id']))
+					g.db.commit()
+					trackit.core.audit_event(session['username'],'repos','delete.success',repo['id'],'Deleted repository ' + repo['name'])
 					flash('Repository deleted', 'alert-success')
 					return redirect(url_for('repo_list'))
 				
@@ -717,6 +736,8 @@ def repo_view(name):
 
 					# Commit changes to the database
 					g.db.commit()
+
+					trackit.core.audit_event(session['username'],'repos','rule.add',repo['id'],'Permission rule added to ' + repo['name'])
 					
 					## Now get the rules to rebuilt in trackitd
 					
@@ -780,6 +801,7 @@ def repo_view(name):
 						flash('An internal error occured when rebuilding permission rules: ' + str(error_string), 'alert-danger')
 						return redirect(url_for('repo_view',name=repo['name']))
 					
+					trackit.core.audit_event(session['username'],'repos','rule.delete',repo['id'],'Permission rule removed from ' + repo['name'])
 					flash('Removed permission rule', 'alert-success')
 					return(redirect(url_for('repo_view',name=repo['name'])))	
 					
@@ -847,6 +869,7 @@ def repo_view(name):
 							flash('An internal error occured when rebuilding permission rules: ' + str(error_string), 'alert-danger')
 							return redirect(url_for('repo_view',name=repo['name']))
 						
+						trackit.core.audit_event(session['username'],'repos','rule.updated',repo['id'],'Permission rule updated on ' + repo['name'])
 						flash('Permission rule updated', 'alert-success')
 						
 					return(redirect(url_for('repo_view',name=repo['name'])))

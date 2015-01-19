@@ -186,3 +186,16 @@ def ut_to_string(ut):
 	"""
 	return datetime.datetime.fromtimestamp(int(ut)).strftime('%Y-%m-%d %H:%M:%S %Z')
 	
+################################################################################
+
+def audit_event(username,module,event,module_id,desc):
+
+	event = module + "." + event
+
+	cur = g.db.cursor()
+	cur.execute('''INSERT INTO `audit` 
+	(`utime`, `username`, `module`, `event`, `module_id`, `desc`) 
+	VALUES (UNIX_TIMESTAMP(), %s, %s, %s, %s, %s)''', (username, module, event, module_id, desc))
+	
+	g.db.commit()
+
