@@ -61,4 +61,4 @@ def audit():
 	for entry in log:
 		entry['when'] = trackit.core.ut_to_string(entry['utime'])
 
-	return render_template('audit.html',log=log,active='god')	
+	return render_template('audit.html',log=log,active='god')

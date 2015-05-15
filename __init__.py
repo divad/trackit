@@ -32,10 +32,6 @@ DEBUG = False
 # Key used to sign/encrypt session data stored in cookies.
 SECRET_KEY = ''
 
-## Kerberos configuration
-KRB5_SERVICE = 'krbtgt/localdomain'
-KRB5_DOMAIN  = 'localhost.localdomain'
-
 ## Logging and alerts
 LOG_DIR='logs'
 LOG_FILE='trackit.log'
@@ -55,14 +51,18 @@ DB_PORT='3306'
 ADMIN_GROUP='sys'
 
 ## Version
-VERSION=0.9
+VERSION=0.91
 
 ## the trackitd pyro uri
 TRACKITD_URI="PYRO:trackit-daemon@localhost:1888"
 TRACKITD_KEY="changeme"
 
-LDAP_SERVER="ldap://localhost"
-LDAP_BASE=""
+LDAP_URI="ldap://localhost"
+LDAP_SEARCH_BASE=""
+LDAP_ANON_BIND=True
+LDAP_USER_ATTRIBUTE="cn"
+LDAP_BIND_USER=''
+LDAP_BIND_PW=''
 
 SAMBA_CONFIG_FILE="/etc/samba/conf.d/svnhooks.conf"
 
@@ -108,8 +108,13 @@ Further Details:
 ## Set up file logging as well
 file_handler = RotatingFileHandler(app.config['LOG_DIR'] + '/' + app.config['LOG_FILE'], 'a', 1 * 1024 * 1024, 10)
 file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
-app.logger.setLevel(logging.INFO)
-file_handler.setLevel(logging.INFO)
+if app.debug:
+	app.logger.setLevel(logging.DEBUG)
+	file_handler.setLevel(logging.DEBUG)
+else:
+	app.logger.setLevel(logging.INFO)
+	file_handler.setLevel(logging.INFO)
+
 app.logger.addHandler(file_handler)
 app.logger.info('trackit ' + str(app.config['VERSION']) + ' started up')
 

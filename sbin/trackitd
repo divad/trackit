@@ -473,8 +473,8 @@ REV="$2"
 
 	def ldap_get_group_dn(self,group_name):
 
-		ldapserver = ldap.initialize(self.config['LDAP_SERVER'])
-		results = ldapserver.search_s(self.config['LDAP_BASE'], ldap.SCOPE_SUBTREE,"(cn=" + group_name +")")
+		ldapserver = ldap.initialize(self.config['LDAP_URI'])
+		results = ldapserver.search_s(self.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE,"(cn=" + group_name +")")
 
 		for result in results:
 			dn    = result[0]

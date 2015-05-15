@@ -26,6 +26,7 @@ import pwd
 import os
 import binascii
 import MySQLdb as mysql
+import ldap
 
 ################################################################################
 #### LOGIN
@@ -36,21 +37,11 @@ def login():
 	if request.method == 'GET':
 		return redirect(url_for('default'))
 	else:
+		result = trackit.user.auth_user(request.form['username'],request.form['password'])
 
-		try:
-			## Check password with kerberos
-			kerberos.checkPassword(request.form['username'], request.form['password'], app.config['KRB5_SERVICE'], app.config['KRB5_DOMAIN'])
-		except kerberos.BasicAuthError as e:
+		if not result:
 			flash('Incorrect username and/or password','alert-danger')
 			return redirect(url_for('default'))
-		except kerberos.KrbError as e:
-			flash('Kerberos Error: ' + e.__str__(),'alert-danger')
-			return redirect(url_for('default'))
-		except kerberos.GSSError as e:
-			flash('GSS Error: ' + e.__str__(),'alert-danger')
-			return redirect(url_for('default'))
-		except Exception as e:
-			trackit.errors.fatal(e)
 
 		## Check this user is allowed to logon
 		result = trackit.core.ldap_check_user_access(request.form['username'])
@@ -92,6 +83,64 @@ def login():
 
 		return redirect(url_for('repo_list'))
 		
+################################################################################
+
+def auth_user(username,password):
+	app.logger.debug("bargate.core.auth_user for " + username)
+
+	## connect to LDAP and turn off referals
+	l = ldap.initialize(app.config['LDAP_URI'])
+	l.set_option(ldap.OPT_REFERRALS, 0)
+
+	## and bind to the server with a username/password if needed in order to search for the full DN for the user who is logging in.
+	try:
+		if app.config['LDAP_ANON_BIND']:
+			l.simple_bind_s()
+		else:
+			l.simple_bind_s( (app.config['LDAP_BIND_USER']), (app.config['LDAP_BIND_PW']) )
+	except ldap.LDAPError as e:
+		flash('Internal Error - Could not connect to LDAP directory: ' + str(e),'alert-danger')
+		app.logger.error("Could not bind to LDAP: " + str(e))
+		trackit.errors.fatal(e)
+
+	app.logger.debug("bargate.core.auth_user ldap bind succeeded ")
+
+	## Now search for the user object to bind as
+	try:
+		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE,(app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
+	except ldap.LDAPError as e:
+		app.logger.debug("bargate.core.auth_user no object found in ldap")
+		return False
+
+	app.logger.debug("bargate.core.auth_user ldap results found ")
+
+	## handle the search results
+	for result in results:
+		dn	= result[0]
+		attrs	= result[1]
+
+		if dn == None:
+			## No dn returned. Return false.
+			return False
+
+		else:
+			## Found the DN. Yay! Now bind with that DN and the password the user supplied
+			try:
+				app.logger.debug("bargate.core.auth_user ldap attempting ldap simple bind as " + str(dn))
+				lauth = ldap.initialize(app.config['LDAP_URI'])
+				lauth.set_option(ldap.OPT_REFERRALS, 0)
+				lauth.simple_bind_s( (dn), (password) )
+				return True
+			except ldap.LDAPError as e:
+				## password was wrong
+				app.logger.debug("trackit.core.auth_user ldap bind failed as " + str(dn))
+				return False
+
+			app.logger.debug("trackit.core.auth_user ldap bind succeeded as " + str(dn))
+
+	## Catch all return false for LDAP auth
+	return False
+
 ################################################################################
 
 def is_global_admin(username=None):

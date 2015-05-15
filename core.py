@@ -30,13 +30,13 @@ import MySQLdb as mysql
 import datetime
 import re
 import Pyro4
-import ldap                   ## used in check_ldap_group
+import ldap                   ## used in check_ldap_group, auth_user
 
 ################################################################################
 
 def ldap_check_group(group_name):
-	ldapserver = ldap.initialize(app.config['LDAP_SERVER'])
-	results = ldapserver.search_s(app.config['LDAP_BASE'], ldap.SCOPE_SUBTREE,"(cn=" + group_name +")")
+	ldapserver = ldap.initialize(app.config['LDAP_URI'])
+	results = ldapserver.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE,"(cn=" + group_name +")")
 
 	for result in results:
 		dn    = result[0]
@@ -49,8 +49,8 @@ def ldap_check_group(group_name):
 	return False
 
 def ldap_check_user_access(username):
-	ldapserver = ldap.initialize(app.config['LDAP_SERVER'])
-	results = ldapserver.search_s(app.config['LDAP_BASE'], ldap.SCOPE_SUBTREE,"(cn=" + username +")")
+	ldapserver = ldap.initialize(app.config['LDAP_URI'])
+	results = ldapserver.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE,"(" + app.config['LDAP_USER_ATTRIBUTE'] + "=" + username +")")
 
 	for result in results:
 		dn    = result[0]
