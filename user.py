@@ -71,11 +71,8 @@ def login():
 		app.logger.info('User "' + session['username'] + '" logged in from "' + request.remote_addr + '" using ' + request.user_agent.string)
 		
 		if is_global_admin():
-			if not session['username'] == 'clp1v10':
-				session['admin'] = True
-				flash('You are logged in as a global administrator with full privileges over all repositories and teams.','alert-warning')
-			else:
-				session['admin'] = False
+			session['admin'] = True
+			flash('You are logged in as a global administrator with full privileges over all repositories and teams.','alert-warning')
 		else:
 			session['admin'] = False
 
@@ -158,8 +155,6 @@ def is_global_admin(username=None):
 	## mark the user as an admin if they are in the admins group
 	group = grp.getgrnam(app.config['ADMIN_GROUP'])
 	if username in group.gr_mem:
-		if username == 'clp1v10':
-			return False
 		return True
 	else:
 		return False
