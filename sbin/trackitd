@@ -63,7 +63,10 @@ class TracKitDaemon(object):
 		
 	def db_connect(self):
 		self.db = mysql.connect(self.config['DB_SERV'],self.config['DB_USER'],self.config['DB_PASS'],self.config['DB_NAME'])
-		return self.db.cursor(mysql.cursors.DictCursor)
+		curd = self.db.cursor(mysql.cursors.DictCursor)
+		## mysql is a pile of fucking dogshite.
+		curd.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED")
+		return curd
 		
 	def load_config(self, filename):
 		d = imp.new_module('config')
@@ -331,9 +334,12 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 ################################################################################	
 		
 	def git_auth_config(self,name):			
+		syslog.syslog("Git_auth_config called with " + str(name))
 		curd = self.get_cursor()
 		curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 		repo = curd.fetchone()
+
+		syslog.syslog(str(repo))
 		
 		if repo == None:
 			raise InternalError("Could not find repo '" + name + "' in the database")
