@@ -215,7 +215,7 @@
 						{% endif %}
 					</td>
 					<td data-fullname="{{member.fullname}}" data-admin="{{member.admin}}" data-username="{{member.username}}">
-						<a href="#" class="click_edit_member"><span class="fa fa-fw fa-gear"></span></a>
+						{% if team_admin %}<a href="#" class="click_edit_member"><span class="fa fa-fw fa-gear"></span></a>{%endif%}
 					</tr>
 				</tr>
 			{% endfor %}

@@ -95,9 +95,11 @@ span:hover.feature-icon
   color: #FFFFFF;
 }
 
-a:hover, a:active, a:visited {
+.navbar-default .navbar-brand, .navbar-default .navbar-nav > li > a:hover, a:active, a:visited {
   color: #FFFFFF !important;
 }
+
+
 
 .btn {
   font-size: 20px;

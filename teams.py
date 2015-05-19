@@ -98,15 +98,24 @@ def members(team_id):
 			member['fullname'] = 'N/A'
 
 	return members
+
+def count_admins(team_id):
+
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT COUNT(*) AS "total" FROM `team_members` WHERE `tid` = %s AND `admin` = 1', (team_id))
+	count = curd.fetchone()
+
+	return int(count['total'])
 	
 ################################################################################
 
-def is_admin(team_id,username=None):
+def is_admin(team_id,username=None,global_ok=True):
 	if username == None:
 		username = session['username']
 		
-	if trackit.user.is_global_admin():
-		return True
+	if global_ok:
+		if trackit.user.is_global_admin():
+			return True
 		
 	cur = g.db.cursor()
 	cur.execute('SELECT 1 FROM `team_members` WHERE `tid` = %s AND `username` = %s AND `admin` = 1', (team_id,username))
@@ -265,11 +274,29 @@ def team_view(name):
 							flash('That person is not a member of the team','alert-danger')
 						else:
 							if submit == 'Remove':
+								if trackit.teams.is_admin(team['id'],username,False):
+									## Make sure there is are least one admin left after this
+									admins_left = trackit.teams.count_admins(team['id'])
+
+									if admins_left < 2:
+										flash('You cannot remove the last administrator from a team', 'alert-danger')
+										return(redirect(url_for('team_view',name=team['name'])))
+
 								cur.execute('DELETE FROM `team_members` WHERE tid = %s AND username = %s', (team['id'],username))
 								g.db.commit()
 								trackit.core.audit_event(session['username'],'teams','member.remove',team['id'],'Team member ' + username + ' was removed from team: ' + team['name'])
 								flash('Removed team member', 'alert-success')
 							elif submit == 'Save':
+								if trackit.teams.is_admin(team['id'],username,False):
+									# if now demoting...
+									if admin == 0:
+										## Make sure there is are least one admin left after this
+										admins_left = trackit.teams.count_admins(team['id'])
+
+										if admins_left < 2:
+											flash('You cannot demote the last administrator from a team', 'alert-danger')
+											return(redirect(url_for('team_view',name=team['name'])))
+
 								cur.execute('UPDATE `team_members` SET `admin` = %s WHERE tid = %s AND username = %s', (admin, team['id'],username))
 								g.db.commit()
 								trackit.core.audit_event(session['username'],'teams','member.update',team['id'],'Admin flag changed for ' + username + ' in team: ' + team['name'])

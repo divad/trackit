@@ -31,7 +31,7 @@ import imp
 import shutil
 
 TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
-VERSION             = "0.14"
+VERSION             = "0.15"
 DEBUG               = True
 
 Pyro4.config.SERVERTYPE = "multiplex"
@@ -48,11 +48,20 @@ class TracKitDaemon(object):
 		## Open syslog 
 		syslog.openlog("trackitd",syslog.LOG_PID)
 		syslog.syslog('Starting trackitd/' + str(VERSION))
+		self.db = None
 
 ################################################################################
+
+	def get_cursor(self):
+		if self.db:
+			if self.db.open:
+				return self.db.cursor(mysql.cursors.DictCursor)
+			else:
+				return self.db_connect()
+		else:	
+			return self.db_connect()
 		
 	def db_connect(self):
-		## Connect to MySQL
 		self.db = mysql.connect(self.config['DB_SERV'],self.config['DB_USER'],self.config['DB_PASS'],self.config['DB_NAME'])
 		return self.db.cursor(mysql.cursors.DictCursor)
 		
@@ -75,7 +84,8 @@ class TracKitDaemon(object):
 ################################################################################
 		
 	def db_close(self):
-		self.db.close()
+		if self.db.open:
+			self.db.close()
 		
 ################################################################################
 		
@@ -227,7 +237,7 @@ class TracKitDaemon(object):
 ################################################################################	
 		
 	def trac_auth_config(self,name):			
-		curd = self.db_connect()
+		curd = self.get_cursor()
 		curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 		repo = curd.fetchone()
 		
@@ -317,12 +327,11 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 		f.close()
 		
 		syslog.syslog('trac auth config rebuilt for instance ' + name)
-		self.db_close()
 
 ################################################################################	
 		
 	def git_auth_config(self,name):			
-		curd = self.db_connect()
+		curd = self.get_cursor()
 		curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 		repo = curd.fetchone()
 		
@@ -415,13 +424,12 @@ WSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi
 		
 		self.server_graceful()
 		syslog.syslog('git auth config rebuilt for instance ' + name)
-		self.db_close()
 
 
 ################################################################################
 
 	def svn_notify_config(self,name,address):			
-		curd = self.db_connect()
+		curd = self.get_cursor()
 		curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 		repo = curd.fetchone()
 	
@@ -467,8 +475,6 @@ REV="$2"
 			
 			syslog.syslog('Removed post-commit hook for repo: ' + name)
 		
-		self.db_close()
-
 ################################################################################
 
 	def ldap_get_group_dn(self,group_name):
@@ -524,7 +530,7 @@ REV="$2"
 		
 		## Generate teams
 		zconfig.add_section('groups')
-		curd = self.db_connect()
+		curd = self.get_cursor()
 		curd.execute('SELECT * FROM `teams` ORDER BY `name`')
 		teams = curd.fetchall()
 		
@@ -571,14 +577,13 @@ REV="$2"
 			
 		syslog.syslog('SVN authz file regenerated')
 		curd.close()
-		self.db_close()
 
 ################################################################################
 			
 	def regenerate_samba_hooks_file(self):	
 		smbconf = ""
 	
-		curd = self.db_connect()
+		curd = self.get_cursor()
 		curd.execute('SELECT * FROM `repos` WHERE `state` = 1')
 		repos = curd.fetchall()
 		
@@ -621,14 +626,13 @@ valid users = %s
 			
 		syslog.syslog('Samba SVN hooks configuration regenerated')
 		curd.close()
-		self.db_close()
 		
 ################################################################################
 			
 	def regenerate_autoversion_config(self):	
 		autoconf = ""
 	
-		curd = self.db_connect()
+		curd = self.get_cursor()
 		curd.execute('SELECT * FROM `repos` WHERE `state` = 1 AND `autoversion` = 1')
 		repos = curd.fetchall()
 		
@@ -649,7 +653,6 @@ SVNAutoversioning on
 			
 		syslog.syslog('SVN autoversion configuration regenerated')
 		curd.close()
-		self.db_close()
 		
 ################################################################################
 
@@ -693,7 +696,7 @@ SVNAutoversioning on
 			return (False,"Invalid repository name")
 			
 		try:
-			curd = self.db_connect()
+			curd = self.get_cursor()
 			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 			repo = curd.fetchone()
 			
@@ -729,10 +732,9 @@ SVNAutoversioning on
 		if DEBUG: syslog.syslog('method repo_add_admin called')
 		
 		try:
-			curd = self.db_connect()
+			curd = self.get_cursor()
 			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 			repo = curd.fetchone()
-			self.db_close()
 			
 			if repo == None:
 				raise InternalError("Could not find repo '" + name + "' in the database")
@@ -758,10 +760,9 @@ SVNAutoversioning on
 		
 		try:
 		
-			curd = self.db_connect()
+			curd = self.get_cursor()
 			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 			repo = curd.fetchone()
-			self.db_close()
 			
 			if repo == None:
 				raise InternalError("Could not find repo '" + name + "' in the database")
@@ -789,10 +790,9 @@ SVNAutoversioning on
 		
 		try:
 		
-			curd = self.db_connect()
+			curd = self.get_cursor()
 			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 			repo = curd.fetchone()
-			self.db_close()
 
 			
 			if repo == None:
@@ -843,11 +843,9 @@ SVNAutoversioning on
 
 		try:
 		
-			curd = self.db_connect()
+			curd = self.get_cursor()
 			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 			repo = curd.fetchone()
-			self.db_close()
-
 			
 			if repo == None:
 				raise InternalError("Could not enable repo name '" + name + "' because it does not exist!")
@@ -897,7 +895,7 @@ SVNAutoversioning on
 
 		try:
 		
-			curd = self.db_connect()
+			curd = self.get_cursor()
 			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 			repo = curd.fetchone()
 			
@@ -933,7 +931,6 @@ SVNAutoversioning on
 				self.trac_auth_config(name)
 			
 			self.server_graceful()
-			self.db_close()
 		
 		except Exception as ex:
 		
@@ -950,7 +947,7 @@ SVNAutoversioning on
 
 		try:	
 
-			curd = self.db_connect()
+			curd = self.get_cursor()
 			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 			repo = curd.fetchone()
 			
@@ -978,7 +975,7 @@ SVNAutoversioning on
 		if DEBUG: syslog.syslog('method repo_update_web_security called')
 
 		try:
-			curd = self.db_connect()
+			curd = self.get_cursor()
 			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 			repo = curd.fetchone()
 			
@@ -1001,7 +998,7 @@ SVNAutoversioning on
 		if DEBUG: syslog.syslog('method repo_update_src_notify_email called')
 
 		try:
-			curd = self.db_connect()
+			curd = self.get_cursor()
 			curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 			repo = curd.fetchone()
 			
@@ -1039,7 +1036,7 @@ SVNAutoversioning on
 		try:
 			self.regenerate_authz_file()
 			
-			curd = self.db_connect()
+			curd = self.get_cursor()
 			curd.execute('SELECT * FROM `repos` WHERE `state` = 1')
 			repos = curd.fetchall()
 			
@@ -1050,7 +1047,6 @@ SVNAutoversioning on
 					self.git_auth_config(repo['name'])
 			
 			self.server_graceful()
-			self.db_close()
 
 		except Exception as ex:
 			syslog.syslog('Unable to process team deletion update:' + str(ex))
