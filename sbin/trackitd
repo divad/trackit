@@ -32,6 +32,7 @@ import shutil
 import time
 from multiprocessing import Process, Value
 import traceback
+import smtplib
 
 TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
 VERSION             = "0.17"
@@ -112,11 +113,14 @@ class TracKitDaemon(object):
 ################################################################################
 		
 	def sysexec(self,command):
-		commands = command.split(' ')
-		proc = subprocess.Popen(commands,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-		(stdoutdata, stderrdata) = proc.communicate()
-		
-		return (proc.returncode,str(stdoutdata),str(stderrdata))
+		try:
+			commands = command.split(' ')
+			proc = subprocess.Popen(commands,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+			(stdoutdata, stderrdata) = proc.communicate()
+			return (proc.returncode,str(stdoutdata),str(stderrdata))
+		except Exception as ex:
+			syslog.syslog("sysexec exception: " + str(ex))
+			return (1,"",str(ex))
 		
 ################################################################################
 		
@@ -260,11 +264,30 @@ class TracKitDaemon(object):
 	def do_server_graceful(self,waiting):
 		## sleep
 		time.sleep(30)
-
 		waiting.value = 0
 
-		## TODO configtest
-		## TODO email about errors
+		syslog.syslog('asking apachectl for a httpd config test')
+	
+		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/sudo -n /usr/sbin/apachectl configtest')
+
+		if rcode > 0:
+			syslog.syslog('CRITICAL: httpd configtest failed - apachectl returned an error code:' + str(rcode))
+			syslog.syslog('apachectl stdout:' + stdoutdata)
+			syslog.syslog('apachectl stderr:' + stderrdata)			
+			syslog.syslog('CRITICAL: not restarting httpd because a restart would break')
+			
+			self.mail_alert("ALERT: Forge service CRITICAL","""This is an automated message from the trackitd program on Forge. 
+
+An attempt to restart the web server failed because a pre-restart configtest failed. The next automatic restart of Apache httpd will leave the system broken. Please fix this error manually.
+
+The return code from apache ctl was: %s
+
+The stdout data was: %s
+
+The stderr data was: %s """ % (rcode, stdoutdata, stderrdata))
+
+		else:
+			syslog.syslog('httpd configtest OK')
 		
 		syslog.syslog('asking apachectl for a graceful restart')
 	
@@ -275,10 +298,31 @@ class TracKitDaemon(object):
 			syslog.syslog('apachectl stdout:' + stdoutdata)
 			syslog.syslog('apachectl stderr:' + stderrdata)			
 			
-			error_data = {'stdout': stdoutdata, 'stderr': stderrdata, 'rcode': rcode}
-			raise InternalError("The web server restart failed. Please contact ServiceLine",error_data)
+			self.mail_alert("ALERT: Forge service UNAVAILABLE","""This is an automated message from the trackitd program on Forge. 
+
+An attempt to restart the web server failed and as such the system is now not avaialble to its users. Please restore service manually.
+
+The return code from apache ctl was: %s
+
+The stdout data was: %s
+
+The stderr data was: %s """ % (rcode, stdoutdata, stderrdata))
 		else:
 			syslog.syslog('httpd graceful restart OK')
+
+	def mail_alert(self,subject, message):
+		if self.config['EMAIL_ALERTS']:
+			message = """Subject: %s
+
+			%s
+			""" % (subject, message)
+
+			try:
+			   smtpObj = smtplib.SMTP(self.config['SMTP_SERVER'])
+			   smtpObj.sendmail(self.config['EMAIL_FROM'], self.config['ADMINS'], message)         
+			   syslog.syslog('critical error alert e-mail has been sent')
+			except SMTPException as ex:
+			   syslog.syslog('critical error alert e-mail could not be sent: ' + str(ex))
 
 		
 ################################################################################	
