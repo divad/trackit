@@ -29,9 +29,11 @@ import traceback # remove
 import ldap
 import imp
 import shutil
+import time
+from multiprocessing import Process
 
 TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
-VERSION             = "0.15"
+VERSION             = "0.16"
 DEBUG               = True
 
 Pyro4.config.SERVERTYPE = "multiplex"
@@ -48,24 +50,39 @@ class TracKitDaemon(object):
 		## Open syslog 
 		syslog.openlog("trackitd",syslog.LOG_PID)
 		syslog.syslog('Starting trackitd/' + str(VERSION))
+
+		## Create some blank variables for later use
 		self.db = None
+		self.graceful = None
 
 ################################################################################
 
 	def get_cursor(self):
 		if self.db:
 			if self.db.open:
-				return self.db.cursor(mysql.cursors.DictCursor)
-			else:
-				return self.db_connect()
-		else:	
-			return self.db_connect()
+				## sadly, self.db.open returns true even if it actually isn't open due to MySQL being a pile of garbage
+				## so we will try a 'test' query. this is what virtually all connection pools use. We don't need/want a connection pool as this is a single thread daemon.
+				try:
+					curd = self.db.cursor(mysql.cursors.DictCursor)
+					curd.execute('SELECT 1')
+					result = curd.fetchone();
+
+					if result:
+						return curd
+				except (AttributeError, mysql.OperationalError):
+					syslog.syslog("MySQL connection has been closed, attempting reconnect")
+
+		## If we didn't return a cursor then we need to connect and return a cursor
+		return self.db_connect()
 		
 	def db_connect(self):
+		syslog.syslog("Attempting connection to MySQL")
 		self.db = mysql.connect(self.config['DB_SERV'],self.config['DB_USER'],self.config['DB_PASS'],self.config['DB_NAME'])
 		curd = self.db.cursor(mysql.cursors.DictCursor)
-		## mysql is a pile of fucking dogshite.
+		## mysql is a pile of fucking dogshite. We must set the isolation level to the standard (rather than what MySQL uses by default which is REPEATABLE READ)
+		## otherwise changes from the web app wont be reflected to us because MySQL snapshots the database for a 'consistent read' so even after changes occur you see the original state
 		curd.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED")
+		syslog.syslog("Connection to MySQL established")
 		return curd
 		
 	def load_config(self, filename):
@@ -217,12 +234,29 @@ class TracKitDaemon(object):
 		return trac_path
 
 ################################################################################	
+
+## httpd restart stuff
 		
 	def server_graceful(self):
+		if self.graceful:
+			if self.graceful.is_alive():
+				## httpd restart already queued
+				syslog.syslog('additional request for httpd restart, already queued')
+				return
+
+		## if we got this far httpd restart has not been queued
+		syslog.syslog('request for httpd restart, will restart in 30 seconds')
+		self.graceful = Process(target=self.do_server_graceful)
+		self.graceful.start()
+
+	def do_server_graceful(self):
+		## sleep
+		time.sleep(30)
+
 		## TODO configtest
 		## TODO email about errors
 		
-		syslog.syslog('httpd graceful restart requested')
+		syslog.syslog('asking apachectl for a graceful restart')
 	
 		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/sudo -n /usr/sbin/apachectl graceful')
 
@@ -334,13 +368,10 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 ################################################################################	
 		
 	def git_auth_config(self,name):			
-		syslog.syslog("Git_auth_config called with " + str(name))
 		curd = self.get_cursor()
 		curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
 		repo = curd.fetchone()
 
-		syslog.syslog(str(repo))
-		
 		if repo == None:
 			raise InternalError("Could not find repo '" + name + "' in the database")
 		
