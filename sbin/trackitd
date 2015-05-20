@@ -30,10 +30,11 @@ import ldap
 import imp
 import shutil
 import time
-from multiprocessing import Process
+from multiprocessing import Process, Value
+import traceback
 
 TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
-VERSION             = "0.16"
+VERSION             = "0.17"
 DEBUG               = True
 
 Pyro4.config.SERVERTYPE = "multiplex"
@@ -54,6 +55,7 @@ class TracKitDaemon(object):
 		## Create some blank variables for later use
 		self.db = None
 		self.graceful = None
+		self.graceful_waiting = Value('i',1	)
 
 ################################################################################
 
@@ -240,18 +242,26 @@ class TracKitDaemon(object):
 	def server_graceful(self):
 		if self.graceful:
 			if self.graceful.is_alive():
-				## httpd restart already queued
-				syslog.syslog('additional request for httpd restart, already queued')
-				return
+				## httpd restart request process exists
+				## work out if its waiting or currently restarting
+				if self.graceful_waiting.value == 1:
+					## Its waiting, so we need not do anything
+					return
+				else:
+					## restart has started, so we need to wait until it is done, then schedule another
+					self.graceful.join()
 
 		## if we got this far httpd restart has not been queued
-		syslog.syslog('request for httpd restart, will restart in 30 seconds')
-		self.graceful = Process(target=self.do_server_graceful)
+		self.graceful_waiting = Value('i',1)
+		syslog.syslog('httpd restart scheduled for 30 seconds time')
+		self.graceful = Process(target=self.do_server_graceful, args=(self.graceful_waiting,))
 		self.graceful.start()
 
-	def do_server_graceful(self):
+	def do_server_graceful(self,waiting):
 		## sleep
 		time.sleep(30)
+
+		waiting.value = 0
 
 		## TODO configtest
 		## TODO email about errors
@@ -702,13 +712,14 @@ SVNAutoversioning on
 			try:
 				src_path = self.svn_create(name)
 			except Exception as ex:
-				syslog.syslog('SVN creation call failed')
+				syslog.syslog('SVN creation call failed: ' + str(ex))
 				return (False,"Failed to create repository. The error was: " + str(ex))
 		elif src_type == 'git': 
 			try:
 				src_path = self.git_create(name)
 			except Exception as ex:
-				syslog.syslog('git init call failed')
+				syslog.syslog('git init call failed: ' + str(ex))
+				syslog.syslog(traceback.format_exc())
 				return (False,"Failed to create repository. The error was: " + str(ex))
 		elif src_type == 'none':
 			src_path = ""
