@@ -27,9 +27,6 @@ $(document).ready(function() {
 		</thead>
 		<tbody>
 
-	{% if repos|length == 0 %}
-			<tr><td colspan="4">No repos found</td></tr>
-	{% else %}
 		{% for repo in repos %}
 			<tr data-url="{{repo.link}}" class="rowclick-tr">
 				<td class="rowclick-td">{{repo.name}}</td>
@@ -38,7 +35,6 @@ $(document).ready(function() {
 				<td class="rowclick-td">{{repo.visibility}}</td>
 			</tr>	
 		{% endfor %}
-	{%endif%}
 
 		</tbody>
 	</table>
