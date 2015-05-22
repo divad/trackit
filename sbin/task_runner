@@ -1,0 +1,146 @@
+#!/usr/bin/python
+#
+# This file is part of trackit.
+#
+# trackit is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# trackit is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with trackit.  If not, see <http://www.gnu.org/licenses/>.
+
+import Pyro4
+import syslog
+import signal
+import sys
+from os.path import join, getsize
+import os
+import subprocess
+import re
+import ConfigParser
+import MySQLdb as mysql
+import traceback # remove
+import ldap
+import imp
+import shutil
+import time
+from multiprocessing import Process, Value
+import traceback
+import smtplib
+
+TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
+
+class TracKitTaskRunner(object):
+
+	def __init__(self):
+		## Open syslog 
+		syslog.openlog("trackit-task_runner",syslog.LOG_PID)
+		syslog.syslog('Starting trackit-task_runner')
+
+		## Create some blank variables for later use
+		self.db = None
+
+################################################################################
+		
+	def db_connect(self):
+		if self.db == None:
+			syslog.syslog("Attempting connection to MySQL")
+			self.db = mysql.connect(self.config['DB_SERV'],self.config['DB_USER'],self.config['DB_PASS'],self.config['DB_NAME'])
+			syslog.syslog("Connection to MySQL established")
+
+		curd = self.db.cursor(mysql.cursors.DictCursor)
+		return curd
+		
+	def load_config(self, filename):
+		d = imp.new_module('config')
+		d.__file__ = filename
+		try:
+			with open(filename) as config_file:
+				exec(compile(config_file.read(), filename, 'exec'), d.__dict__)
+		except IOError as e:
+			syslog.syslog('Unable to load configuration file (%s)' % e.strerror)
+			sys.exit(1)
+		self.config = {}
+		for key in dir(d):
+			if key.isupper():
+				self.config[key] = getattr(d, key)
+				
+		return True
+
+	def get_all_repos(self):
+		curd = self.db_connect()
+		curd.execute('SELECT * FROM `repos` WHERE `state` = 2 OR `state` = 1 OR `state` = 0')
+		return curd.fetchall()
+
+	def calculate_repo_sizes(self):
+		repos = self.get_all_repos()
+		total_files = 0
+		total_size  = 0
+		src_files   = 0
+		src_size    = 0
+		trac_files  = 0
+		trac_size   = 0
+
+		for repo in repos:
+			if repo['src_type'] == 'git':
+				src_files, src_size = self.directory_size(os.path.join(self.config['GIT_ROOT'],repo['name']))
+			elif repo['src_type'] == 'svn':
+				src_files, src_size = self.directory_size(os.path.join(self.config['SVN_ROOT'],repo['name']))
+
+			if repo['web_type'] == 'trac':
+				trac_files, trac_size = self.directory_size(os.path.join(self.config['TRAC_ROOT'],repo['name']))
+
+			total_files = src_files + trac_files
+			total_size  = src_size + trac_size
+
+			## when repo created, create the the repo_stats table
+			cur.execute('''UPDATE `repos` SET `
+			(`name`, `desc`, `tid`, `src_type`, `web_type`, `security`, `state`) 
+			VALUES (%s, %s, %s, %s, %s, %s, %s)''', (repo_name, repo_desc, '-1', repo_src_type, repo_web_type, REPO_SEC['PRIVATE'], REPO_STATE['REQUESTED']))
+		
+			# Commit changes to the database
+			g.db.commit()
+
+			print total_files
+			print total_size
+
+	def directory_size(self,path):
+		size = 0
+		count = 0
+		for root, dirs, files in os.walk(path):
+			size += sum(getsize(join(root, name)) for name in files)
+			count += len(files)
+
+		return (count, size)
+
+################################################################################
+		
+	def db_close(self):
+		if self.db.open:
+			self.db.close()
+		
+################################################################################
+		
+	def sysexec(self,command):
+		try:
+			commands = command.split(' ')
+			proc = subprocess.Popen(commands,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+			(stdoutdata, stderrdata) = proc.communicate()
+			return (proc.returncode,str(stdoutdata),str(stderrdata))
+		except Exception as ex:
+			syslog.syslog("sysexec exception: " + str(ex))
+			return (1,"",str(ex))
+		
+################################################################################
+	
+if __name__ == "__main__":	
+	task_runner = TracKitTaskRunner()
+	task_runner.load_config(TRACKIT_CONFIG_FILE)
+	task_runner.calculate_repo_sizes()
+	#task_runner.remove_deleted_users()
