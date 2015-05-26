@@ -659,8 +659,7 @@ def repo_view(name):
 					web = request.form['web']
 
 					if not str(web) == '1':
-						had_error = 1
-						flash('Invalid web project management tool access flag', 'alert-danger')	
+						web = 0
 				else:
 					web = 0
 					
@@ -823,8 +822,7 @@ def repo_view(name):
 						web = request.form['web']
 
 						if not str(web) == '1':
-							had_error = 1
-							flash('Invalid web project management tool access flag', 'alert-danger')	
+							web = 0	
 					else:
 						web = 0
 						

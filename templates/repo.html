@@ -235,7 +235,7 @@ function selectSourceType(sourceType)
 	}
 	else if (sourceType == 'team')
 	{
-		$('#name-label').text('Team');
+		$('#name-label').text('Team Name');
 		$('#add-title').text('Add team permission');
 		$('#ad-alert').addClass('hidden');
 		$('#team-alert').removeClass('hidden');
@@ -248,7 +248,7 @@ function selectSourceType(sourceType)
 	}
 	else if (sourceType == 'adgroup')
 	{
-		$('#name-label').text('AD Group');
+		$('#name-label').text('AD Group Name');
 		$('#add-title').text('Add AD group permission');
 		$('#ad-alert').removeClass('hidden');
 		$('#team-alert').addClass('hidden');
@@ -400,25 +400,27 @@ $(document).ready(function() {
 							</span>
 						</div>
 					</div>
-					
-					<div class="form-group">
-						<div class="col-lg-offset-3 col-lg-9">						
-							<label>
-							  <input name="web" type="checkbox" checked="checked" value="1"></input> Access to Trac
-							</label>
-							<span class="help-block">Should this user be granted access to the web interface?
+
+					<div class="form-group" id="web-control-select">
+						<label class="col-lg-3 control-label">Access to Trac</label>
+						<div class="col-lg-9">							
+							<select name="web" class="form-control" id="add_perm_web">
+								<option value="0" id="add_perm_web_0">No access</option>
+								<option value="1" id="add_perm_web_1" selected="selected">Access to Trac</option>
+							</select>
+
+							<span class="help-block">Should this user be granted access to the Trac web interface?
 							</span>
 						</div>
-						
 					</div>
 					
 					<div class="form-group" id="admin-group">
 						<div class="col-lg-offset-3 col-lg-9">						
 							<label>
-							  <input name="admin" type="checkbox" value="1"></input> Repository Administrator
+							  <input name="admin" type="checkbox" value="1"></input> Repository Manager
 							</label>
-							<span class="help-block">Grant admin rights over the repository? 
-							<span class="hidden" id="team-alert"><br/><span class="label label-warning"><strong>Please note!</strong></span> Teams granted admin rights do not have admin rights within Trac</span>
+							<span class="help-block">Grant manager rights? This grants the ability to manage repository settings & permissions and they will receive Trac admin rights.
+							<span class="hidden" id="team-alert"><br/><span class="label label-warning"><strong>Please note!</strong></span> Teams granted manager rights do not have admin rights within Trac</span>
 
 							</span>
 						</div>
@@ -542,24 +544,26 @@ $(document).ready(function() {
 							</span>
 						</div>
 					</div>
-					
-					<div class="form-group">
-						<div class="col-lg-offset-3 col-lg-9">						
-							<label>
-							  <input name="web" id="edit_perm_web" type="checkbox" checked="checked" value="1"></input> Access to Trac
-							</label>
-							<span class="help-block">Should this user be granted access to the web interface?
+
+					<div class="form-group" id="web_select_edit">
+						<label class="col-lg-3 control-label">Access to Trac</label>
+						<div class="col-lg-9">							
+							<select name="web" class="form-control" id="edit_perm_web">
+								<option value="0" id="edit_perm_web_0">No access</option>
+								<option value="1" id="edit_perm_web_1">Access to Trac</option>
+							</select>
+
+							<span class="help-block">Should this user be granted access to the Trac web interface?
 							</span>
 						</div>
-						
 					</div>
 					
 					<div class="form-group" id="admin_group_edit">
 						<div class="col-lg-offset-3 col-lg-9">						
 							<label>
-							  <input name="admin" id="edit_perm_admin" type="checkbox" value="1"></input> Repository Administrator
+							  <input name="admin" id="edit_perm_admin" type="checkbox" value="1"></input> Repository Manager
 							</label>
-							<span class="help-block">Should this user be granted administrative rights over this repository?
+							<span class="help-block">Grant manager rights? This grants the ability to manage repository settings & permissions and they will receive Trac admin rights.
 							</span>
 						</div>
 					</div>

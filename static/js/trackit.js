@@ -31,15 +31,18 @@ $(document).ready(function()
 
 		$('#edit_perm_rid').attr('value',parent.data('rid'));
 		$('#edit_perm_name').text(parent.data('name'));
-		var src = parent.data('src');
 
+		var src = parent.data('src');
 		$('#edit_perm_src_0').removeAttr('selected');
 		$('#edit_perm_src_1').removeAttr('selected');
 		$('#edit_perm_src_2').removeAttr('selected');
 		$('#edit_perm_src_' + src).attr('selected','selected');
 		
 		var web = parent.data('web');
-		$('#edit_perm_web').prop('checked', web);
+		$('#edit_perm_web_0').removeAttr('selected');
+		$('#edit_perm_web_1').removeAttr('selected');
+		$('#edit_perm_web_' + web).attr('selected','selected');
+
 		var admin = parent.data('admin');
 		$('#edit_perm_admin').prop('checked', admin);
 		
