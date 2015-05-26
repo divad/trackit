@@ -43,19 +43,14 @@ class TracKitTaskRunner(object):
 		syslog.openlog("trackit-task_runner",syslog.LOG_PID)
 		syslog.syslog('Starting trackit-task_runner')
 
-		## Create some blank variables for later use
-		self.db = None
+		## Load config
+		self.load_config(TRACKIT_CONFIG_FILE)
 
-################################################################################
-		
-	def db_connect(self):
-		if self.db == None:
-			syslog.syslog("Attempting connection to MySQL")
-			self.db = mysql.connect(self.config['DB_SERV'],self.config['DB_USER'],self.config['DB_PASS'],self.config['DB_NAME'])
-			syslog.syslog("Connection to MySQL established")
-
-		curd = self.db.cursor(mysql.cursors.DictCursor)
-		return curd
+		## Connect to the DB
+		syslog.syslog("Attempting connection to MySQL")
+		self.db = mysql.connect(self.config['DB_SERV'],self.config['DB_USER'],self.config['DB_PASS'],self.config['DB_NAME'])
+		syslog.syslog("Connection to MySQL established")
+		self.curd = self.db.cursor(mysql.cursors.DictCursor)
 		
 	def load_config(self, filename):
 		d = imp.new_module('config')
@@ -74,9 +69,8 @@ class TracKitTaskRunner(object):
 		return True
 
 	def get_all_repos(self):
-		curd = self.db_connect()
-		curd.execute('SELECT * FROM `repos` WHERE `state` = 2 OR `state` = 1 OR `state` = 0')
-		return curd.fetchall()
+		self.curd.execute('SELECT * FROM `repos` WHERE `state` = 2 OR `state` = 1 OR `state` = 0')
+		return self.curd.fetchall()
 
 	def calculate_repo_sizes(self):
 		repos = self.get_all_repos()
@@ -84,8 +78,8 @@ class TracKitTaskRunner(object):
 		total_size  = 0
 		src_files   = 0
 		src_size    = 0
-		trac_files  = 0
-		trac_size   = 0
+		web_files  = 0
+		web_size   = 0
 
 		for repo in repos:
 			if repo['src_type'] == 'git':
@@ -94,21 +88,18 @@ class TracKitTaskRunner(object):
 				src_files, src_size = self.directory_size(os.path.join(self.config['SVN_ROOT'],repo['name']))
 
 			if repo['web_type'] == 'trac':
-				trac_files, trac_size = self.directory_size(os.path.join(self.config['TRAC_ROOT'],repo['name']))
+				web_files, web_size = self.directory_size(os.path.join(self.config['TRAC_ROOT'],repo['name']))
 
-			total_files = src_files + trac_files
-			total_size  = src_size + trac_size
+			total_files = src_files + web_files
+			total_size  = src_size + web_size
 
 			## when repo created, create the the repo_stats table
-			cur.execute('''UPDATE `repos` SET `
-			(`name`, `desc`, `tid`, `src_type`, `web_type`, `security`, `state`) 
-			VALUES (%s, %s, %s, %s, %s, %s, %s)''', (repo_name, repo_desc, '-1', repo_src_type, repo_web_type, REPO_SEC['PRIVATE'], REPO_STATE['REQUESTED']))
+			self.curd.execute('''UPDATE `repo_stats` SET 
+			`src_size` = %s, `src_files` = %s, `web_size` = %s, `web_files` = %s, `total_size` = %s, `total_files` = %s
+			WHERE `id` = %s''', (src_size,src_files,web_size,web_files,total_size,total_files, repo['id']))
 		
 			# Commit changes to the database
-			g.db.commit()
-
-			print total_files
-			print total_size
+			self.db.commit()
 
 	def directory_size(self,path):
 		size = 0
@@ -141,6 +132,5 @@ class TracKitTaskRunner(object):
 	
 if __name__ == "__main__":	
 	task_runner = TracKitTaskRunner()
-	task_runner.load_config(TRACKIT_CONFIG_FILE)
 	task_runner.calculate_repo_sizes()
 	#task_runner.remove_deleted_users()

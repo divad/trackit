@@ -192,7 +192,7 @@ def repo_check_exists():
 def get(value,selector='id'):
 	""" Return a repo from the DB. Returns None when the repo doesn't exist"""
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT * FROM `repos` WHERE `' + selector + '` = %s', (value))
+	curd.execute('SELECT * FROM `repos` LEFT JOIN `repo_stats` ON `repos`.`id` = `repo_stats`.`id` WHERE `' + selector + '` = %s', (value))
 	repo = curd.fetchone()
 
 	if repo is not None:
@@ -380,11 +380,16 @@ def repo_create():
 		# Get the new ID
 		rid = cur.lastrowid
 
-		# CREATE THE DEFAULT ADMIN RULE
+		# Create the user as the default admin
 		cur.execute('''INSERT INTO `rules` 
 		(`rid`, `source`, `name`, `src`, `web`, `admin`) 
 		VALUES (%s, %s, %s, %s, %s, %s)''', (rid, 'internal', session['username'], 2, 1, 1))
+		g.db.commit()
 
+		# Create the stats entry for this repo
+		cur.execute('''INSERT INTO `repo_stats` 
+		(`id`) 
+		VALUES (%s)''', (rid))
 		g.db.commit()
 
 		# Ask trackitd to create the repository 
@@ -446,6 +451,8 @@ def repo_view(name):
 	
 	## GET (view) requests
 	if request.method == 'GET':
+		## get size of the repo
+		
 	
 		## Get all teams :/ fix this later via AJAX call!
 		teams = trackit.teams.get_all_teams()

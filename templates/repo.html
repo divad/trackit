@@ -570,7 +570,7 @@ $(document).ready(function() {
 				</div>
 				<div class="modal-footer">					
 					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-					<input type="submit" name="submit" value="Remove" class="btn btn-danger"/>
+					<input type="submit" name="submit" value="Remove rule" class="btn btn-danger"/>
 					<input type="submit" name="submit" value="Save" class="btn btn-primary"/>
 				</div>
 			</form>
@@ -587,13 +587,13 @@ $(document).ready(function() {
 			<div class="panel-heading">Repository Information</div>
 			<div class="panel-body">
 			<form class="form-horizontal" role="form">
-				<div class="form-group">
+				<div class="form-group form-group-static">
 					<label class="col-sm-4 control-label bold-text">Status</label>
 					<div class="col-sm-8">
 						<p class="form-control-static">{{ repo.status }}</p>
 					</div>
 				</div>
-				<div class="form-group">
+				<div class="form-group form-group-static">
 					<label class="col-sm-4 control-label bold-text">Source Control</label>
 					<div class="col-sm-8">
 						<p class="form-control-static">
@@ -609,7 +609,7 @@ $(document).ready(function() {
 					</p>
 					</div>
 				</div>
-				<div class="form-group">
+				<div class="form-group form-group-static">
 					<label class="col-sm-4 control-label bold-text">Project Management</label>
 					<div class="col-sm-8">
 						<p class="form-control-static">
@@ -623,13 +623,13 @@ $(document).ready(function() {
 						</p>
 					</div>
 				</div>
-				<div class="form-group">
+				<div class="form-group form-group-static">
 					<label class="col-sm-4 control-label bold-text">Visibility</label>
 					<div class="col-sm-8">
 						<p class="form-control-static">{{repo.visibility}}</p>
 					</div>
 				</div>
-				<div class="form-group">
+				<div class="form-group form-group-static">
 					<label class="col-sm-4 control-label bold-text">Trac Security</label>
 					<div class="col-sm-8">
 						<p class="form-control-static">
@@ -639,6 +639,12 @@ $(document).ready(function() {
 						{{repo.web_security_str}}
 						{% endif %}
 						</p>
+					</div>
+				</div>
+				<div class="form-group form-group-static">
+					<label class="col-sm-4 control-label bold-text">Size on disk</label>
+					<div class="col-sm-8">
+						<p class="form-control-static">{{ repo.total_size|filesizeformat }}</p>
 					</div>
 				</div>
 			</form>
@@ -652,7 +658,7 @@ $(document).ready(function() {
 			<div class="panel-body">
 				<form class="form-horizontal" role="form">
 					{% if repo.src_type == 'svn' %}
-					<div class="form-group">
+					<div class="form-group form-group-static">
 						<label class="col-sm-3 control-label bold-text">Subversion</label>
 						<div class="col-sm-9">
 							<p class="form-control-static"><a href="https://svn.soton.ac.uk/{{repo.name}}">https://svn.soton.ac.uk/{{repo.name}}</a></p>
@@ -660,7 +666,7 @@ $(document).ready(function() {
 					</div>
 					{% endif %}
 					{% if repo.src_type == 'git' %}
-					<div class="form-group">
+					<div class="form-group form-group-static">
 						<label class="col-sm-3 control-label bold-text">Git</label>
 						<div class="col-sm-9">
 							<p class="form-control-static"><a href="https://{{session.username}}@git.soton.ac.uk/{{repo.name}}">https://{{session.username}}@git.soton.ac.uk/{{repo.name}}</a></p>
@@ -668,7 +674,7 @@ $(document).ready(function() {
 					</div>
 					{% endif %}
 					{% if repo.web_type == 'trac' %}
-					<div class="form-group">
+					<div class="form-group form-group-static">
 						<label class="col-sm-3 control-label bold-text">Trac</label>
 						<div class="col-sm-9">
 							<p class="form-control-static"><a href="https://trac.soton.ac.uk/{{repo.name}}/">https://trac.soton.ac.uk/{{repo.name}}</a></p>
@@ -676,13 +682,13 @@ $(document).ready(function() {
 					</div>
 					{% endif %}
 					{% if repo.src_type == 'svn' %}
-					<div class="form-group">
+					<div class="form-group form-group-static">
 						<label class="col-sm-3 control-label bold-text">SVN Hooks</label>
 						<div class="col-sm-9">
 							<p class="form-control-static"><a href="smb://svn.soton.ac.uk/{{repo.name}}">smb://svn.soton.ac.uk/{{repo.name}}</a> <i class="fa fa-fw fa-linux"></i> <i class="fa fa-fw fa-apple"></i></p>
 						</div>
 					</div>
-					<div class="form-group">
+					<div class="form-group form-group-static">
 						<label class="col-sm-3 control-label bold-text">&nbsp;</label>
 						<div class="col-sm-9">
 							<p class="form-control-static"><a href="file://svn.soton.ac.uk/{{repo.name}}">\\svn.soton.ac.uk\{{repo.name}}</a> <i class="fa fa-fw fa-windows"></i></p>
@@ -714,7 +720,7 @@ $(document).ready(function() {
 					<th width="24%">Name</th>
 					<th width="24%">Source Access</th>
 					<th width="24%">Trac Access</th>
-					<th width="24%">Admin Rights</th>
+					<th width="24%">Manager</th>
 					<th width="4%"></th>
 				</tr>
 			</thead>
