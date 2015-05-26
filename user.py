@@ -86,7 +86,7 @@ def login():
 ################################################################################
 
 def auth_user(username,password):
-	app.logger.debug("bargate.core.auth_user for " + username)
+	app.logger.debug("trackit.user.auth_user for " + username)
 
 	if username == '':
 		return False
@@ -108,16 +108,16 @@ def auth_user(username,password):
 		app.logger.error("Could not bind to LDAP: " + str(e))
 		trackit.errors.fatal(e)
 
-	app.logger.debug("bargate.core.auth_user ldap bind succeeded ")
+	app.logger.debug("trackit.user.auth_user ldap bind succeeded ")
 
 	## Now search for the user object to bind as
 	try:
 		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE,(app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
 	except ldap.LDAPError as e:
-		app.logger.debug("bargate.core.auth_user no object found in ldap")
+		app.logger.debug("trackit.user.auth_user no object found in ldap")
 		return False
 
-	app.logger.debug("bargate.core.auth_user ldap results found ")
+	app.logger.debug("trackit.user.auth_user ldap results found ")
 
 	## handle the search results
 	for result in results:
@@ -131,7 +131,7 @@ def auth_user(username,password):
 		else:
 			## Found the DN. Yay! Now bind with that DN and the password the user supplied
 			try:
-				app.logger.debug("bargate.core.auth_user ldap attempting ldap simple bind as " + str(dn))
+				app.logger.debug("trackit.user.auth_user ldap attempting ldap simple bind as " + str(dn))
 				lauth = ldap.initialize(app.config['LDAP_URI'])
 				lauth.set_option(ldap.OPT_REFERRALS, 0)
 				lauth.simple_bind_s( (dn), (password) )

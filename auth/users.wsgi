@@ -17,10 +17,11 @@
 
 import imp
 import syslog
-import hashlib
 import redis
+import bcrypt #libffi-devel needed, pip install bcrypt
 
 TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
+PASSWORD_CACHE_TTL  = 900
 
 def load_config():
 	d = imp.new_module('config')
@@ -38,12 +39,24 @@ def load_config():
 			
 	return config
 
+def cache_password(red, username, password):
+	try:
+		encrypted_password = bcrypt.hashpw(password, bcrypt.gensalt())
+		red.setex('user' + ':' + username + ':cached_password', PASSWORD_CACHE_TTL, encrypted_password)
+	except Exception as ex:
+		syslog.openlog("trackit-auth",syslog.LOG_PID)
+		syslog.syslog('check_password redis set call failed! - ' + str(ex))
+
 def check_password(environ, username, password):
-	enc_password = hashlib.sha512(password).hexdigest()
-
 	## We use REDIS password caching for both to reduce having to hit
-	## kerberos (AD) (dog slow!) or MySQL (which has a cache, but redis is in memory)
+	## LDAP (AD) (dog slow!) or MySQL (which is slower than REDIS)
 
+	if username == '':
+		return False
+	if password == '':
+		return False
+
+	## Connect to REDIS
 	try:
 		r = redis.StrictRedis(host='localhost', port=6379, db=0)
 		use_redis = True
@@ -52,6 +65,7 @@ def check_password(environ, username, password):
 		syslog.syslog('ERROR could not connect to REDIS: ' + str(ex))	
 		use_redis = False
 
+	## If we can use redis
 	if use_redis:
 		try:		
 			cached_password = r.get('user' + ':' + username + ':cached_password')
@@ -59,17 +73,16 @@ def check_password(environ, username, password):
 
 			## Check the cache for the main password
 			if not cached_password == None:
-				## redis cache exists
-				if cached_password == enc_password:
+				## redis cache exists, check password.
+				if bcrypt.hashpw(password, cached_password) == cached_password:
 					return True
 
 			## Try the alt password cache instead
 			if not cached_alt_password == None:
-				if cached_alt_password == enc_password:
+				if bcrypt.hashpw(password, cached_altpassword) == cached_alt_password:
 					return True
 				else:
 					return False
-			
 
 		except Exception as ex:
 			syslog.openlog("trackit-auth",syslog.LOG_PID)
@@ -80,6 +93,7 @@ def check_password(environ, username, password):
 
 	try:
 		import kerberos
+		## TODO switch to LDAP pls
 		kerberos.checkPassword(username, password, config['KRB5_SERVICE'], config['KRB5_DOMAIN'])
 		result = True
 		
@@ -88,35 +102,33 @@ def check_password(environ, username, password):
 
 	if result:
 		if use_redis:
-			try:
-				encrypted_password = hashlib.sha512(password).hexdigest()
-				r.setex('user' + ':' + username + ':cached_password', 300, encrypted_password)
-			except Exception as ex:
-				syslog.openlog("trackit-auth",syslog.LOG_PID)
-				syslog.syslog('check_password redis set call failed! - ' + str(ex))
+			cache_password(r,username,password)
 
 		return True
 	else:
-		import MySQLdb as mysql
-		db = mysql.connect(config['DB_SERV'],config['DB_USER'],config['DB_PASS'],config['DB_NAME'])
-		curd = db.cursor(mysql.cursors.DictCursor)
+		## try the alt password instead
+		try:
+			import MySQLdb as mysql
+			db = mysql.connect(config['DB_SERV'],config['DB_USER'],config['DB_PASS'],config['DB_NAME'])
+			curd = db.cursor(mysql.cursors.DictCursor)
 	
-		curd.execute('SELECT * FROM `alt_passwords` WHERE `username` = %s',(username))
-		user = curd.fetchone()
+			curd.execute('SELECT * FROM `alt_passwords` WHERE `username` = %s',(username))
+			user = curd.fetchone()
 
-		if user == None:
-			return False
-		else:
-			if password == user['password']:
+			if user == None:
+				return False
+			else:
+				if password == user['password']:
 
-				if use_redis:
-					try:
-						encrypted_password = hashlib.sha512(password).hexdigest()
-						r.setex('user' + ':' + username + ':cached_alt_password', 300, encrypted_password)
-					except Exception as ex:
-						syslog.openlog("trackit-auth",syslog.LOG_PID)
-						syslog.syslog('check_password redis set call failed! - ' + str(ex))
+					if use_redis:
+						cache_password(r,username,password)
 
-				return True
+					return True
+
+			except Exception as ex:
+				## something went wrong during MySQL alt password auth. the server was probably down.
+				syslog.openlog("trackit-auth",syslog.LOG_PID)
+				syslog.syslog('check_password mysql call failed! - ' + str(ex))
+				return False			
 
 	return False
