@@ -180,10 +180,10 @@ def check_password(environ, username, password):
 
 					return True
 
-			except Exception as ex:
-				## something went wrong during MySQL alt password auth. the server was probably down.
-				syslog.openlog("trackit-auth",syslog.LOG_PID)
-				syslog.syslog('check_password mysql call failed! - ' + str(ex))
-				return False			
+		except Exception as ex:
+			## something went wrong during MySQL alt password auth. the server was probably down.
+			syslog.openlog("trackit-auth",syslog.LOG_PID)
+			syslog.syslog('check_password mysql call failed! - ' + str(ex))
+			return False			
 
 	return False
