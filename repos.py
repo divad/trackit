@@ -35,7 +35,7 @@ REPO_WEB_SEC_STR = { 0: 'Private', 1: 'Public' }
 
 def get_all():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT * FROM `repos` ORDER BY `name`')
+	curd.execute('SELECT * FROM `repos` LEFT JOIN `repo_stats` ON `repos`.`id` = `repo_stats`.`id` ORDER BY `repos`.`name`')
 	return curd.fetchall()
 
 ################################################################################

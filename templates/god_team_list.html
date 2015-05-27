@@ -24,7 +24,9 @@ $(document).ready(function() {
 	<table id="dtable" class="table table-striped table-bordered table-hover" cellspacing="0" width="100%">
 		<thead>
 			<tr>
-				<th>Name</th><th>Description</th>
+				<th>Name</th>
+				<th>Description</th>
+				<th>Members</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -36,6 +38,7 @@ $(document).ready(function() {
 			<tr data-url="{{team.link}}" class="rowclick-tr">
 				<td class="rowclick-td">{{team.name}}</td>
 				<td class="rowclick-td">{{team.desc|truncate(30)}}</td>
+				<td class="rowclick-td">{{team.members}}</td>
 			</tr>	
 		{% endfor %}
 	{%endif%}

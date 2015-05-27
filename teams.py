@@ -106,6 +106,14 @@ def count_admins(team_id):
 	count = curd.fetchone()
 
 	return int(count['total'])
+
+def count_members(team_id):
+
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT COUNT(*) AS "total" FROM `team_members` WHERE `tid` = %s', (team_id))
+	count = curd.fetchone()
+
+	return int(count['total'])
 	
 ################################################################################
 
@@ -388,6 +396,7 @@ def team_list_admin():
 	
 	for team in teams:
 		team['link'] = url_for('team_view', name = team['name'])
+		team['members'] = count_members(team['id'])
 
 	return render_template('god_team_list.html',teams=teams,active='god')	
 
