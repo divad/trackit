@@ -19,9 +19,12 @@ import imp
 import syslog
 import redis
 import bcrypt #libffi-devel needed, pip install bcrypt
+import ldap
 
 TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
 PASSWORD_CACHE_TTL  = 900
+
+################################################################################
 
 def load_config():
 	d = imp.new_module('config')
@@ -39,6 +42,8 @@ def load_config():
 			
 	return config
 
+################################################################################
+
 def cache_password(red, username, password):
 	try:
 		encrypted_password = bcrypt.hashpw(password, bcrypt.gensalt())
@@ -46,6 +51,57 @@ def cache_password(red, username, password):
 	except Exception as ex:
 		syslog.openlog("trackit-auth",syslog.LOG_PID)
 		syslog.syslog('check_password redis set call failed! - ' + str(ex))
+
+################################################################################
+
+def ldap_auth_user(username,password):
+	syslog.openlog("trackit-auth",syslog.LOG_PID)
+
+	## connect to LDAP and turn off referals
+	l = ldap.initialize(config['LDAP_URI'])
+	l.set_option(ldap.OPT_REFERRALS, 0)
+
+	## and bind to the server with a username/password if needed in order to search for the full DN for the user who is logging in.
+	try:
+		if config['LDAP_ANON_BIND']:
+			l.simple_bind_s()
+		else:
+			l.simple_bind_s( (config['LDAP_BIND_USER']), (config['LDAP_BIND_PW']) )
+	except ldap.LDAPError as e:
+		syslog.syslog('Failed to bind to LDAP - ' + str(ex))
+		return False
+
+	app.logger.debug("trackit.user.auth_user ldap bind succeeded ")
+
+	## Now search for the user object to bind as
+	try:
+		results = l.search_s(config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE,(config['LDAP_USER_ATTRIBUTE']) + "=" + username)
+	except ldap.LDAPError as e:
+		return False
+
+	## handle the search results
+	for result in results:
+		dn	= result[0]
+		attrs	= result[1]
+
+		if dn == None:
+			## No dn returned. Return false.
+			return False
+
+		else:
+			## Found the DN. Yay! Now bind with that DN and the password the user supplied
+			try:
+				lauth = ldap.initialize(config['LDAP_URI'])
+				lauth.set_option(ldap.OPT_REFERRALS, 0)
+				lauth.simple_bind_s( (dn), (password) )
+				return True
+			except ldap.LDAPError as e:
+				return False
+
+			syslog.syslog('auth ldap OK for ' + str(dn))
+
+	## Catch all return false for LDAP auth
+	return False
 
 def check_password(environ, username, password):
 	## We use REDIS password caching for both to reduce having to hit
@@ -92,10 +148,9 @@ def check_password(environ, username, password):
 	config = load_config()
 
 	try:
-		import kerberos
-		## TODO switch to LDAP pls
-		kerberos.checkPassword(username, password, config['KRB5_SERVICE'], config['KRB5_DOMAIN'])
-		result = True
+		ldap_auth_result = ldap_auth_user(username,password)
+		if ldap_auth_result:
+			return True
 		
 	except Exception:
 		result = False
