@@ -54,7 +54,7 @@ def cache_password(red, username, password):
 
 ################################################################################
 
-def ldap_auth_user(username,password):
+def ldap_auth_user(config,username,password):
 	syslog.openlog("trackit-auth",syslog.LOG_PID)
 
 	## connect to LDAP and turn off referals
@@ -70,8 +70,6 @@ def ldap_auth_user(username,password):
 	except ldap.LDAPError as e:
 		syslog.syslog('Failed to bind to LDAP - ' + str(ex))
 		return False
-
-	app.logger.debug("trackit.user.auth_user ldap bind succeeded ")
 
 	## Now search for the user object to bind as
 	try:
@@ -104,6 +102,9 @@ def ldap_auth_user(username,password):
 	return False
 
 def check_password(environ, username, password):
+	syslog.openlog("trackit-auth",syslog.LOG_PID)
+	syslog.syslog('auth ldap call started')
+
 	## We use REDIS password caching for both to reduce having to hit
 	## LDAP (AD) (dog slow!) or MySQL (which is slower than REDIS)
 
@@ -111,6 +112,8 @@ def check_password(environ, username, password):
 		return False
 	if password == '':
 		return False
+
+	syslog.syslog('auth ldap call started2')
 
 	## Connect to REDIS
 	try:
@@ -120,6 +123,8 @@ def check_password(environ, username, password):
 		syslog.openlog("trackit-auth",syslog.LOG_PID)
 		syslog.syslog('ERROR could not connect to REDIS: ' + str(ex))	
 		use_redis = False
+
+	syslog.syslog('auth ldap call started3')
 
 	## If we can use redis
 	if use_redis:
@@ -144,15 +149,21 @@ def check_password(environ, username, password):
 			syslog.openlog("trackit-auth",syslog.LOG_PID)
 			syslog.syslog('check_password redis get call failed! - ' + str(ex))
 
+	syslog.syslog('auth ldap call started4')
+
 	## If we got here then redis didnt' have a password cache for this user
 	config = load_config()
 
 	try:
-		ldap_auth_result = ldap_auth_user(username,password)
+		ldap_auth_result = ldap_auth_user(config,username,password)
+
 		if ldap_auth_result:
+			syslog.syslog('success')
 			return True
+		syslog.syslog('fail')
 		
-	except Exception:
+	except Exception as ex:
+		syslog.syslog('ldap auth call resulted in an exception: ' + str(ex))
 		result = False
 
 	if result:
