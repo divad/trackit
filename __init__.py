@@ -76,6 +76,7 @@ app = WrapFlask(__name__)
 app.config.from_object(__name__)
 
 # try to load config from various paths 
+app.config.from_pyfile('/data/forgemgr/trackit.conf', silent=True)
 app.config.from_pyfile('/etc/trackit.conf', silent=True)
 app.config.from_pyfile('/etc/trackit/trackit.conf', silent=True)
 app.config.from_pyfile('/data/trackit/trackit.conf', silent=True)
