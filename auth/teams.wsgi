@@ -18,7 +18,7 @@
 import imp
 import MySQLdb as mysql
 
-TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
+TRACKIT_CONFIG_FILE = '/data/forgemgr/trackit.conf'
 
 def load_config():
 	d = imp.new_module('config')

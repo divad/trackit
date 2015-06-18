@@ -34,7 +34,7 @@ from multiprocessing import Process, Value
 import traceback
 import smtplib
 
-TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
+TRACKIT_CONFIG_FILE = '/data/forgemgr/trackit.conf'
 
 class TracKitTaskRunner(object):
 

@@ -21,7 +21,7 @@ import redis
 import bcrypt #libffi-devel needed, pip install bcrypt
 import ldap
 
-TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
+TRACKIT_CONFIG_FILE = '/data/forgemgr/trackit.conf'
 PASSWORD_CACHE_TTL  = 900
 
 ################################################################################
