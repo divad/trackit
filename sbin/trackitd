@@ -34,8 +34,8 @@ from multiprocessing import Process, Value
 import traceback
 import smtplib
 
-TRACKIT_CONFIG_FILE = '/data/trackit/trackit.conf'
-VERSION             = "0.17"
+TRACKIT_CONFIG_FILE = '/data/forgemgr/trackit.conf'
+VERSION             = "0.18"
 DEBUG               = True
 
 Pyro4.config.SERVERTYPE = "multiplex"
