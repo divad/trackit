@@ -86,6 +86,8 @@ class TracKitTaskRunner(object):
 				src_files, src_size = self.directory_size(os.path.join(self.config['GIT_ROOT'],repo['name']))
 			elif repo['src_type'] == 'svn':
 				src_files, src_size = self.directory_size(os.path.join(self.config['SVN_ROOT'],repo['name']))
+			elif repo['src_type'] == 'hg':
+				src_files, src_size = self.directory_size(os.path.join(self.config['HG_ROOT'],repo['name']))
 
 			if repo['web_type'] == 'trac':
 				web_files, web_size = self.directory_size(os.path.join(self.config['TRAC_ROOT'],repo['name']))

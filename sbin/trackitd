@@ -158,8 +158,8 @@ class TracKitDaemon(object):
 		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/git init --bare ' + git_path)
 		if rcode > 0:
 			syslog.syslog('Could not create git repo ' + git_path + ': git init returned an error code')
-			syslog.syslog('svnadmin stdout:' + stdoutdata)
-			syslog.syslog('svnadmin stderr:' + stderrdata)			
+			syslog.syslog('git init stdout:' + stdoutdata)
+			syslog.syslog('git init stderr:' + stderrdata)			
 			
 			error_data = {'stdout': stdoutdata, 'stderr': stderrdata, 'rcode': rcode}
 			raise InternalError("git init returned an error. Please contact your system administrator.",error_data)
@@ -167,6 +167,28 @@ class TracKitDaemon(object):
 		syslog.syslog('Created git repository ' + name)
 		self.git_auth_config(name)
 		return git_path
+
+################################################################################
+		
+	def hg_create(self,name):
+		hg_path = os.path.join(self.config['HG_ROOT'],name)
+		if os.path.lexists(hg_path):
+			syslog.syslog('Could not create hg repo ' + hg_path + ': the directory already exists')
+			raise InternalError("The hg repository path " + hg_path + " already exists")
+
+		## Run hg init
+		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/hg init ' + hg_path)
+		if rcode > 0:
+			syslog.syslog('Could not create hg repo ' + hg_path + ': hg init returned an error code')
+			syslog.syslog('hg init stdout:' + stdoutdata)
+			syslog.syslog('hg init stderr:' + stderrdata)			
+			
+			error_data = {'stdout': stdoutdata, 'stderr': stderrdata, 'rcode': rcode}
+			raise InternalError("hg init returned an error. Please contact your system administrator.",error_data)
+		
+		syslog.syslog('Created hg repository ' + name)
+		self.hg_auth_config(name)
+		return hg_path
 		
 ################################################################################
 			
@@ -182,6 +204,8 @@ class TracKitDaemon(object):
 			trac_str = " svn " + src_path
 		elif src_type == "git":
 			trac_str = " git " + src_path
+		elif src_type == "hg":
+			trac_str = " hg " + src_path
 	
 		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/trac-admin ' + trac_path + ' initenv ' + name + ' sqlite:db/trac.db' + trac_str)
 
@@ -314,8 +338,7 @@ The stderr data was: %s """ % (rcode, stdoutdata, stderrdata))
 		if self.config['EMAIL_ALERTS']:
 			message = """Subject: %s
 
-%s
-			""" % (subject, message)
+%s""" % (subject, message)
 
 			try:
 			   smtpObj = smtplib.SMTP(self.config['SMTP_SERVER'])
@@ -340,7 +363,7 @@ The stderr data was: %s """ % (rcode, stdoutdata, stderrdata))
 			
 		if str(repo['state']) == "2":
 			## suspend 
-			location = "/trac/" + name 
+			location = "/" + name 
 			f = open(os.path.join(self.config['TRAC_CONF_DIR'], name + ".conf"), 'w')
 			f.write("""<Location %s>\nRedirectMatch .* https://forge.soton.ac.uk/suspended\n</Location>""" % (location))
 			f.flush()
@@ -383,7 +406,7 @@ The stderr data was: %s """ % (rcode, stdoutdata, stderrdata))
 					if not groupdn == None:
 						ldap_groups += "\nRequire ldap-group " + groupdn
 				
-		location = "/trac/" + name 
+		location = "/" + name 
 		
 		if repo['web_security'] == 1:
 			location = location + "/login"
@@ -434,7 +457,7 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 			
 		if str(repo['state']) == "2":
 			## suspend 
-			location = "/git/" + name 
+			location = "/" + name 
 			f = open(os.path.join(self.config['GIT_CONF_DIR'], name + ".conf"), 'w')
 			f.write("""<Location %s>\nRedirectMatch .* https://forge.soton.ac.uk/suspended\n</Location>""" % (location))
 			f.flush()
@@ -473,7 +496,7 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 					if rule['src'] == 2:
 						rw_teams += "\nRequire group " + rule['name']
 
-		location = "/git/" + name 
+		location = "/" + name 
 		
 		if len(ro_users) > 0:
 			ro_users = "\nRequire user " + ro_users
@@ -515,6 +538,104 @@ WSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi
 		
 		self.server_graceful()
 		syslog.syslog('git auth config rebuilt for instance ' + name)
+
+
+################################################################################
+
+	def hg_auth_config(self,name):			
+		curd = self.get_cursor()
+		curd.execute('SELECT * FROM `repos` WHERE `name` = %s',(name))
+		repo = curd.fetchone()
+
+		if repo == None:
+			raise InternalError("Could not find repo '" + name + "' in the database")
+		
+		if repo['src_type'] != 'hg':
+			raise InternalError("Could not build hg auth config for repo '" + name + "' because src_type is not set to hg")
+			
+		if str(repo['state']) == "2":
+			## suspend 
+			location = "/" + name 
+			f = open(os.path.join(self.config['HG_CONF_DIR'], name + ".conf"), 'w')
+			f.write("""<Location %s>\nRedirectMatch .* https://forge.soton.ac.uk/suspended\n</Location>""" % (location))
+			f.flush()
+			os.fsync(f.fileno())
+			f.close()
+			syslog.syslog('Suspended hg auth config for: ' + name)
+			return 
+		elif str(repo['state']) == "3":
+			## delete
+			os.remove(os.path.join(self.config['HG_CONF_DIR'], name + ".conf"))
+			syslog.syslog('Removed hg auth config for: ' + name)
+			return 
+	
+		## create set
+		ro_users = ""
+		rw_users = ""
+		ro_teams = ""
+		rw_teams = ""	
+		
+		## get rules now
+		curd.execute('SELECT * FROM `rules` WHERE `rid` = %s', (repo['id']))
+		rules = curd.fetchall()	
+
+		for rule in rules:
+			if rule['source'] == 'internal':
+				if rule['src'] >= 1:
+					ro_users += rule['name'] + " "
+
+					if rule['src'] == 2:
+						rw_users += rule['name'] + " "
+				
+			elif rule['source'] == 'team':
+				if rule['src'] >= 1:
+					ro_teams += "\nRequire group " + rule['name']
+
+					if rule['src'] == 2:
+						rw_teams += "\nRequire group " + rule['name']
+
+		location = "/" + name 
+		
+		if len(ro_users) > 0:
+			ro_users = "\nRequire user " + ro_users
+
+		if len(rw_users) > 0:
+			rw_users = "\nRequire user " + rw_users
+
+		f = open(os.path.join(self.config['HG_CONF_DIR'], name + ".conf"), 'w')
+		f.write("""<Location %s>
+AuthType Basic
+AuthName "%s Mercurial Repository"
+AuthBasicProvider wsgi
+WSGIAuthUserScript /data/trackit/trackit/auth/users.wsgi
+WSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi
+%s %s
+</Location>
+<Location %s/git-receive-pack>
+AuthType Basic
+AuthName "%s Mercurial Repository"
+AuthBasicProvider wsgi
+WSGIAuthUserScript /data/trackit/trackit/auth/users.wsgi
+WSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi
+%s %s
+</Location>
+""" % (
+			location,
+			name,
+			ro_users,
+			ro_teams,
+			location,
+			name,
+			rw_users,
+			rw_teams,
+		))
+		
+		f.flush()
+		os.fsync(f.fileno())
+		f.close()
+		
+		self.server_graceful()
+		syslog.syslog('hg auth config rebuilt for instance ' + name)
 
 
 ################################################################################
@@ -765,6 +886,13 @@ SVNAutoversioning on
 				syslog.syslog('git init call failed: ' + str(ex))
 				syslog.syslog(traceback.format_exc())
 				return (False,"Failed to create repository. The error was: " + str(ex))
+		elif src_type == 'hg': 
+			try:
+				src_path = self.hg_create(name)
+			except Exception as ex:
+				syslog.syslog('hg init call failed: ' + str(ex))
+				syslog.syslog(traceback.format_exc())
+				return (False,"Failed to create repository. The error was: " + str(ex))
 		elif src_type == 'none':
 			src_path = ""
 			
@@ -800,6 +928,8 @@ SVNAutoversioning on
 					src_path = os.path.join(self.config['SVN_ROOT'],name)
 				elif repo['src_type'] == 'git':
 					src_path = os.path.join(self.config['GIT_ROOT'],name)
+				elif repo['src_type'] == 'hg':
+					src_path = os.path.join(self.config['HG_ROOT'],name)
 				elif repo['src_type'] == 'none':
 					src_path = ''
 
@@ -901,7 +1031,7 @@ SVNAutoversioning on
 				self.regenerate_samba_hooks_file()
 				self.regenerate_autoversion_config()
 
-			if repo['src_type'] == 'git':
+			elif repo['src_type'] == 'git':
 			
 				git_path = os.path.join(self.config['GIT_ROOT'],name)
 				git_suspend_path = os.path.join(self.config['GIT_SUSPENDED_ROOT'],name)
@@ -909,6 +1039,15 @@ SVNAutoversioning on
 				syslog.syslog('Moved git directory to suspended for repo: ' + name)
 			
 				self.git_auth_config(name)
+
+			elif repo['src_type'] == 'hg':
+			
+				hg_path = os.path.join(self.config['HG_ROOT'],name)
+				hg_suspend_path = os.path.join(self.config['HG_SUSPENDED_ROOT'],name)
+				shutil.move(hg_path,hg_suspend_path)
+				syslog.syslog('Moved hg directory to suspended for repo: ' + name)
+			
+				self.hg_auth_config(name)
 				
 			if repo['web_type'] == 'trac':
 				trac_path = os.path.join(self.config['TRAC_ROOT'],name)
@@ -953,7 +1092,7 @@ SVNAutoversioning on
 				self.regenerate_samba_hooks_file()
 				self.regenerate_autoversion_config()
 
-			if repo['src_type'] == 'git':
+			elif repo['src_type'] == 'git':
 			
 				git_path = os.path.join(self.config['GIT_ROOT'],name)
 				git_suspend_path = os.path.join(self.config['GIT_SUSPENDED_ROOT'],name)
@@ -961,6 +1100,15 @@ SVNAutoversioning on
 				syslog.syslog('Moved git directory to active for repo: ' + name)
 			
 				self.git_auth_config(name)
+
+			elif repo['src_type'] == 'hg':
+			
+				hg_path = os.path.join(self.config['HG_ROOT'],name)
+				hg_suspend_path = os.path.join(self.config['HG_SUSPENDED_ROOT'],name)
+				shutil.move(hg_suspend_path,hg_path)
+				syslog.syslog('Moved hg directory to active for repo: ' + name)
+			
+				self.hg_auth_config(name)
 				
 			if repo['web_type'] == 'trac':
 				trac_path = os.path.join(self.config['TRAC_ROOT'],name)
@@ -1005,7 +1153,7 @@ SVNAutoversioning on
 				self.regenerate_samba_hooks_file()
 				self.regenerate_autoversion_config()
 
-			if repo['src_type'] == 'git':
+			elif repo['src_type'] == 'git':
 			
 				git_path = os.path.join(self.config['GIT_ROOT'],name)
 				git_delete_path = os.path.join(self.config['GIT_DELETED_ROOT'],name)
@@ -1013,6 +1161,15 @@ SVNAutoversioning on
 				syslog.syslog('Moved git directory to deleted for repo: ' + name)
 			
 				self.git_auth_config(name)
+
+			elif repo['src_type'] == 'hg':
+			
+				hg_path = os.path.join(self.config['HG_ROOT'],name)
+				hg_delete_path = os.path.join(self.config['HG_DELETED_ROOT'],name)
+				shutil.move(hg_path,hg_delete_path)
+				syslog.syslog('Moved hg directory to deleted for repo: ' + name)
+			
+				self.hg_auth_config(name)
 				
 			if repo['web_type'] == 'trac':
 				trac_path = os.path.join(self.config['TRAC_ROOT'],name)
@@ -1050,6 +1207,8 @@ SVNAutoversioning on
 				self.regenerate_authz_file()
 			elif repo['src_type'] == 'git':
 				self.git_auth_config(name)
+			elif repo['src_type'] == 'hg':
+				self.hg_auth_config(name)
 				
 			if repo['web_type'] == 'trac':
 				self.trac_auth_config(name)
@@ -1133,10 +1292,14 @@ SVNAutoversioning on
 			repos = curd.fetchall()
 			
 			for repo in repos:
+
 				if repo['web_type'] == 'trac':
 					self.trac_auth_config(repo['name'])
+
 				if repo['src_type'] == 'git':
 					self.git_auth_config(repo['name'])
+				elif repo['src_type'] == 'hg':
+					self.hg_auth_config(repo['name'])
 			
 			self.server_graceful()
 
@@ -1178,7 +1341,7 @@ def signal_handler(signal):
 
 ################################################################################
 	
-if __name__ == "__main__":	
+if __name__ == "__main__":
 	## Set up the daemon
 	trackit     = TracKitDaemon()
 	trackit.load_config(TRACKIT_CONFIG_FILE)
