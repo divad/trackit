@@ -314,7 +314,7 @@ The stderr data was: %s """ % (rcode, stdoutdata, stderrdata))
 		if self.config['EMAIL_ALERTS']:
 			message = """Subject: %s
 
-			%s
+%s
 			""" % (subject, message)
 
 			try:
