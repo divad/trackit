@@ -66,6 +66,9 @@ LDAP_BIND_PW=''
 
 SAMBA_CONFIG_FILE="/etc/samba/conf.d/svnhooks.conf"
 
+## For generating URLs
+DNS_DOMAIN='soton.ac.uk'
+
 ################################################################################
 
 

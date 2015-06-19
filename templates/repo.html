@@ -64,7 +64,7 @@
 								<option value="2"{% if repo.security == 2 %} selected="selected"{% endif %}>Public - Visible to anybody on the internet</option>
 							</select>
 
-							<span class="help-block">Who can see the project details on forge.soton.ac.uk
+							<span class="help-block">Who can see the project details on forge.{{config.DNS_DOMAIN}}
 							</span>
 						</div>
 					</div>
@@ -661,7 +661,7 @@ $(document).ready(function() {
 					<div class="form-group form-group-static">
 						<label class="col-sm-3 control-label bold-text">Subversion</label>
 						<div class="col-sm-9">
-							<p class="form-control-static"><a href="https://svn.soton.ac.uk/{{repo.name}}">https://svn.soton.ac.uk/{{repo.name}}</a></p>
+							<p class="form-control-static"><a href="https://svn{{config.DNS_DOMAIN}}/{{repo.name}}">https://svn{{config.DNS_DOMAIN}}/{{repo.name}}</a></p>
 						</div>
 					</div>
 					{% endif %}
@@ -669,7 +669,7 @@ $(document).ready(function() {
 					<div class="form-group form-group-static">
 						<label class="col-sm-3 control-label bold-text">Git</label>
 						<div class="col-sm-9">
-							<p class="form-control-static"><a href="https://{{session.username}}@git.soton.ac.uk/{{repo.name}}">https://{{session.username}}@git.soton.ac.uk/{{repo.name}}</a></p>
+							<p class="form-control-static"><a href="https://{{session.username}}@git.{{config.DNS_DOMAIN}}/{{repo.name}}">https://{{session.username}}@git.{{config.DNS_DOMAIN}}/{{repo.name}}</a></p>
 						</div>
 					</div>
 					{% endif %}
@@ -677,7 +677,7 @@ $(document).ready(function() {
 					<div class="form-group form-group-static">
 						<label class="col-sm-3 control-label bold-text">Trac</label>
 						<div class="col-sm-9">
-							<p class="form-control-static"><a href="https://trac.soton.ac.uk/{{repo.name}}/">https://trac.soton.ac.uk/{{repo.name}}</a></p>
+							<p class="form-control-static"><a href="https://trac.{{config.DNS_DOMAIN}}/{{repo.name}}/">https://trac.{{config.DNS_DOMAIN}}/{{repo.name}}</a></p>
 						</div>
 					</div>
 					{% endif %}
@@ -685,13 +685,13 @@ $(document).ready(function() {
 					<div class="form-group form-group-static">
 						<label class="col-sm-3 control-label bold-text">SVN Hooks</label>
 						<div class="col-sm-9">
-							<p class="form-control-static"><a href="smb://svn.soton.ac.uk/{{repo.name}}">smb://svn.soton.ac.uk/{{repo.name}}</a> <i class="fa fa-fw fa-linux"></i> <i class="fa fa-fw fa-apple"></i></p>
+							<p class="form-control-static"><a href="smb://svn.{{config.DNS_DOMAIN}}/{{repo.name}}">smb://svn.{{config.DNS_DOMAIN}}/{{repo.name}}</a> <i class="fa fa-fw fa-linux"></i> <i class="fa fa-fw fa-apple"></i></p>
 						</div>
 					</div>
 					<div class="form-group form-group-static">
 						<label class="col-sm-3 control-label bold-text">&nbsp;</label>
 						<div class="col-sm-9">
-							<p class="form-control-static"><a href="file://svn.soton.ac.uk/{{repo.name}}">\\svn.soton.ac.uk\{{repo.name}}</a> <i class="fa fa-fw fa-windows"></i></p>
+							<p class="form-control-static"><a href="file://svn.{{config.DNS_DOMAIN}}/{{repo.name}}">\\svn.{{config.DNS_DOMAIN}}\{{repo.name}}</a> <i class="fa fa-fw fa-windows"></i></p>
 						</div>
 					</div>
 					{% endif %}

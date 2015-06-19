@@ -70,19 +70,19 @@
 				<div class="form-group">
 					<label class="col-sm-3 control-label bold-text">SVN</label>
 					<div class="col-sm-9">
-						<p class="form-control-static"><a href="https://svn.soton.ac.uk/{{repo.name}}">https://svn.soton.ac.uk/{{repo.name}}</a></p>
+						<p class="form-control-static"><a href="https://svn.{{config.DNS_DOMAIN}}/{{repo.name}}">https://svn.{{config.DNS_DOMAIN}}/{{repo.name}}</a></p>
 					</div>
 				</div>
 				<div class="form-group">
 					<label class="col-sm-3 control-label bold-text">SVN+SSH</label>
 					<div class="col-sm-9">
-						<p class="form-control-static">ssh+svn://svn.soton.ac.uk/{{repo.name}}</p>
+						<p class="form-control-static">ssh+svn://svn.{{config.DNS_DOMAIN}}/{{repo.name}}</p>
 					</div>
 				</div>
 				<div class="form-group">
 					<label class="col-sm-3 control-label bold-text">Trac</label>
 					<div class="col-sm-9">
-						<p class="form-control-static"><a href="https://trac.soton.ac.uk/{{repo.name}}/">https://trac.soton.ac.uk/{{repo.name}}</a></p>
+						<p class="form-control-static"><a href="https://trac.{{config.DNS_DOMAIN}}/{{repo.name}}/">https://trac.{{config.DNS_DOMAIN}}/{{repo.name}}</a></p>
 					</div>
 				</div>			
 			</form>
