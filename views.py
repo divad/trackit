@@ -62,3 +62,12 @@ def audit():
 		entry['when'] = trackit.core.ut_to_string(entry['utime'])
 
 	return render_template('audit.html',log=log,active='god')
+
+################################################################################
+#### God settings viewer
+
+@app.route('/god/settings')
+@trackit.core.login_required
+@trackit.core.admin_required
+def settings():
+	return render_template('god_settings.html', active='god')
