@@ -310,6 +310,9 @@ The stdout data was: %s
 
 The stderr data was: %s """ % (rcode, stdoutdata, stderrdata))
 
+			## return and dont restart
+			return
+
 		else:
 			syslog.syslog('httpd configtest OK')
 		
