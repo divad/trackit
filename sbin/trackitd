@@ -619,6 +619,7 @@ AuthBasicProvider wsgi
 WSGIAuthUserScript /data/trackit/trackit/auth/users.wsgi
 WSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi
 %s %s
+</LimitExcept>
 </Location>
 """ % (
 			location,
