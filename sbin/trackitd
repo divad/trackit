@@ -625,7 +625,6 @@ WSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi
 			name,
 			ro_users,
 			ro_teams,
-			location,
 			name,
 			rw_users,
 			rw_teams,
