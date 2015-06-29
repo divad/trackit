@@ -604,14 +604,15 @@ WSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi
 
 		f = open(os.path.join(self.config['HG_CONF_DIR'], name + ".conf"), 'w')
 		f.write("""<Location %s>
+<Limit GET PROPFIND OPTIONS REPORT>
 AuthType Basic
 AuthName "%s Mercurial Repository"
 AuthBasicProvider wsgi
 WSGIAuthUserScript /data/trackit/trackit/auth/users.wsgi
 WSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi
 %s %s
-</Location>
-<Location %s/git-receive-pack>
+</Limit>
+<LimitExcept GET PROPFIND OPTIONS REPORT>
 AuthType Basic
 AuthName "%s Mercurial Repository"
 AuthBasicProvider wsgi

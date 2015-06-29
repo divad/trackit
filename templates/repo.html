@@ -369,7 +369,7 @@ $(document).ready(function() {
 				</div>
 				<div class="modal-body" stlye="min-height: 200px">
 				
-					<div class="alert alert-danger hidden" role="alert" id="ad-alert"><strong>Warning!</strong> Granting permissions to active directory groups is <u>not recommended</u>. Source code access (Subversion/Git) cannot be granted to such groups. Admin rights cannot be granted to such groups. Nested active directory groups are not (yet) supported.</div>
+					<div class="alert alert-danger hidden" role="alert" id="ad-alert"><strong>Warning!</strong> Granting permissions to active directory groups is <u>not recommended</u>. Source code access (Subversion/Git/Mercurial) cannot be granted to such groups. Admin rights cannot be granted to such groups. Nested active directory groups are not (yet) supported.</div>
 
 					
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
@@ -598,11 +598,11 @@ $(document).ready(function() {
 					<div class="col-sm-8">
 						<p class="form-control-static">
 				{% if repo.src_type == 'git' %}
-					<span class="label label-primary">GIT</span>
+					<span class="label label-primary">Git</span>
 				{% elif repo.src_type == 'svn' %}
-					<span class="label label-primary">SVN</span>
+					<span class="label label-primary">Subversion</span>
 				{% elif repo.src_type == 'hg' %}
-					<span class="label label-primary">HG</span>
+					<span class="label label-primary">Mercurial</span>
 				{% elif repo.src_type == 'none' %}
 					<span class="label label-default">N/A</span>
 				{% endif %}
@@ -670,6 +670,14 @@ $(document).ready(function() {
 						<label class="col-sm-3 control-label bold-text">Git</label>
 						<div class="col-sm-9">
 							<p class="form-control-static"><a href="https://{{session.username}}@git.{{config.DNS_DOMAIN}}/{{repo.name}}">https://{{session.username}}@git.{{config.DNS_DOMAIN}}/{{repo.name}}</a></p>
+						</div>
+					</div>
+					{% endif %}
+					{% if repo.src_type == 'hg' %}
+					<div class="form-group form-group-static">
+						<label class="col-sm-3 control-label bold-text">Mercurial</label>
+						<div class="col-sm-9">
+							<p class="form-control-static"><a href="https://{{session.username}}@hg.{{config.DNS_DOMAIN}}/{{repo.name}}">https://{{session.username}}@hg.{{config.DNS_DOMAIN}}/{{repo.name}}</a></p>
 						</div>
 					</div>
 					{% endif %}

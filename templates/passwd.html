@@ -4,17 +4,18 @@
 	<h1><span class="fa-stack">
   <i class="fa fa-square fa-stack-2x"></i>
   <i class="fa fa-key fa-stack-1x fa-inverse"></i>
-</span> Your Git/Subversion Password</h1>
+</span> Your Forge Password</h1>
 </div>
 
-<p>Below is an alternative password you can use to access your git or subversion repositories.</p>
-<p>When working with a git or subversion repository you are prompted to enter your University
+<p>Below is an alternative password you can use to access your git, subversion or mercurial repositories.</p>
+<p>When working with a repository you are prompted to enter your University
 password repeatedly which becomes tiresome. Whilst the Subversion client can 'save' 
 your password it is stored in plain text and often unprotected. The git client can 'cache' or 'save'
-as well, both of which are stored in plain text.
+as well, both of which are stored in plain text. Mercurial supports a non-standard keyring extension, otherwise
+you have to store your password in plain text.
 </p>
 <p>Instead 
-of using your university password you can use an alternative Git/Subversion-only
+of using your university password you can use an alternative Forge-only
 password. You can safely store this password when your client prompts you to do
 so safe in the knowledge that your University password is not being saved. If you
 believe this password has been compromised you can reset it by clicking
@@ -39,7 +40,7 @@ $( document ).ready(function()
 <form class="form-horizontal" role="form" method="POST">
 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
   <div class="form-group">
-    <label for="inputPassword3" class="col-sm-3 control-label">Your Git/Subversion Password:</label>
+    <label for="inputPassword3" class="col-sm-3 control-label">Your Forge Password:</label>
     <div class="col-sm-6">
       <input class="form-control" type="password" value="{{password}}" id="password">
     </div>

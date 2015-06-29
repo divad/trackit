@@ -25,8 +25,8 @@
 			</div>
 			<div class="modal-body">
 
-				<p><a href="http://git-scm.com/">Git</a> and <a href="">Subversion (SVN)</a> are both revision control systems and Forge offers both. So how do you choose?</p>
-				<p>The biggest difference between them is that Subversion is a <em>centralised</em> revision/version control system, and Git is a <em>distributed</em> revision/version control system. When working with the former (Subversion) virtually all tasks (commits, etc) take place on the server, but with the latter (Git) most tasks take place locally on your own local repository and can then be pushed/merged back to the Forge server.</p>
+				<p><a href="http://git-scm.com/">Git</a>, <a href="https://subversion.apache.org/">Subversion (SVN)</a> and Mercurial are all revision control systems and Forge offers support for all three. So how do you choose?</p>
+				<p>The biggest difference between them is that Subversion is a <em>centralised</em> revision/version control system, and Git and Mercurial are a <em>distributed</em> revision/version control systems. When working with the former (Subversion) virtually all tasks (commits, etc) take place on the server, but with Git and Mercurial most tasks take place locally on your own local repository and can then be pushed/merged back to the Forge server when required.</p>
 				<ul>
 					<li>We recommend that you use Git if you're going to be developing computer software</li>
 					<li>If you're storing binary data (such as Office documents) we recommend using Subversion</li>
@@ -35,13 +35,13 @@
 					<li>Git is much faster than Subversion and require less disk space</li>
 					<li>Subversion's workflow and tools (and revision numbers) are much simpler and easier to understand than Git</li>
 				</ul
-				<p>Ultimatley the choice is personal, some people prefer Subversion over Git, and vice versa. Below are some more links to help you decide:</p>
+				<p>In general we recommend you pick Git or Subversion over Mercurial as both are far more widely used and supported. Ultimatley the choice is personal. Below are some more links to help you decide:</p>
 				<ul>
 					<li><a href="http://svnbook.red-bean.com/en/1.7/svn.intro.whatis.html#svn.intro.righttool">Is SVN the right tool?</a></li>
 					<li><a href="http://git-scm.com/about">Git's about page</a></li>
+					<li><a href="https://mercurial.selenic.com/guide">Mercurials's guide website</a></li>
 					<li><a href="http://en.wikipedia.org/wiki/Comparison_of_revision_control_software">Wikipedia's comparison</a></li>
 				</ul>
-				<p>Note - the Forge application itself is managed via Git.</p>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -95,8 +95,8 @@ function onFormSubmit()
 			<select name="repo_src_type" class="form-control" id="input_src_type">
 				<option value="git"{% if repo_src_type and repo_src_type == "git" %} selected="selected"{% endif %}>Git</option>
 				<option value="svn"{% if repo_src_type and repo_src_type == "svn" %} selected="selected"{% endif %}>Subversion</option>
-				<!--<option value="hg"{% if repo_src_type and repo_src_type == "hg" %} selected="selected"{% endif %}>Mercurial</option>-->
-				<option value="none"{% if repo_src_type and repo_src_type == "none" %} selected="selected"{% endif %}>None - source control disabled</option>-->
+				<option value="hg"{% if repo_src_type and repo_src_type == "hg" %} selected="selected"{% endif %}>Mercurial</option>
+				<option value="none"{% if repo_src_type and repo_src_type == "none" %} selected="selected"{% endif %}>None - source control disabled</option>
 			</select>
 
 			<span class="help-block">The type of repository source control, if any. <a href="" data-toggle="modal" data-target="#choose">How do I choose?</a>
