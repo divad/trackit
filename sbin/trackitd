@@ -237,6 +237,9 @@ class TracKitDaemon(object):
 		elif src_type == "git":
 			tconfig.add_section('components')
 			tconfig.set('components','tracopt.versioncontrol.git.*','enabled')
+		elif src_type == "hg":
+			tconfig.add_section('components')
+			tconfig.set('components','tracext.hg.*','enabled')
 
 		## email notifications
 		tconfig.set('notification','always_notify_owner','true')
