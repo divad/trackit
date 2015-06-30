@@ -35,7 +35,7 @@ import traceback
 import smtplib
 
 TRACKIT_CONFIG_FILE = '/data/forgemgr/trackit.conf'
-VERSION             = "0.18"
+VERSION             = "0.19"
 DEBUG               = True
 
 Pyro4.config.SERVERTYPE = "multiplex"
@@ -228,7 +228,7 @@ class TracKitDaemon(object):
 		## LOGO
 		tconfig.set('header_logo','src','https://www.southampton.ac.uk/images/bg_logo_small.png')
 		tconfig.set('header_logo','alt','Trac')
-		tconfig.set('header_logo','link','https://trac.soton.ac.uk/' + name + '/')
+		tconfig.set('header_logo','link','https://trac.' + self.config['DNS_DOMAIN'] + '/' + name + '/')
 		
 
 		if src_type == "svn":	
@@ -242,13 +242,13 @@ class TracKitDaemon(object):
 		tconfig.set('notification','always_notify_owner','true')
 		tconfig.set('notification','always_notify_reporter','true')
 		tconfig.set('notification','always_notify_updater','true')
-		tconfig.set('notification','smtp_default_domain','soton.ac.uk')
+		tconfig.set('notification','smtp_default_domain',self.config['DNS_DOMAIN'])
 		tconfig.set('notification','smtp_enabled','true')
-		tconfig.set('notification','smtp_from','noreply@soton.ac.uk')
-		tconfig.set('notification','smtp_replyto','noreply@soton.ac.uk')
+		tconfig.set('notification','smtp_from','noreply@' + self.config['DNS_DOMAIN'])
+		tconfig.set('notification','smtp_replyto','noreply@' + self.config['DNS_DOMAIN'])
 		
 		## other settings
-		tconfig.set('project','admin','noreply@soton.ac.uk')
+		tconfig.set('project','admin','noreply@' + self.config['DNS_DOMAIN'])
 		
 		with open(config_path,'wb') as cfp:
 			tconfig.write(cfp)
@@ -368,7 +368,7 @@ The stderr data was: %s """ % (rcode, stdoutdata, stderrdata))
 			## suspend 
 			location = "/" + name 
 			f = open(os.path.join(self.config['TRAC_CONF_DIR'], name + ".conf"), 'w')
-			f.write("""<Location %s>\nRedirectMatch .* https://forge.soton.ac.uk/suspended\n</Location>""" % (location))
+			f.write("""<Location %s>\nRedirectMatch .* https://forge.""" + self.config['DNS_DOMAIN'] + """/suspended\n</Location>""" % (location))
 			f.flush()
 			os.fsync(f.fileno())
 			f.close()
@@ -422,18 +422,19 @@ The stderr data was: %s """ % (rcode, stdoutdata, stderrdata))
 			users_string = "\nRequire ldap-user " + users_string
 			
 		if teamauthz_required:
-			teamauthz_string = "\nAuthzLDAPAuthoritative off\nWSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi" + teamauthz_string
+			teamauthz_string = "\nAuthzLDAPAuthoritative off\nWSGIAuthGroupScript " + self.config['FORGEMGR_ROOT'] + "/trackit/auth/teams.wsgi" + teamauthz_string
 	
 		f = open(os.path.join(self.config['TRAC_CONF_DIR'], name + ".conf"), 'w')
 		f.write("""<Location %s>
 AuthType Basic
 AuthName "%s Trac Project"
 AuthBasicProvider ldap
-AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
+AuthLDAPUrl %s %s %s %s
 </Location>
 """ % (
 			location,
 			name,
+			self.config['TRAC_LDAP_URL'],
 			teamauthz_string,
 			users_string,
 			ldap_groups,
@@ -462,7 +463,7 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 			## suspend 
 			location = "/" + name 
 			f = open(os.path.join(self.config['GIT_CONF_DIR'], name + ".conf"), 'w')
-			f.write("""<Location %s>\nRedirectMatch .* https://forge.soton.ac.uk/suspended\n</Location>""" % (location))
+			f.write("""<Location %s>\nRedirectMatch .* https://forge.""" + self.config['DNS_DOMAIN'] + """/suspended\n</Location>""" % (location))
 			f.flush()
 			os.fsync(f.fileno())
 			f.close()
@@ -512,25 +513,29 @@ AuthLDAPUrl ldaps://nlbldap.soton.ac.uk/dc=soton,dc=ac,dc=uk?cn?? %s %s %s
 AuthType Basic
 AuthName "%s Git Repository"
 AuthBasicProvider wsgi
-WSGIAuthUserScript /data/trackit/trackit/auth/users.wsgi
-WSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi
+WSGIAuthUserScript %s/trackit/auth/users.wsgi
+WSGIAuthGroupScript %s/trackit/auth/teams.wsgi
 %s %s
 </Location>
 <Location %s/git-receive-pack>
 AuthType Basic
 AuthName "%s Git Repository"
 AuthBasicProvider wsgi
-WSGIAuthUserScript /data/trackit/trackit/auth/users.wsgi
-WSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi
+WSGIAuthUserScript %s/trackit/auth/users.wsgi
+WSGIAuthGroupScript %s/trackit/auth/teams.wsgi
 %s %s
 </Location>
 """ % (
 			location,
 			name,
+			self.config['FORGEMGR_ROOT'],
+			self.config['FORGEMGR_ROOT'],
 			ro_users,
 			ro_teams,
 			location,
 			name,
+			self.config['FORGEMGR_ROOT'],
+			self.config['FORGEMGR_ROOT'],
 			rw_users,
 			rw_teams,
 		))
@@ -560,7 +565,7 @@ WSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi
 			## suspend 
 			location = "/" + name 
 			f = open(os.path.join(self.config['HG_CONF_DIR'], name + ".conf"), 'w')
-			f.write("""<Location %s>\nRedirectMatch .* https://forge.soton.ac.uk/suspended\n</Location>""" % (location))
+			f.write("""<Location %s>\nRedirectMatch .* https://forge.""" + self.config['DNS_DOMAIN'] + """/suspended\n</Location>""" % (location))
 			f.flush()
 			os.fsync(f.fileno())
 			f.close()
@@ -611,25 +616,29 @@ WSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi
 AuthType Basic
 AuthName "%s Mercurial Repository"
 AuthBasicProvider wsgi
-WSGIAuthUserScript /data/trackit/trackit/auth/users.wsgi
-WSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi
+WSGIAuthUserScript %s/trackit/auth/users.wsgi
+WSGIAuthGroupScript %s/trackit/auth/teams.wsgi
 %s %s
 </Limit>
 <LimitExcept GET PROPFIND OPTIONS REPORT>
 AuthType Basic
 AuthName "%s Mercurial Repository"
 AuthBasicProvider wsgi
-WSGIAuthUserScript /data/trackit/trackit/auth/users.wsgi
-WSGIAuthGroupScript /data/trackit/trackit/auth/teams.wsgi
+WSGIAuthUserScript %s/trackit/auth/users.wsgi
+WSGIAuthGroupScript %s/trackit/auth/teams.wsgi
 %s %s
 </LimitExcept>
 </Location>
 """ % (
 			location,
 			name,
+			self.config['FORGEMGR_ROOT'],
+			self.config['FORGEMGR_ROOT'],
 			ro_users,
 			ro_teams,
 			name,
+			self.config['FORGEMGR_ROOT'],
+			self.config['FORGEMGR_ROOT'],
 			rw_users,
 			rw_teams,
 		))
@@ -667,10 +676,11 @@ REPOS="$1"
 REV="$2"
 /usr/local/bin/svnnotify --repos-path "$REPOS" \
 --revision "$REV" --to %s \
---from noreply@soton.ac.uk --with-diff \
+--from noreply@%s --with-diff \
 --subject-prefix "SVN commit on repository '%s': " \
 --header "This is a notification of a commit made to the Subversion repository '%s'"
 """ % (
+				self.config['DNS_DOMAIN'],
 				address,
 				name,
 				name,
