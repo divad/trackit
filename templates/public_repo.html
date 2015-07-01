@@ -67,24 +67,40 @@
 			<div class="panel-heading">Service Links</div>
 			<div class="panel-body">
 			<form class="form-horizontal" role="form">
-				<div class="form-group">
-					<label class="col-sm-3 control-label bold-text">SVN</label>
-					<div class="col-sm-9">
-						<p class="form-control-static"><a href="https://svn.{{config.DNS_DOMAIN}}/{{repo.name}}">https://svn.{{config.DNS_DOMAIN}}/{{repo.name}}</a></p>
+
+
+					{% if repo.src_type == 'svn' %}
+					<div class="form-group form-group-static">
+						<label class="col-sm-3 control-label bold-text">Subversion</label>
+						<div class="col-sm-9">
+							<p class="form-control-static"><a href="https://svn{{config.DNS_DOMAIN}}/{{repo.name}}">https://svn{{config.DNS_DOMAIN}}/{{repo.name}}</a></p>
+						</div>
 					</div>
-				</div>
-				<div class="form-group">
-					<label class="col-sm-3 control-label bold-text">SVN+SSH</label>
-					<div class="col-sm-9">
-						<p class="form-control-static">ssh+svn://svn.{{config.DNS_DOMAIN}}/{{repo.name}}</p>
+					{% endif %}
+					{% if repo.src_type == 'git' %}
+					<div class="form-group form-group-static">
+						<label class="col-sm-3 control-label bold-text">Git</label>
+						<div class="col-sm-9">
+							<p class="form-control-static"><a href="https://{{session.username}}@git.{{config.DNS_DOMAIN}}/{{repo.name}}">https://{{session.username}}@git.{{config.DNS_DOMAIN}}/{{repo.name}}</a></p>
+						</div>
 					</div>
-				</div>
-				<div class="form-group">
-					<label class="col-sm-3 control-label bold-text">Trac</label>
-					<div class="col-sm-9">
-						<p class="form-control-static"><a href="https://trac.{{config.DNS_DOMAIN}}/{{repo.name}}/">https://trac.{{config.DNS_DOMAIN}}/{{repo.name}}</a></p>
+					{% endif %}
+					{% if repo.src_type == 'hg' %}
+					<div class="form-group form-group-static">
+						<label class="col-sm-3 control-label bold-text">Mercurial</label>
+						<div class="col-sm-9">
+							<p class="form-control-static"><a href="https://{{session.username}}@hg.{{config.DNS_DOMAIN}}/{{repo.name}}">https://{{session.username}}@hg.{{config.DNS_DOMAIN}}/{{repo.name}}</a></p>
+						</div>
 					</div>
-				</div>			
+					{% endif %}
+					{% if repo.web_type == 'trac' %}
+					<div class="form-group form-group-static">
+						<label class="col-sm-3 control-label bold-text">Trac</label>
+						<div class="col-sm-9">
+							<p class="form-control-static"><a href="https://trac.{{config.DNS_DOMAIN}}/{{repo.name}}/">https://trac.{{config.DNS_DOMAIN}}/{{repo.name}}</a></p>
+						</div>
+					</div>
+					{% endif %}		
 			</form>
 			</div>
 		</div>
