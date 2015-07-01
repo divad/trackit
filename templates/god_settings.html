@@ -12,19 +12,19 @@
 <form>
 	<fieldset>
 		<legend>General/Misc</legend>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Debug Mode</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.DEBUG}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Administrators group</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.ADMIN_GROUP}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">DNS Domain</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.DNS_DOMAIN}}</p>
@@ -33,13 +33,13 @@
 	</fieldset>
 	<fieldset>
 		<legend>Logging</legend>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Log dir</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.LOG_DIR}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Log file</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.LOG_FILE}}</p>
@@ -48,25 +48,25 @@
 	</fieldset>
 	<fieldset>
 		<legend>Critical alerts</legend>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">E-mail alerts enabled</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.EMAIL_ALERTS}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">E-mails are sent to</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.ADMINS}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">SMTP Server</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.SMTP_SERVER}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">E-mails are sent from</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.EMAIL_FROM}}</p>
@@ -75,25 +75,25 @@
 	</fieldset>
 	<fieldset>
 		<legend>Database</legend>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Server</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.DB_SERV}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Port</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.DB_PORT}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Database name</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.DB_NAME}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Database username</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.DB_USER}}</p>
@@ -102,104 +102,104 @@
 	</fieldset>
 	<fieldset>
 		<legend>Directories</legend>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Forge Data Root</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.FORGE_ROOT}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Forge Manager Root</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.FORGEMGR_ROOT}}</p>
 			</div>
 		</div>
 
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">SVN Active Root</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.SVN_ROOT}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">SVN Suspended Root</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.SVN_SUSPENDED_ROOT}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">SVN Deleted Root</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.SVN_DELETED_ROOT}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Git Active Root</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.GIT_ROOT}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Git Suspended Root</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.GIT_SUSPENDED_ROOT}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Git Deleted Root</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.GIT_DELETED_ROOT}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Mercurial Active Root</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.HG_ROOT}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Mercurial Suspended Root</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.HG_SUSPENDED_ROOT}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Mercurial Deleted Root</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.HG_DELETED_ROOT}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Trac Active Root</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.TRAC_ROOT}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Trac Suspended Root</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.TRAC_SUSPENDED_ROOT}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Trac Deleted Root</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.TRAC_DELETED_ROOT}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Git httpd config files</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.GIT_CONF_DIR}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Mercurial httpd config files</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.HG_CONF_DIR}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Trac httpd config files</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.TRAC_CONF_DIR}}</p>
@@ -208,19 +208,19 @@
 	</fieldset>
 	<fieldset>
 		<legend>Other config files</legend>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">SVN authz file</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.SVN_AUTHZ_FILE}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">SVN autoversion file</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.SVN_AUTOVERSION_CONFIG_FILE}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Samba config file</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.SAMBA_CONFIG_FILE}}</p>
@@ -229,13 +229,13 @@
 	</fieldset>
 	<fieldset>
 		<legend>TrackIT Daemon Settings</legend>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">trackitd uid</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.TRACKITD_SET_UID}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">trackitd gid</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.TRACKITD_SET_GID}}</p>
@@ -244,19 +244,19 @@
 	</fieldset>
 	<fieldset>
 		<legend>LDAP</legend>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">LDAP URI</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.LDAP_URI}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">LDAP Search Base</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.LDAP_SEARCH_BASE}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">LDAP user attribute</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.LDAP_USER_ATTRIBUTE}}</p>
@@ -265,13 +265,13 @@
 	</fieldset>
 	<fieldset>
 		<legend>Trac Settings</legend>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Trac Header Logo</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.TRAC_HEADER_LOGO}}</p>
 			</div>
 		</div>
-		<div class="form-group">
+		<div class="form-group form-group-static">
 			<label class="col-sm-3 control-label">Trac LDAP Auth config</label>
 			<div class="col-sm-9">
 				<p class="form-control-static">{{config.TRAC_LDAP_URL}}</p>
