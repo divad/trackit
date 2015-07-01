@@ -103,7 +103,7 @@ def ldap_auth_user(config,username,password):
 
 def check_password(environ, username, password):
 	syslog.openlog("trackit-auth",syslog.LOG_PID)
-	syslog.syslog('auth ldap call started')
+	syslog.syslog('check_password called')
 
 	## We use REDIS password caching for both to reduce having to hit
 	## LDAP (AD) (dog slow!) or MySQL (which is slower than REDIS)
@@ -113,8 +113,6 @@ def check_password(environ, username, password):
 	if password == '':
 		return False
 
-	syslog.syslog('auth ldap call started2')
-
 	## Connect to REDIS
 	try:
 		r = redis.StrictRedis(host='localhost', port=6379, db=0)
@@ -123,8 +121,6 @@ def check_password(environ, username, password):
 		syslog.openlog("trackit-auth",syslog.LOG_PID)
 		syslog.syslog('ERROR could not connect to REDIS: ' + str(ex))	
 		use_redis = False
-
-	syslog.syslog('auth ldap call started3')
 
 	## If we can use redis
 	if use_redis:
@@ -136,11 +132,13 @@ def check_password(environ, username, password):
 			if not cached_password == None:
 				## redis cache exists, check password.
 				if bcrypt.hashpw(password, cached_password) == cached_password:
+					syslog.syslog('auth succcess from redis standard cache for ' + username)
 					return True
 
 			## Try the alt password cache instead
 			if not cached_alt_password == None:
 				if bcrypt.hashpw(password, cached_altpassword) == cached_alt_password:
+					syslog.syslog('auth succcess from redis alt cache for ' + username)
 					return True
 				else:
 					return False
@@ -189,6 +187,7 @@ def check_password(environ, username, password):
 					if use_redis:
 						cache_password(r,username,password)
 
+					syslog.syslog('auth succcess from mysql alt password database for ' + username)
 					return True
 
 		except Exception as ex:
@@ -197,4 +196,5 @@ def check_password(environ, username, password):
 			syslog.syslog('check_password mysql call failed! - ' + str(ex))
 			return False			
 
+	syslog.syslog('auth failed from all sources for ' + username)
 	return False
