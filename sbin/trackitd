@@ -284,13 +284,13 @@ class TracKitDaemon(object):
 
 		## if we got this far httpd restart has not been queued
 		self.graceful_waiting = Value('i',1)
-		syslog.syslog('httpd restart scheduled for 30 seconds time')
+		syslog.syslog('httpd restart scheduled for 10 seconds time')
 		self.graceful = Process(target=self.do_server_graceful, args=(self.graceful_waiting,))
 		self.graceful.start()
 
 	def do_server_graceful(self,waiting):
 		## sleep
-		time.sleep(30)
+		time.sleep(10)
 		waiting.value = 0
 
 		syslog.syslog('asking apachectl for a httpd config test')
