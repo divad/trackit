@@ -158,15 +158,15 @@ def check_password(environ, username, password):
 		ldap_auth_result = ldap_auth_user(config,username,password)
 
 		if ldap_auth_result:
-			syslog.syslog('success')
-			return True
-		syslog.syslog('fail')
+			syslog.syslog('ldap auth success for ' + username)
+		else:
+			syslog.syslog('ldap auth failed (incorrect password) for ' + username)
 		
 	except Exception as ex:
 		syslog.syslog('ldap auth call resulted in an exception: ' + str(ex))
-		result = False
+		ldap_auth_result = False
 
-	if result:
+	if ldap_auth_result:
 		if use_redis:
 			cache_password(r,username,password)
 
