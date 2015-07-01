@@ -103,6 +103,19 @@
 	<fieldset>
 		<legend>Directories</legend>
 		<div class="form-group">
+			<label class="col-sm-2 control-label">Forge Data Root</label>
+			<div class="col-sm-10">
+				<p class="form-control-static">{{config.FORGE_ROOT}}</p>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label">Forge Manager Root</label>
+			<div class="col-sm-10">
+				<p class="form-control-static">{{config.FORGEMGR_ROOT}}</p>
+			</div>
+		</div>
+
+		<div class="form-group">
 			<label class="col-sm-2 control-label">SVN Active Root</label>
 			<div class="col-sm-10">
 				<p class="form-control-static">{{config.SVN_ROOT}}</p>
@@ -139,6 +152,24 @@
 			</div>
 		</div>
 		<div class="form-group">
+			<label class="col-sm-2 control-label">Mercurial Active Root</label>
+			<div class="col-sm-10">
+				<p class="form-control-static">{{config.HG_ROOT}}</p>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label">Mercurial Suspended Root</label>
+			<div class="col-sm-10">
+				<p class="form-control-static">{{config.HG_SUSPENDED_ROOT}}</p>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label">Mercurial Deleted Root</label>
+			<div class="col-sm-10">
+				<p class="form-control-static">{{config.HG_DELETED_ROOT}}</p>
+			</div>
+		</div>
+		<div class="form-group">
 			<label class="col-sm-2 control-label">Trac Active Root</label>
 			<div class="col-sm-10">
 				<p class="form-control-static">{{config.TRAC_ROOT}}</p>
@@ -160,6 +191,12 @@
 			<label class="col-sm-2 control-label">Git httpd config files</label>
 			<div class="col-sm-10">
 				<p class="form-control-static">{{config.GIT_CONF_DIR}}</p>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label">Mercurial httpd config files</label>
+			<div class="col-sm-10">
+				<p class="form-control-static">{{config.HG_CONF_DIR}}</p>
 			</div>
 		</div>
 		<div class="form-group">
@@ -223,6 +260,21 @@
 			<label class="col-sm-2 control-label">LDAP user attribute</label>
 			<div class="col-sm-10">
 				<p class="form-control-static">{{config.LDAP_USER_ATTRIBUTE}}</p>
+			</div>
+		</div>
+	</fieldset>
+	<fieldset>
+		<legend>Trac Settings</legend>
+		<div class="form-group">
+			<label class="col-sm-2 control-label">Trac Header Logo</label>
+			<div class="col-sm-10">
+				<p class="form-control-static">{{config.TRAC_HEADER_LOGO}}</p>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label">Trac LDAP Auth config</label>
+			<div class="col-sm-10">
+				<p class="form-control-static">{{config.TRAC_LDAP_URL}}</p>
 			</div>
 		</div>
 	</fieldset>
