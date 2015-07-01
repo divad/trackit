@@ -6,6 +6,7 @@ import MySQLdb as mysql
 TRACKIT_CONFIG_FILE = '/data/forgemgr/trackit.conf'
 GIT_APP_PATH = '/usr/bin'
 
+# Function to load the configuration from a Python script
 def load_config(filename):
 	d = imp.new_module('config')
 	d.__file__ = filename
@@ -60,6 +61,7 @@ config = load_config(TRACKIT_CONFIG_FILE)
 db = mysql.connect(config['DB_SERV'], config['DB_USER'], config['DB_PASS'], config['DB_NAME'])
 cur = db.cursor(mysql.cursors.DictCursor)
 
+# Extract parts from the above regex
 git_subcommand = command_search.group('command')
 git_repository = command_search.group('repository')
 
@@ -71,10 +73,10 @@ git_repository = command_search.group('repository')
 # - The MAX() on the permissions means you get the greatest access between team and user if both exist
 cur.execute("SELECT MAX(`rules`.`src`) AS `permission` FROM ((`rules` LEFT JOIN `teams` ON `teams`.`name` = `rules`.`name`AND `rules`.`source` = 'team') LEFT JOIN `team_members` ON `team_members`.`tid` = `teams`.`id`) JOIN `repos` ON `repos`.`id` = `rules`.`rid` WHERE `repos`.`name` = %s AND ((`rules`.`source` = 'team' AND `team_members`.`username` = %s) OR (`rules`.`source` = 'internal' AND `rules`.`name` = %s));", (git_repository, user, user))
 
-# Fetch the permission result (0 = no access, 1 = read-only, 2 = read-write0
+# Fetch the permission result (0 = no access, 1 = read-only, 2 = read-write)
 result = cur.fetchone()
 
-# If there are no results, then there are no rules for the user, hence no acces
+# If there are no results, then there are no rules for the user, hence no access
 if result is None:
 	print >> sys.stderr, "Permission denied (no access to repository defined)"
 	sys.exit(1)
