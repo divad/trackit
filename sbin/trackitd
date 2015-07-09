@@ -1363,9 +1363,17 @@ if __name__ == "__main__":
 	trackit     = TracKitDaemon()
 	trackit.load_config(TRACKIT_CONFIG_FILE)
 
-	## Drop privileges
-	os.setgid(trackit.config['TRACKITD_SET_GID'])
-	os.setuid(trackit.config['TRACKITD_SET_UID'])
+	## Drop privileges, looking up the UID/GID if not given numerically
+	if str(trackit.config['TRACKITD_SET_GID']).isdigit():
+		os.setgid(trackit.config['TRACKITD_SET_GID'])
+	else:
+		import grp
+		os.setgid(grp.getgrnam(trackit.config['TRACKITD_SET_GID']).gr_gid)
+	if str(trackit.config['TRACKITD_SET_UID']).isdigit():
+		os.setuid(trackit.config['TRACKITD_SET_UID'])
+	else:
+		import pwd
+		os.setuid(pwd.getpwnam(trackit.config['TRACKITD_SET_UID']).pw_uid)
 	
 	signal.signal(signal.SIGTERM, signal_handler_term)
 	signal.signal(signal.SIGINT, signal_handler_int)
