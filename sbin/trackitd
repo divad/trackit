@@ -35,7 +35,7 @@ import traceback
 import smtplib
 
 TRACKIT_CONFIG_FILE = '/data/forgemgr/trackit.conf'
-VERSION             = "0.20"
+VERSION             = "0.21"
 DEBUG               = True
 
 Pyro4.config.SERVERTYPE = "multiplex"
@@ -120,7 +120,7 @@ class TracKitDaemon(object):
 
 		if errorstr != None:
 			with open(self.config['STATUS_FILE'], "a") as status_file:
-				status_file.write(errorstr) 
+				status_file.write(str(errorstr) + "\n") 
 		
 
 ################################################################################
