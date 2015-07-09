@@ -117,6 +117,12 @@ def before_request():
 	## Connect to the database
 	trackit.core.db_connect()
 
+	## Check if error status file is present
+	if request.method == "GET":
+		if 'STATUS_FILE' in app.config:
+			if os.path.exists(app.config['STATUS_FILE']):
+				g.status_error = True
+
 	## Check CSRF key is valid
 	if request.method == "POST":
 		## check csrf token is valid
