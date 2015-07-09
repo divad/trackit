@@ -31,8 +31,44 @@ import datetime
 import re
 import Pyro4
 import ldap                   ## used in check_ldap_group, auth_user
+import os.path
 
 ################################################################################
+
+def get_system_status():
+	status = True
+	## Check STATUS File for trackitd errors
+	try:
+		if os.path.exists(app.config['STATUS_OK']):
+			g.trackitd_status = False
+			status = False
+		else:
+			g.trackitd_status = True
+	except Exception as ex:
+		g.trackitd_status = False
+		status = False
+
+	## check trackitd is running
+	# ping trackitd
+
+	## check httpd is running
+
+	## check mysql is running
+	if g.db:
+		try:
+			curd = g.db.cursor(mysql.cursors.DictCursor)
+			curd.execute('SELECT VERSION()')
+			version = curd.fetchone()
+			if version:
+				g.mysql_status = True
+			else:
+				g.mysql_status = False
+		except Exception as ex:
+			g.mysql_status = False
+
+	## check redis is running
+
+	return status
 
 def ldap_check_group(group_name):
 	ldapserver = ldap.initialize(app.config['LDAP_URI'])
@@ -77,8 +113,25 @@ def db_connect():
 	"""This function connects to the DB via parameters stored in the config file.
 	"""
 	## Connect to the database instance
-	g.db = mysql.connect(app.config['DB_SERV'],app.config['DB_USER'],app.config['DB_PASS'],app.config['DB_NAME'])
-	g.db.errorhandler = trackit.errors.db_error_handler
+	try:
+		g.db = mysql.connect(app.config['DB_SERV'],app.config['DB_USER'],app.config['DB_PASS'],app.config['DB_NAME'])
+		g.db.errorhandler = trackit.errors.db_error_handler
+	except Exception as ex:
+		g.db_error = str(ex)
+		g.db = False
+
+################################################################################
+
+def db_required(f):
+	"""This is a decorator function that when called ensures the view function can access the database, otherwise it shows an error.
+	Usage is as such: @bargate.core.login_required
+	"""
+	@wraps(f)
+	def decorated_function(*args, **kwargs):
+		if g.db == False:
+			trackit.errors.halt("Could not connect to the database","Forge was unable to connect to the database: " + g.db_error)
+		return f(*args, **kwargs)
+	return decorated_function
 
 ################################################################################
 
@@ -122,29 +175,12 @@ def before_request():
 		## check csrf token is valid
 		token = session.get('_csrf_token')
 
-
-#		try:
-#			if '_csrf_token' in session:
-#				app.logger.info('CSRF token in session is: ' + token)
-#			else:
-#				app.logger.info('No token in session')
-
-#			if '_csrf_token' in request.form:
-#				app.logger.info('CSRF token presented is: ' + request.form.get('_csrf_token'))
-#			else:
-#				app.logger.info('No CSRF token in form')
-
-#		except Exception as e:
-#			app.logger.error(str(e))
-
 		if not token or token != request.form.get('_csrf_token'):
 			if 'username' in session:
 				app.logger.warning('CSRF protection alert: %s failed to present a valid POST token',session['username'])
 			else:
 				app.logger.warning('CSRF protection alert: a non-logged in user failed to present a valid POST token')
 
-			### the user cannot have accidentally triggered this (?)
-			### so just throw a 403.
 			abort(403)
 
 ################################################################################
@@ -153,8 +189,8 @@ def before_request():
 def teardown_request(exception):
 	"""This function closes the DB connection as the app stops.
 	"""
-	db = getattr(g, 'db', None)
-	if db is not None:
+	db = getattr(g, 'db', False)
+	if db:
 		db.close()
 
 ################################################################################

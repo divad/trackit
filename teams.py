@@ -137,6 +137,7 @@ def is_admin(team_id,username=None,global_ok=True):
 ################################################################################
 
 @app.route('/api/teams')
+@trackit.core.db_required
 def api_teams():
 	teams = trackit.teams.get_all_teams()
 	
@@ -152,6 +153,7 @@ def api_teams():
 ################################################################################
 
 @app.route('/team/<name>/', methods=['GET','POST'])
+@trackit.core.db_required
 @trackit.core.login_required
 def team_view(name):
 	"""View handler to show a team and the repositories in the team"""
@@ -372,6 +374,7 @@ def team_list_handler(teams,template,page,function):
 @app.route('/teams')
 @app.route('/teams/<page>')
 @trackit.core.login_required
+@trackit.core.db_required
 def team_list_all(page=None):
 	"""View handler to list all teams"""
 	return team_list_handler(get_all_teams(),'team_list_all.html',page,'team_list_all')
@@ -381,13 +384,15 @@ def team_list_all(page=None):
 @app.route('/myteams')
 @app.route('/myteams/<page>')
 @trackit.core.login_required
+@trackit.core.db_required
 def team_list_mine(page=None):
 	"""View handler to list all my teams"""
 	return team_list_handler(get_user_teams(session['username']),'team_list_mine.html',page,'team_list_mine')
 
 ################################################################################
 
-@app.route('/god/teams')
+@app.route('/admin/teams')
+@trackit.core.db_required
 @trackit.core.login_required
 @trackit.core.admin_required
 def team_list_admin():
@@ -403,6 +408,7 @@ def team_list_admin():
 ################################################################################
 
 @app.route('/teams/check', methods=['POST'])
+@trackit.core.db_required
 def team_check():
 	"""Returns a JSON response to user agents to check if a team already exists. Used for AJAX client-side checking before form submit"""
 
@@ -426,6 +432,7 @@ def team_check():
 ################################################################################
 	
 @app.route('/teams/create', methods=['GET','POST'])
+@trackit.core.db_required
 @trackit.core.login_required
 def team_create():
 	"""View function to create a new team"""	

@@ -50,9 +50,10 @@ def suspended():
 ################################################################################
 #### God audit
 
-@app.route('/god/audit')
+@app.route('/admin/audit')
 @trackit.core.login_required
 @trackit.core.admin_required
+@trackit.core.db_required
 def audit():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT * FROM `audit` ORDER BY `utime` DESC')
@@ -66,8 +67,18 @@ def audit():
 ################################################################################
 #### God settings viewer
 
-@app.route('/god/settings')
+@app.route('/admin/settings')
 @trackit.core.login_required
 @trackit.core.admin_required
 def settings():
 	return render_template('god_settings.html', active='god')
+
+################################################################################
+#### God admin page
+
+@app.route('/admin')
+@trackit.core.login_required
+@trackit.core.admin_required
+def admin():
+	status = trackit.core.get_system_status()
+	return render_template('admin.html', active='god', status=status)

@@ -35,7 +35,7 @@ import traceback
 import smtplib
 
 TRACKIT_CONFIG_FILE = '/data/forgemgr/trackit.conf'
-VERSION             = "0.21"
+VERSION             = "0.22"
 DEBUG               = True
 
 Pyro4.config.SERVERTYPE = "multiplex"
@@ -109,18 +109,6 @@ class TracKitDaemon(object):
 	def db_close(self):
 		if self.db.open:
 			self.db.close()
-		
-################################################################################
-		
-	def set_needs_attention(self,errorstr = None):
-		## This is called when a critical error has occured that needs to be remedies by a human.
-		## i.e. I NEED ATTENTION! function. 
-		if not os.path.exists(self.config['STATUS_FILE']):
-			open(self.config['STATUS_FILE'], 'w').close()
-
-		if errorstr != None:
-			with open(self.config['STATUS_FILE'], "a") as status_file:
-				status_file.write(str(errorstr) + "\n") 
 		
 
 ################################################################################
@@ -920,6 +908,29 @@ SVNAutoversioning on
 		curd.close()
 		
 ################################################################################
+		
+	def set_needs_attention(self,errorstr = None):
+		## This is called when a critical error has occured that needs to be remedies by a human.
+		## i.e. I NEED ATTENTION! function. 
+		if not os.path.exists(self.config['STATUS_FILE']):
+			open(self.config['STATUS_FILE'], 'w').close()
+
+		if errorstr != None:
+			with open(self.config['STATUS_FILE'], "a") as status_file:
+				status_file.write(str(errorstr) + "\n") 
+
+
+################################################################################
+
+	def clear_attention_state(self):
+		try:
+			if os.path.exists(self.config['STATUS_FILE']):
+				os.remove(self.config['STATUS_FILE'])
+		except Exception as ex:
+			syslog.syslog('clear_attention_state: Could not remove status file' + str(ex))
+			return (False,"Failed to clear error state The error was: " + str(ex))
+
+################################################################################		
 
 	def repo_create(self,name,src_type,web_type,initial_admin):
 		if not re.search(r'^[a-zA-Z0-9_\-]{3,50}$', name):

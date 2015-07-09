@@ -113,6 +113,7 @@ def repo_list_handler(repos,title,page,function):
 @app.route('/repos')
 @app.route('/repos/<page>')
 @trackit.core.login_required
+@trackit.core.db_required
 def repo_list(page=None):
 	"""View handler to list all repositories"""
 
@@ -122,6 +123,7 @@ def repo_list(page=None):
 
 @app.route('/public')
 @app.route('/public/<page>')
+@trackit.core.db_required
 def repo_list_all(page=None):
 	"""View handler to list all repositories"""
 	
@@ -140,9 +142,10 @@ def repo_list_all(page=None):
 		
 ################################################################################
 
-@app.route('/god/repos')
+@app.route('/admin/repos')
 @trackit.core.login_required
 @trackit.core.admin_required
+@trackit.core.db_required
 def repo_list_admin():
 	"""View handler to list all repositories"""
 	
@@ -167,6 +170,7 @@ def repo_is_valid_name(repo_name):
 ################################################################################
 
 @app.route('/repos/check', methods=['POST'])
+@trackit.core.db_required
 def repo_check_exists():
 	"""Returns a JSON response to user agents to check if a repository already exists. Used for AJAX client-side checking before form submit"""
 
@@ -282,6 +286,7 @@ def has_access(repo_id,username=None):
 ################################################################################
 
 @app.route('/repos/create', methods=['GET','POST'])
+@trackit.core.db_required
 @trackit.core.login_required
 def repo_create():
 	"""View function to create a new repository"""	
@@ -419,6 +424,7 @@ def repo_create():
 ################################################################################
 
 @app.route('/repo/<name>/', methods=['GET','POST'])
+@trackit.core.db_required
 def repo_view(name):
 	"""View handler to manage a repo"""
 
