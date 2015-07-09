@@ -33,25 +33,30 @@
 <div class="row">
 	<div class="col-md-3">
 		<div class="admin-block">
+				{% if status %}
 				<i class="fa fa-fw fa-thumbs-up fa-5x text-success status-img"></i>
 				<h3>Status OK</h3>
+				{% else %}
+				<i class="fa fa-fw fa-exclamation-triangle fa-5x text-danger status-img"></i>
+				<h3>System ERR</h3>
+				{% endif %}
 		</div>
 	</div>
 	<div class="col-md-3">
 		<div class="admin-block">
-			<h1><strong><a href="{{ url_for('repo_list_admin') }}">74</a></strong></h1>
+			<h1><strong><a href="{{ url_for('repo_list_admin') }}">{{repo_count}}</a></strong></h1>
 			<h2>Repositories</h2>
 		</div>
 	</div>
 	<div class="col-md-3">
 		<div class="admin-block">
-			<h1><strong><a href="{{ url_for('team_list_admin') }}">23</a></strong></h1>
+			<h1><strong><a href="{{ url_for('team_list_admin') }}">{{team_count}}</a></strong></h1>
 			<h2>Teams</h2>
 		</div>
 	</div>
 	<div class="col-md-3">
 		<div class="admin-block">
-			<h1><strong>23</strong>G</h1>
+			<h1><strong>??	</strong>G</h1>
 			<h2>disk usage</h2>
 		</div>
 	</div>
@@ -59,25 +64,41 @@
 <div class="row">
 	<div class="col-md-3">
 		<div class="admin-block">
+				{% if g.trackitd_running %}
+				<i class="fa fa-fw fa-check fa-5x text-success status-img"></i>
+				{% else %}
 				<i class="fa fa-fw fa-exclamation-triangle fa-5x text-danger status-img"></i>
+				{% endif %}
 				<h3>trackitd</h3>
 		</div>
 	</div>
 	<div class="col-md-3">
 		<div class="admin-block">
+				{% if g.httpd_status %}
 				<i class="fa fa-fw fa-check fa-5x text-success status-img"></i>
-				<h3>apache</h3>
+				{% else %}
+				<i class="fa fa-fw fa-exclamation-triangle fa-5x text-danger status-img"></i>
+				{% endif %}
+				<h3>httpd</h3>
 		</div>
 	</div>
 	<div class="col-md-3">
 		<div class="admin-block">
+				{% if g.mysql_status %}
 				<i class="fa fa-fw fa-check fa-5x text-success status-img"></i>
+				{% else %}
+				<i class="fa fa-fw fa-exclamation-triangle fa-5x text-danger status-img"></i>
+				{% endif %}
 				<h3>mysql</h3>
 		</div>
 	</div>
 	<div class="col-md-3">
 		<div class="admin-block">
+				{% if g.redis_status %}
 				<i class="fa fa-fw fa-check fa-5x text-success status-img"></i>
+				{% else %}
+				<i class="fa fa-fw fa-exclamation-triangle fa-5x text-danger status-img"></i>
+				{% endif %}
 				<h3>redis</h3>
 		</div>
 	</div>

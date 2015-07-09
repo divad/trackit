@@ -35,7 +35,7 @@ import traceback
 import smtplib
 
 TRACKIT_CONFIG_FILE = '/data/forgemgr/trackit.conf'
-VERSION             = "0.22"
+VERSION             = "0.23"
 DEBUG               = True
 
 Pyro4.config.SERVERTYPE = "multiplex"
@@ -1352,6 +1352,12 @@ SVNAutoversioning on
 			syslog.syslog('repo_update_src_notify_email: Unable to set svn notify email:' + str(ex))
 			return False,"Failed to set set notification e-mail. The error was: " + str(ex)		
 		
+		return True,""
+
+################################################################################
+		
+	def ping(self):
+		if DEBUG: syslog.syslog('method ping called')
 		return True,""
 
 ################################################################################

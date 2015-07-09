@@ -32,6 +32,8 @@ import re
 import Pyro4
 import ldap                   ## used in check_ldap_group, auth_user
 import os.path
+import redis
+import requests
 
 ################################################################################
 
@@ -39,19 +41,37 @@ def get_system_status():
 	status = True
 	## Check STATUS File for trackitd errors
 	try:
-		if os.path.exists(app.config['STATUS_OK']):
+		if os.path.exists(app.config['STATUS_FILE']):
 			g.trackitd_status = False
 			status = False
 		else:
 			g.trackitd_status = True
+
 	except Exception as ex:
+		flash("err " + str(ex),"alert-info")
 		g.trackitd_status = False
 		status = False
 
 	## check trackitd is running
-	# ping trackitd
+	try:
+		trackitd = trackit.core.trackitd_connect()
+		result, error_string = trackitd.ping()
+		if result:
+			g.trackitd_running = True
+		else:
+			g.trackitd_running = False
+			status = False
+	except Exception as ex:
+		g.trackitd_running = False
+		status = False	
 
 	## check httpd is running
+	try:
+		req = requests.get("http://localhost",allow_redirects=False)
+		g.httpd_status = True
+	except Exception as ex:
+		g.httpd_status = False
+		status = False	
 
 	## check mysql is running
 	if g.db:
@@ -67,6 +87,17 @@ def get_system_status():
 			g.mysql_status = False
 
 	## check redis is running
+	try:
+		r = redis.StrictRedis(host='localhost')
+		result = r.ping()
+		if result == True:
+			g.redis_status = True
+		else:
+			g.redis_status = False
+			status = False
+	except Exception as ex:
+		g.redis_status = False
+		status = False
 
 	return status
 

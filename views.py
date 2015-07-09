@@ -81,4 +81,19 @@ def settings():
 @trackit.core.admin_required
 def admin():
 	status = trackit.core.get_system_status()
-	return render_template('admin.html', active='god', status=status)
+
+	if g.db:
+		## count repos and teams
+		curd = g.db.cursor(mysql.cursors.DictCursor)
+		curd.execute('SELECT COUNT(*) AS `total` FROM `repos`')
+		res = curd.fetchone()
+		repo_count = int(res['total'])
+		curd.execute('SELECT COUNT(*) AS `total` FROM `teams`')
+		res = curd.fetchone()
+		team_count = int(res['total'])
+	else:
+		repo_count = 0
+		team_count = 0
+
+	return render_template('admin.html', active='god', status=status, repo_count = repo_count, team_count = team_count)
+
