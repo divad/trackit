@@ -785,8 +785,7 @@ def repo_view(name):
 			
 				## Check if this is an edit or a delete of the rule
 				submit = request.form['submit']
-				if submit == 'Remove':
-				
+				if submit == 'Remove' or submit == 'Remove rule':
 					## Remove web/trac admin rights if needed
 					if str(existing_rule['admin']) == '1':
 						if existing_rule['source'] == 'internal':
