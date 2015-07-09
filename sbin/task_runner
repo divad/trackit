@@ -117,7 +117,7 @@ class TracKitTaskRunner(object):
 		## Stage 1: Delete unknown team members from teams
 
 		# Iterate over all known usernames
-		self.curd.execute('''SELECT DISTINCT `username` AS `username` FROM `team_members` WHERE `domain` = "internal"''')
+		self.curd.execute('''SELECT DISTINCT `username` AS `username` FROM `team_members` WHERE `team_members`.`domain` = "internal"''')
 		row = self.curd.fetchone()
 		delete_users = []
 		while row is not None:
@@ -131,7 +131,7 @@ class TracKitTaskRunner(object):
 
 		# Delete the users marked for deletion
 		for user in delete_users:
-			print 'User marked for deletion: ' + user
+			self.curd.execute('''INSERT INTO `audit` (`utime`, `username`, `module`, `event`, `module_id`, `desc`) VALUES (UNIX_TIMESTAMP(), "", "task_runner", "task_runner.team_members.expire", NULL, %s)''', ('Removed expired user ' + str(user) + ' from all teams',))
 			self.curd.execute('''DELETE FROM `team_members` WHERE `username` = %s AND `domain` = "internal"''', (user,))
 
 		## Stage 2: Delete unknown users from rules
@@ -149,7 +149,7 @@ class TracKitTaskRunner(object):
 
 		# Delete the users marked for deletion
 		for user in delete_users:
-			print 'User marked for deletion: ' + user
+			self.curd.execute('''INSERT INTO `audit` (`utime`, `username`, `module`, `event`, `module_id`, `desc`) VALUES (UNIX_TIMESTAMP(), "", "task_runner", "task_runner.rules.expire", NULL, %s)''', ('Removed expired user ' + str(user) + ' from all repository rules',))
 			self.curd.execute('''DELETE FROM `rules` WHERE `name` = %s AND `source` = "internal"''', (user,))
 
 		## Stage 3: Delete unknown users from alt_passwords
@@ -167,9 +167,8 @@ class TracKitTaskRunner(object):
 
 		# Delete the users marked for deletion
 		for user in delete_users:
-			print 'User marked for deletion: ' + user
+			self.curd.execute('''INSERT INTO `audit` (`utime`, `username`, `module`, `event`, `module_id`, `desc`) VALUES (UNIX_TIMESTAMP(), "", "task_runner", "task_runner.alt_passwords.expire", NULL, %s)''', ('Removed alt. password for user ' + str(user),))
 			self.curd.execute('''DELETE FROM `alt_passwords` WHERE `username` = %s''', (user,))
-
 
 		# Commit to the database
 		self.db.commit()
