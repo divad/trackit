@@ -35,7 +35,7 @@ import traceback
 import smtplib
 
 TRACKIT_CONFIG_FILE = '/data/forgemgr/trackit.conf'
-VERSION             = "0.19"
+VERSION             = "0.20"
 DEBUG               = True
 
 Pyro4.config.SERVERTYPE = "multiplex"
@@ -112,6 +112,19 @@ class TracKitDaemon(object):
 		
 ################################################################################
 		
+	def set_needs_attention(self,errorstr = None):
+		## This is called when a critical error has occured that needs to be remedies by a human.
+		## i.e. I NEED ATTENTION! function. 
+		if not os.path.exists(self.config['STATUS_FILE']):
+			open(self.config['STATUS_FILE'], 'w').close()
+
+		if errorstr != None:
+			with open(self.config['STATUS_FILE'], "a") as status_file:
+				status_file.write(errorstr) 
+		
+
+################################################################################
+		
 	def sysexec(self,command):
 		try:
 			commands = command.split(' ')
@@ -129,6 +142,7 @@ class TracKitDaemon(object):
 		svn_path = os.path.join(self.config['SVN_ROOT'],name)
 		if os.path.lexists(svn_path):
 			syslog.syslog('Could not create svn repo ' + svn_path + ': the directory already exists')
+			self.set_needs_attention('svn_create: Could not create svn repo ' + svn_path + ': the directory already exists')
 			raise InternalError("The subversion repository path " + svn_path + " already exists")
 
 		## Run svnadmin create
@@ -138,6 +152,8 @@ class TracKitDaemon(object):
 			syslog.syslog('svnadmin stdout:' + stdoutdata)
 			syslog.syslog('svnadmin stderr:' + stderrdata)			
 			
+			self.set_needs_attention('svn_create: Could not create svn repo ' + svn_path + ': svnadmin returned an error code')	
+
 			error_data = {'stdout': stdoutdata, 'stderr': stderrdata, 'rcode': rcode}
 			raise InternalError("The subversion repository could not be created due to an internal error. Please contact your system administrator.",error_data)
 		
@@ -151,15 +167,18 @@ class TracKitDaemon(object):
 	def git_create(self,name):
 		git_path = os.path.join(self.config['GIT_ROOT'],name)
 		if os.path.lexists(git_path):
-			syslog.syslog('Could not create git repo ' + git_path + ': the directory already exists')
+			syslog.syslog('git_create: Could not create git repo ' + git_path + ': the directory already exists')
+			self.set_needs_attention('git_create: Could not create git repo ' + git_path + ': the directory already exists')
 			raise InternalError("The git repository path " + git_path + " already exists")
 
 		## Run git init
 		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/git init --bare ' + git_path)
 		if rcode > 0:
-			syslog.syslog('Could not create git repo ' + git_path + ': git init returned an error code')
+			syslog.syslog('git_create: Could not create git repo ' + git_path + ': git init returned an error code')
 			syslog.syslog('git init stdout:' + stdoutdata)
 			syslog.syslog('git init stderr:' + stderrdata)			
+
+			self.set_needs_attention('git_create: Could not create git repo ' + git_path + ': git init returned an error code')
 			
 			error_data = {'stdout': stdoutdata, 'stderr': stderrdata, 'rcode': rcode}
 			raise InternalError("git init returned an error. Please contact your system administrator.",error_data)
@@ -173,15 +192,18 @@ class TracKitDaemon(object):
 	def hg_create(self,name):
 		hg_path = os.path.join(self.config['HG_ROOT'],name)
 		if os.path.lexists(hg_path):
-			syslog.syslog('Could not create hg repo ' + hg_path + ': the directory already exists')
+			syslog.syslog('hg_create: Could not create hg repo ' + hg_path + ': the directory already exists')
+			self.set_needs_attention('hg_create: Could not create hg repo ' + hg_path + ': the directory already exists')
 			raise InternalError("The hg repository path " + hg_path + " already exists")
 
 		## Run hg init
 		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/hg init ' + hg_path)
 		if rcode > 0:
-			syslog.syslog('Could not create hg repo ' + hg_path + ': hg init returned an error code')
+			syslog.syslog('hg_create: Could not create hg repo ' + hg_path + ': hg init returned an error code')
 			syslog.syslog('hg init stdout:' + stdoutdata)
-			syslog.syslog('hg init stderr:' + stderrdata)			
+			syslog.syslog('hg init stderr:' + stderrdata)	
+
+			self.set_needs_attention('hg_create: Could not create hg repo ' + hg_path + ': hg init returned an error code')	
 			
 			error_data = {'stdout': stdoutdata, 'stderr': stderrdata, 'rcode': rcode}
 			raise InternalError("hg init returned an error. Please contact your system administrator.",error_data)
@@ -197,7 +219,8 @@ class TracKitDaemon(object):
 		## Check trac folder does not exist
 		trac_path = os.path.join(self.config['TRAC_ROOT'],name)
 		if os.path.lexists(trac_path):
-			raise InternalError("The trac path " + trac_path + " already exists")
+			self.set_needs_attention("trac_create: The trac path " + trac_path + " already exists")
+			raise InternalError("trac_create: The trac path " + trac_path + " already exists")
 
 		trac_str = ""
 		if src_type == "svn":
@@ -210,14 +233,16 @@ class TracKitDaemon(object):
 		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/trac-admin ' + trac_path + ' initenv ' + name + ' sqlite:db/trac.db' + trac_str)
 
 		if rcode > 0:
-			syslog.syslog('Could not trac instance ' + trac_path + ': trac-admin returned an error code')
+			self.set_needs_attention('trac_create: Could not trac instance ' + trac_path + ': trac-admin returned an error code')
+
+			syslog.syslog('trac_create: Could not trac instance ' + trac_path + ': trac-admin returned an error code')
 			syslog.syslog('trac-admin stdout:' + stdoutdata)
-			syslog.syslog('trac-admin stderr:' + stderrdata)			
+			syslog.syslog('trac-admin stderr:' + stderrdata)		
 			
 			error_data = {'stdout': stdoutdata, 'stderr': stderrdata, 'rcode': rcode}
-			raise InternalError("The Trac instance could not be created due to an internal error. Please contact your system administrator.",error_data)
+			raise InternalError("trac_create: The Trac instance could not be created due to an internal error. Please contact your system administrator.",error_data)
 		else:
-			syslog.syslog('Created trac instance ' + name + " with source type: " + src_type)
+			syslog.syslog('trac_create: Created trac instance ' + name + " with source type: " + src_type)
 
 		## Open the config file		
 		config_path = os.path.join(trac_path,'conf','trac.ini')
@@ -229,7 +254,6 @@ class TracKitDaemon(object):
 		tconfig.set('header_logo','src','https://www.southampton.ac.uk/images/bg_logo_small.png')
 		tconfig.set('header_logo','alt','Trac')
 		tconfig.set('header_logo','link','https://trac.' + self.config['DNS_DOMAIN'] + '/' + name + '/')
-		
 
 		if src_type == "svn":	
 			tconfig.add_section('components')
@@ -302,6 +326,7 @@ class TracKitDaemon(object):
 			syslog.syslog('apachectl stdout:' + stdoutdata)
 			syslog.syslog('apachectl stderr:' + stderrdata)			
 			syslog.syslog('CRITICAL: not restarting httpd because a restart would break')
+			self.set_needs_attention('do_server_graceful: httpd configtest failed - apachectl returned an error code:' + str(rcode))
 			
 			self.mail_alert("ALERT: Forge service CRITICAL","""This is an automated message from the trackitd program on Forge. 
 
@@ -326,7 +351,8 @@ The stderr data was: %s """ % (rcode, stdoutdata, stderrdata))
 		if rcode > 0:
 			syslog.syslog('CRITICAL: httpd graceful restart failed - apachectl returned an error code:' + str(rcode))
 			syslog.syslog('apachectl stdout:' + stdoutdata)
-			syslog.syslog('apachectl stderr:' + stderrdata)			
+			syslog.syslog('apachectl stderr:' + stderrdata)		
+			self.set_needs_attention('do_server_graceful: httpd graceful restart failed - apachectl returned an error code:' + str(rcode))
 			
 			self.mail_alert("ALERT: Forge service UNAVAILABLE","""This is an automated message from the trackitd program on Forge. 
 
@@ -362,10 +388,12 @@ The stderr data was: %s """ % (rcode, stdoutdata, stderrdata))
 		repo = curd.fetchone()
 		
 		if repo == None:
-			raise InternalError("Could not find repo '" + name + "' in the database")
+			self.set_needs_attention("trac_auth_create: Could not find repo '" + name + "' in the database")
+			raise InternalError("trac_auth_create: Could not find repo '" + name + "' in the database")
 		
 		if repo['web_type'] != 'trac':
-			raise InternalError("Could not build trac auth config for repo '" + name + "' because web_type is not set to trac")
+			self.set_needs_attention("trac_auth_create: Could not build trac auth config for repo '" + name + "' because web_type is not set to trac")
+			raise InternalError("trac_auth_create: Could not build trac auth config for repo '" + name + "' because web_type is not set to trac")
 			
 		if str(repo['state']) == "2":
 			## suspend 
@@ -457,10 +485,12 @@ AuthLDAPUrl %s %s %s %s
 		repo = curd.fetchone()
 
 		if repo == None:
-			raise InternalError("Could not find repo '" + name + "' in the database")
+			self.set_needs_attention("git_auth_config: Could not find repo '" + name + "' in the database")
+			raise InternalError("git_auth_config: Could not find repo '" + name + "' in the database")
 		
 		if repo['src_type'] != 'git':
-			raise InternalError("Could not build git auth config for repo '" + name + "' because src_type is not set to git")
+			self.set_needs_attention("git_auth_config: Could not build git auth config for repo '" + name + "' because src_type is not set to git")
+			raise InternalError("git_auth_config: Could not build git auth config for repo '" + name + "' because src_type is not set to git")
 			
 		if str(repo['state']) == "2":
 			## suspend 
@@ -559,10 +589,12 @@ WSGIAuthGroupScript %s/trackit/auth/teams.wsgi
 		repo = curd.fetchone()
 
 		if repo == None:
-			raise InternalError("Could not find repo '" + name + "' in the database")
+			self.set_needs_attention("hg_auth_config: Could not find repo '" + name + "' in the database")
+			raise InternalError("hg_auth_config: Could not find repo '" + name + "' in the database")
 		
 		if repo['src_type'] != 'hg':
-			raise InternalError("Could not build hg auth config for repo '" + name + "' because src_type is not set to hg")
+			self.set_needs_attention("hg_auth_config: Could not build hg auth config for repo '" + name + "' because src_type is not set to hg")
+			raise InternalError("hg_auth_config: Could not build hg auth config for repo '" + name + "' because src_type is not set to hg")
 			
 		if str(repo['state']) == "2":
 			## suspend 
@@ -662,10 +694,12 @@ WSGIAuthGroupScript %s/trackit/auth/teams.wsgi
 		repo = curd.fetchone()
 	
 		if repo == None:
-			raise InternalError("Could not find repo '" + name + "' in the database")
+			self.set_needs_attention("svn_notify_config: Could not find repo '" + name + "' in the database")
+			raise InternalError("svn_notify_config: Could not find repo '" + name + "' in the database")
 		
 		if repo['src_type'] != 'svn':
-			raise InternalError("Could not configure svn notification'" + name + "' because src_type is not set to svn")
+			self.set_needs_attention("svn_notify_config: Could not configure svn notification'" + name + "' because src_type is not set to svn")
+			raise InternalError("svn_notify_config: Could not configure svn notification'" + name + "' because src_type is not set to svn")
 
 		hook_file = os.path.join(self.config['SVN_ROOT'],name,'hooks','post-commit')
 			
@@ -727,7 +761,8 @@ REV="$2"
 		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/trac-admin ' + trac_path + ' permission add ' + username + ' TRAC_ADMIN')		
 
 		if rcode > 0:
-			syslog.syslog('Error returned from trac-admin permission add on instance ' + trac_path + '. Error code:' + str(rcode))
+			self.set_needs_attention('trac_admin_admin: Error returned from trac-admin permission add on instance ' + trac_path + '. Error code:' + str(rcode))
+			syslog.syslog('trac_admin_admin: Error returned from trac-admin permission add on instance ' + trac_path + '. Error code:' + str(rcode))
 			syslog.syslog('trac-admin stdout:' + stdoutdata)
 			syslog.syslog('trac-admin stderr:' + stderrdata)			
 			
@@ -742,7 +777,8 @@ REV="$2"
 		rcode, stdoutdata, stderrdata = self.sysexec('/usr/bin/trac-admin ' + trac_path + ' permission remove ' + username + ' TRAC_ADMIN')		
 			
 		if rcode > 0:
-			syslog.syslog('Error returned from trac-admin permission remove on instance ' + trac_path + '. Error code:' + str(rcode))
+			self.set_needs_attention('trac_remove_admin: Error returned from trac-admin permission remove on instance ' + trac_path + '. Error code:' + str(rcode))
+			syslog.syslog('trac_remove_admin: Error returned from trac-admin permission remove on instance ' + trac_path + '. Error code:' + str(rcode))
 			syslog.syslog('trac-admin stdout:' + stdoutdata)
 			syslog.syslog('trac-admin stderr:' + stderrdata)
 			
@@ -888,6 +924,7 @@ SVNAutoversioning on
 	def repo_create(self,name,src_type,web_type,initial_admin):
 		if not re.search(r'^[a-zA-Z0-9_\-]{3,50}$', name):
 			## This should never happen of course, but we do this test just to make sure.
+			self.set_needs_attention("repo_create: function called with invalid repository name: " + name)
 			return (False,"Invalid repository name")
 			
 		if src_type == 'svn': 
@@ -895,12 +932,14 @@ SVNAutoversioning on
 				src_path = self.svn_create(name)
 			except Exception as ex:
 				syslog.syslog('SVN creation call failed: ' + str(ex))
+				self.set_needs_attention("repo_create: svn_create returned an exception: " + str(ex))
 				return (False,"Failed to create repository. The error was: " + str(ex))
 		elif src_type == 'git': 
 			try:
 				src_path = self.git_create(name)
 			except Exception as ex:
 				syslog.syslog('git init call failed: ' + str(ex))
+				self.set_needs_attention("repo_create: git_create returned an exception: " + str(ex))
 				syslog.syslog(traceback.format_exc())
 				return (False,"Failed to create repository. The error was: " + str(ex))
 		elif src_type == 'hg': 
@@ -908,6 +947,7 @@ SVNAutoversioning on
 				src_path = self.hg_create(name)
 			except Exception as ex:
 				syslog.syslog('hg init call failed: ' + str(ex))
+				self.set_needs_attention("repo_create: hg_create returned an exception: " + str(ex))
 				syslog.syslog(traceback.format_exc())
 				return (False,"Failed to create repository. The error was: " + str(ex))
 		elif src_type == 'none':
@@ -918,6 +958,7 @@ SVNAutoversioning on
 				trac_path = self.trac_create(name,src_type,src_path)
 				self.trac_add_admin(trac_path,initial_admin)
 			except Exception as ex:
+				self.set_needs_attention("repo_create: trac creation returned an exception: " + str(ex))
 				syslog.syslog('Trac creation call failed:' + str(ex))
 				return False,"Failed to create repository. The error was: " + str(ex)
 				
@@ -930,6 +971,7 @@ SVNAutoversioning on
 
 		if not re.search(r'^[a-zA-Z0-9_\-]{3,50}$', name):
 			## This should never happen of course, but we do this test just to make sure.
+			self.set_needs_attention("repo_add_web: function called with invalid repository name: " + name)
 			return (False,"Invalid repository name")
 			
 		try:
@@ -938,7 +980,8 @@ SVNAutoversioning on
 			repo = curd.fetchone()
 			
 			if repo == None:
-				raise InternalError("Could not find repo '" + name + "' in the database")
+				self.set_needs_attention("repo_add_web: Could not find repo '" + name + "' in the database")
+				raise InternalError("repo_add_web: Could not find repo '" + name + "' in the database")
 								
 			if web_type == 'trac':
 				if repo['src_type'] == 'svn':
@@ -960,7 +1003,8 @@ SVNAutoversioning on
 						self.trac_add_admin(trac_path,rule['name'])
 						
 		except Exception as ex:
-			syslog.syslog('Trac creation call failed:' + str(ex))
+			self.set_needs_attention('repo_add_web: Trac creation call failed:' + str(ex))
+			syslog.syslog('repo_add_web: Trac creation call failed:' + str(ex))
 			return False,"Failed to add Trac. The error was: " + str(ex)
 					
 		return True,"Success"
@@ -976,18 +1020,21 @@ SVNAutoversioning on
 			repo = curd.fetchone()
 			
 			if repo == None:
-				raise InternalError("Could not find repo '" + name + "' in the database")
+				self.set_needs_attention("repo_add_admin: Could not find repo '" + name + "' in the database")
+				raise InternalError("repo_add_admin: Could not find repo '" + name + "' in the database")
 			
 			if repo['web_type'] == 'trac':	
 				## Check trac folder exists
 				trac_path = os.path.join(self.config['TRAC_ROOT'],name)
 				if not os.path.lexists(trac_path):
+					self.set_needs_attention("repo_add_admin: the trac path does not exist! - " + str(trac_path))
 					return False,"That repository does not exist!"
 					
 				self.trac_add_admin(trac_path,username)
 				
 		except Exception as ex:
-			syslog.syslog('Could not add admin to repo:' + str(ex))
+			self.set_needs_attention('repo_add_admin: Could not add admin to repo:' + str(ex))
+			syslog.syslog('repo_add_admin: Could not add admin to repo:' + str(ex))
 			return False,"Could not grant admin rights. The error was: " + str(ex)
 			
 		return True,"Success"
@@ -1004,19 +1051,22 @@ SVNAutoversioning on
 			repo = curd.fetchone()
 			
 			if repo == None:
-				raise InternalError("Could not find repo '" + name + "' in the database")
+				self.set_needs_attention("repo_remove_admin: Could not find repo '" + name + "' in the database")
+				raise InternalError("repo_remove_admin: Could not find repo '" + name + "' in the database")
 			
 			if repo['web_type'] == 'trac':	
 		
 				## Check trac folder exists
 				trac_path = os.path.join(self.config['TRAC_ROOT'],name)
 				if not os.path.lexists(trac_path):
+					self.set_needs_attention("repo_remove_admin: The trac repository path does not exist! - " + str(trac_path))
 					return False,"That repository does not exist!"
 					
-
 				self.trac_remove_admin(trac_path,username)
+
 		except Exception as ex:
-			syslog.syslog('Could not remove admin from repo:' + str(ex))
+			self.set_needs_attention('repo_remove_admin: Could not remove admin from repo:' + str(ex))
+			syslog.syslog('repo_remove_admin: Could not remove admin from repo:' + str(ex))
 			traceback.print_exc(file=sys.stdout)
 			return False,"Could not revoke admin rights. The error was: " + str(ex)
 			
@@ -1035,7 +1085,8 @@ SVNAutoversioning on
 
 			
 			if repo == None:
-				raise InternalError("Could not suspend repo name '" + name + "' because it does not exist!")
+				self.set_needs_attention("repo_suspend: Could not suspend repo name '" + name + "' because it does not exist in the database")
+				raise InternalError("repo_suspend: Could not suspend repo name '" + name + "' because it does not exist in the database")
 				
 			if repo['src_type'] == 'svn':
 			
@@ -1078,7 +1129,8 @@ SVNAutoversioning on
 		
 		except Exception as ex:
 		
-			syslog.syslog('Could not suspend repo ' + name + ':' + str(ex))
+			self.set_needs_attention('repo_suspend: Could not suspend repo ' + name + ':' + str(ex))
+			syslog.syslog('repo_suspend: Could not suspend repo ' + name + ':' + str(ex))
 			traceback.print_exc(file=sys.stdout)
 			return False,"Could not suspend the repo. The error was: " + str(ex)
 
@@ -1096,7 +1148,8 @@ SVNAutoversioning on
 			repo = curd.fetchone()
 			
 			if repo == None:
-				raise InternalError("Could not enable repo name '" + name + "' because it does not exist!")
+				self.set_needs_attention("repo_enable: Could not enable repo name '" + name + "' because it does not exist in the database")
+				raise InternalError("repo_enable: Could not enable repo name '" + name + "' because it does not exist in the database")
 				
 			if repo['src_type'] == 'svn':
 			
@@ -1139,7 +1192,8 @@ SVNAutoversioning on
 		
 		except Exception as ex:
 		
-			syslog.syslog('Could not enable repo ' + name + ':' + str(ex))
+			self.set_needs_attention('repo_enable: Could not enable repo ' + name + ':' + str(ex))
+			syslog.syslog('repo_enable: Could not enable repo ' + name + ':' + str(ex))
 			traceback.print_exc(file=sys.stdout)
 			return False,"Could not enable the repo. The error was: " + str(ex)
 
@@ -1157,7 +1211,8 @@ SVNAutoversioning on
 			repo = curd.fetchone()
 			
 			if repo == None:
-				raise InternalError("Could not delete repo name '" + name + "' because it does not exist!")
+				self.set_needs_attention("repo_delete: Could not delete repo name '" + name + "' because it does not exist in the database")
+				raise InternalError("repo_delete: Could not delete repo name '" + name + "' because it does not exist in the database")
 				
 			if repo['src_type'] == 'svn':
 			
@@ -1199,8 +1254,8 @@ SVNAutoversioning on
 			self.server_graceful()
 		
 		except Exception as ex:
-		
-			syslog.syslog('Could not delete repo ' + name + ':' + str(ex))
+			self.set_needs_attention('repo_delete: Could not delete repo ' + name + ':' + str(ex))
+			syslog.syslog('repo_delete: Could not delete repo ' + name + ':' + str(ex))
 			traceback.print_exc(file=sys.stdout)
 			return False,"Could not delete the repo. The error was: " + str(ex)
 
@@ -1218,7 +1273,8 @@ SVNAutoversioning on
 			repo = curd.fetchone()
 			
 			if repo == None:
-				raise InternalError("Could not delete repo name '" + name + "' because it does not exist!")
+				self.set_needs_attention("repo_update_rules: Could not update permission rules for repo name '" + name + "' because it does not exist in the database")
+				raise InternalError("repo_update_rules: Could not update permission rules for repo name '" + name + "' because it does not exist in the database")
 				
 			if repo['src_type'] == 'svn':
 				self.regenerate_authz_file()
@@ -1232,7 +1288,8 @@ SVNAutoversioning on
 				self.server_graceful()
 				
 		except Exception as ex:
-			syslog.syslog('Permission rebuild failed:' + str(ex))
+			self.set_needs_attention('repo_update_rules: Permission rebuild failed:' + str(ex))
+			syslog.syslog('repo_update_rules: Permission rebuild failed:' + str(ex))
 			return False,"Failed to rebuild permissions. The error was: " + str(ex)
 					
 		return True,""
@@ -1248,14 +1305,16 @@ SVNAutoversioning on
 			repo = curd.fetchone()
 			
 			if repo == None:
-				raise InternalError("Could not update web security for repo '" + name + "' because it does not exist!")
+				self.set_needs_attention("repo_update_web_security: Could not update web security for repo '" + name + "' because it does not exist in the database")
+				raise InternalError("repo_update_web_security: Could not update web security for repo '" + name + "' because it does not exist in the database")
 				
 			if repo['web_type'] == 'trac':
 				self.trac_auth_config(name)
 				self.server_graceful()
 
 		except Exception as ex:
-			syslog.syslog('Unable to set web security flag:' + str(ex))
+			self.set_needs_attention('repo_update_web_security: Unable to set web security flag for repo "' + name + '": ' + str(ex))
+			syslog.syslog('repo_update_web_security: Unable to set web security flag for repo "' + name + '": ' + str(ex))
 			return False,"Failed to set web security flag. The error was: " + str(ex)		
 		
 		return True,""
@@ -1271,13 +1330,15 @@ SVNAutoversioning on
 			repo = curd.fetchone()
 			
 			if repo == None:
-				raise InternalError("Could not update web security for repo '" + name + "' because it does not exist!")
+				self.set_needs_attention("repo_update_src_notify_email: Could not update web security for repo '" + name + "' because it does not exist in the database")
+				raise InternalError("repo_update_src_notify_email: Could not update web security for repo '" + name + "' because it does not exist in the database")
 				
 			if repo['src_type'] == 'svn':
 				self.svn_notify_config(name,address)
 
 		except Exception as ex:
-			syslog.syslog('Unable to set svn notify email:' + str(ex))
+			self.set_needs_attention('repo_update_src_notify_email: Unable to set svn notify email:' + str(ex))
+			syslog.syslog('repo_update_src_notify_email: Unable to set svn notify email:' + str(ex))
 			return False,"Failed to set set notification e-mail. The error was: " + str(ex)		
 		
 		return True,""
@@ -1291,7 +1352,8 @@ SVNAutoversioning on
 			self.regenerate_autoversion_config()
 			self.server_graceful()
 		except Exception as ex:
-			syslog.syslog('Unable to rebuild svn autoversion config:' + str(ex))
+			self.set_needs_attention('update_autoversion: Unable to rebuild svn autoversion config:' + str(ex))
+			syslog.syslog('update_autoversion: Unable to rebuild svn autoversion config:' + str(ex))
 			return False,"Failed to set set autoversion. The error was: " + str(ex)		
 		
 		return True,""
@@ -1321,7 +1383,8 @@ SVNAutoversioning on
 			self.server_graceful()
 
 		except Exception as ex:
-			syslog.syslog('Unable to process team deletion update:' + str(ex))
+			self.set_needs_attention('team_delete_update: Unable to process team deletion update:' + str(ex))
+			syslog.syslog('team_delete_update: Unable to process team deletion update:' + str(ex))
 			return False,"Failed to update rules after team delete. The error was: " + str(ex)				
 		
 		return True,""
@@ -1334,7 +1397,8 @@ SVNAutoversioning on
 		try:
 			self.regenerate_authz_file()
 		except Exception as ex:
-			syslog.syslog('Unable to process team members update:' + str(ex))
+			self.set_needs_attention('team_members_updated: Unable to process team members update:' + str(ex))
+			syslog.syslog('team_members_updated: Unable to process team members update:' + str(ex))
 			return False,"Failed to update rules after team members update. The error was: " + str(ex)				
 		
 		return True,""
@@ -1369,6 +1433,7 @@ if __name__ == "__main__":
 	else:
 		import grp
 		os.setgid(grp.getgrnam(trackit.config['TRACKITD_SET_GID']).gr_gid)
+
 	if str(trackit.config['TRACKITD_SET_UID']).isdigit():
 		os.setuid(trackit.config['TRACKITD_SET_UID'])
 	else:
