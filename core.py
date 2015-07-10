@@ -97,6 +97,9 @@ def get_system_status():
 		except Exception as ex:
 			g.mysql_status = False
 			status = False
+	else:
+		g.mysql_status = False
+		status = False
 
 	## check redis is running
 	try:
