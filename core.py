@@ -37,6 +37,16 @@ import requests
 
 ################################################################################
 
+def get_system_errlog():
+	## Check STATUS File for trackitd errors
+	try:
+		if os.path.exists(app.config['STATUS_FILE']):
+			with open (app.config['STATUS_FILE'], "r") as status_file:
+				return status_file.read()
+
+	except Exception as ex:
+		return "Could not load error log - " + str(ex)
+
 def get_system_status():
 	status = True
 	## Check STATUS File for trackitd errors

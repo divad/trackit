@@ -926,6 +926,7 @@ SVNAutoversioning on
 		try:
 			if os.path.exists(self.config['STATUS_FILE']):
 				os.remove(self.config['STATUS_FILE'])
+				return True,""
 		except Exception as ex:
 			syslog.syslog('clear_attention_state: Could not remove status file' + str(ex))
 			return (False,"Failed to clear error state The error was: " + str(ex))
