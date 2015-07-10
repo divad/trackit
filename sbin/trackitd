@@ -1225,10 +1225,11 @@ SVNAutoversioning on
 				self.set_needs_attention("repo_delete: Could not delete repo name '" + name + "' because it does not exist in the database")
 				raise InternalError("repo_delete: Could not delete repo name '" + name + "' because it does not exist in the database")
 				
+			repo_id = repo['id']
+
 			if repo['src_type'] == 'svn':
-			
 				svn_path = os.path.join(self.config['SVN_ROOT'],name)
-				svn_delete_path = os.path.join(self.config['SVN_DELETED_ROOT'],name)
+				svn_delete_path = os.path.join(self.config['SVN_DELETED_ROOT'], str(repo_id) + '_' + name)
 				shutil.move(svn_path,svn_delete_path)
 				syslog.syslog('Moved svn directory to deleted for repo: ' + name)
 			
@@ -1237,18 +1238,16 @@ SVNAutoversioning on
 				self.regenerate_autoversion_config()
 
 			elif repo['src_type'] == 'git':
-			
 				git_path = os.path.join(self.config['GIT_ROOT'],name)
-				git_delete_path = os.path.join(self.config['GIT_DELETED_ROOT'],name)
+				git_delete_path = os.path.join(self.config['GIT_DELETED_ROOT'], str(repo_id) + '_' + name)
 				shutil.move(git_path,git_delete_path)
 				syslog.syslog('Moved git directory to deleted for repo: ' + name)
 			
 				self.git_auth_config(name)
 
 			elif repo['src_type'] == 'hg':
-			
 				hg_path = os.path.join(self.config['HG_ROOT'],name)
-				hg_delete_path = os.path.join(self.config['HG_DELETED_ROOT'],name)
+				hg_delete_path = os.path.join(self.config['HG_DELETED_ROOT'], str(repo_id) + '_' + name)
 				shutil.move(hg_path,hg_delete_path)
 				syslog.syslog('Moved hg directory to deleted for repo: ' + name)
 			
@@ -1256,7 +1255,7 @@ SVNAutoversioning on
 				
 			if repo['web_type'] == 'trac':
 				trac_path = os.path.join(self.config['TRAC_ROOT'],name)
-				trac_delete_path = os.path.join(self.config['TRAC_DELETED_ROOT'],name)
+				trac_delete_path = os.path.join(self.config['TRAC_DELETED_ROOT'], str(repo_id) + '_' + name)
 				shutil.move(trac_path,trac_delete_path)
 				syslog.syslog('Moved trac directory to deleted for repo: ' + name)
 
