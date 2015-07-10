@@ -136,6 +136,7 @@ def ldap_check_user_access(username):
 def trackitd_connect():
 	proxy = Pyro4.Proxy(app.config['TRACKITD_URI'])
 	proxy._pyroHmacKey = app.config['TRACKITD_KEY']
+	proxy.ping()
 	return proxy
 
 ################################################################################
