@@ -5,7 +5,7 @@
 @import url(https://fonts.googleapis.com/css?family=Lato:400,700);
 .admin-block
 {
-	min-height: 172px;
+	min-height: 182px;
 	padding-left: auto;
 	padding-right: auto;
 	border-radius: 6px;
@@ -35,10 +35,10 @@
 		<div class="admin-block">
 				{% if status %}
 				<i class="fa fa-fw fa-thumbs-up fa-5x text-success status-img"></i>
-				<h3>Status OK</h3>
+				<h2>Status OK</h2>
 				{% else %}
 				<i class="fa fa-fw fa-exclamation-triangle fa-5x text-danger status-img"></i>
-				<h3>System ERR</h3>
+				<h2>System ERR</h2>
 				{% endif %}
 		</div>
 	</div>
@@ -69,7 +69,7 @@
 			{% else %}
 			<i class="fa fa-fw fa-5x text-warning fa-question-circle status-img"></i>
 			{% endif %}
-			<h2>disk usage</h2>
+			<h2>Disk usage</h2>
 		</div>
 	</div>
 </div>
@@ -81,7 +81,7 @@
 				{% else %}
 				<i class="fa fa-fw fa-exclamation-triangle fa-5x text-danger status-img"></i>
 				{% endif %}
-				<h3>trackitd</h3>
+				<h2>trackitd</h2>
 		</div>
 	</div>
 	<div class="col-md-3">
@@ -91,7 +91,7 @@
 				{% else %}
 				<i class="fa fa-fw fa-exclamation-triangle fa-5x text-danger status-img"></i>
 				{% endif %}
-				<h3>httpd</h3>
+				<h2>httpd</h2>
 		</div>
 	</div>
 	<div class="col-md-3">
@@ -101,7 +101,7 @@
 				{% else %}
 				<i class="fa fa-fw fa-exclamation-triangle fa-5x text-danger status-img"></i>
 				{% endif %}
-				<h3>mysql</h3>
+				<h2>mysql</h2>
 		</div>
 	</div>
 	<div class="col-md-3">
@@ -111,7 +111,7 @@
 				{% else %}
 				<i class="fa fa-fw fa-exclamation-triangle fa-5x text-danger status-img"></i>
 				{% endif %}
-				<h3>redis</h3>
+				<h2>redis</h2>
 		</div>
 	</div>
 </div>
